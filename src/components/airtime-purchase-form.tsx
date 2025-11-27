@@ -98,7 +98,7 @@ Please proceed with the top-up. Thank you.`;
   }
 
   return (
-    <Card className="w-full max-w-lg mx-auto shadow-2xl animate-in fade-in-50 zoom-in-95 duration-500">
+    <Card className="w-full max-w-2xl mx-auto shadow-2xl animate-in fade-in-50 zoom-in-95 duration-500">
       <CardHeader>
         <CardTitle className="text-3xl font-headline text-center">
           Buy Airtime
