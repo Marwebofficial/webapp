@@ -37,12 +37,10 @@ export const dataPlans: Record<Network, DataPlan[]> = {
     { id: 'airtel-20gb', label: '20GB', price: 4500 },
   ],
   glo: [
-    { id: 'glo-1.5gb', label: '1.5GB', price: 200 },
-    { id: 'glo-4gb', label: '4GB', price: 500 },
-    { id: 'glo-10gb', label: '10GB', price: 1000 },
-    { id: 'glo-15gb', label: '15GB', price: 1500 },
-    { id: 'glo-25gb', label: '25GB', price: 2500 },
-    { id: 'glo-50gb', label: '50GB', price: 4800 },
+    { id: 'glo-750mb-1d', label: '750MB', price: 270, validity: '1 Day' },
+    { id: 'glo-1.5gb-1d', label: '1.5GB', price: 360, validity: '1 Day' },
+    { id: 'glo-2.5gb-2d', label: '2.5GB', price: 570, validity: '2 Days' },
+    { id: 'glo-10gb-30d', label: '10GB', price: 2700, validity: '30 Days' },
   ],
   '9mobile': [
     { id: '9mobile-1gb', label: '1GB', price: 200 },
