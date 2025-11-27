@@ -24,6 +24,13 @@ export function Nav() {
         >
           Buy Airtime
         </Link>
+        <Link
+          href="/airtime-to-cash"
+          className="text-sm font-medium hover:underline underline-offset-4"
+          prefetch={false}
+        >
+          Airtime to Cash
+        </Link>
       </nav>
     </header>
   );
