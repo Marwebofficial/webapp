@@ -200,6 +200,11 @@ export function DataPurchaseForm() {
                                 <p className="text-muted-foreground font-semibold">
                                   ₦{plan.price.toLocaleString()}
                                 </p>
+                                {plan.validity && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {plan.validity}
+                                  </p>
+                                )}
                               </CardContent>
                             </Card>
                           ))}

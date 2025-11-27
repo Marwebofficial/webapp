@@ -2,6 +2,7 @@ export type DataPlan = {
   id: string;
   label: string;
   price: number;
+  validity?: string;
 };
 
 export type Network = 'mtn' | 'airtel' | 'glo' | '9mobile';
@@ -18,12 +19,14 @@ export const networkProviders: {
 
 export const dataPlans: Record<Network, DataPlan[]> = {
   mtn: [
-    { id: 'mtn-1gb', label: '1GB', price: 200 },
-    { id: 'mtn-2gb', label: '2GB', price: 400 },
-    { id: 'mtn-5gb', label: '5GB', price: 1000 },
-    { id: 'mtn-10gb', label: '10GB', price: 2000 },
-    { id: 'mtn-15gb', label: '15GB', price: 3000 },
-    { id: 'mtn-20gb', label: '20GB', price: 4000 },
+    { id: 'mtn-500mb-1d', label: '500MB', price: 400, validity: '1 Day' },
+    { id: 'mtn-1gb-1d', label: '1GB', price: 530, validity: '1 Day' },
+    { id: 'mtn-1.5gb-2d', label: '1.5GB', price: 630, validity: '2 Days' },
+    { id: 'mtn-3.2gb-2d', label: '3.2GB', price: 1050, validity: '2 Days' },
+    { id: 'mtn-1gb-7d', label: '1GB', price: 820, validity: '7 Days' },
+    { id: 'mtn-3.5gb-30d', label: '3.5GB', price: 2700, validity: '30 Days' },
+    { id: 'mtn-10gb-30d', label: '10GB', price: 4600, validity: '30 Days' },
+    { id: 'mtn-40gb-60d', label: '40GB', price: 9700, validity: '60 Days' },
   ],
   airtel: [
     { id: 'airtel-750mb', label: '750MB', price: 250 },
