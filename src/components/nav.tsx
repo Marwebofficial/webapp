@@ -9,13 +9,20 @@ export function Nav() {
         <Wifi className="h-6 w-6 text-primary" />
         <span className="ml-2 text-lg font-semibold">DataConnect</span>
       </Link>
-      <nav className="ml-auto flex gap-4 sm:gap-6">
+      <nav className="ml-auto flex gap-4 sm:gap-6 items-center">
         <Link
           href="/buy-data"
           className="text-sm font-medium hover:underline underline-offset-4"
           prefetch={false}
         >
           Buy Data
+        </Link>
+        <Link
+          href="/buy-airtime"
+          className="text-sm font-medium hover:underline underline-offset-4"
+          prefetch={false}
+        >
+          Buy Airtime
         </Link>
       </nav>
     </header>

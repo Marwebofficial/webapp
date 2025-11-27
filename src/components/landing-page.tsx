@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Zap, Smartphone, ShieldCheck, Clock } from 'lucide-react';
+import { Zap, Smartphone, ShieldCheck, Clock, Phone } from 'lucide-react';
 import Image from 'next/image';
 
 export function LandingPage() {
@@ -21,19 +21,28 @@ export function LandingPage() {
           <div className="container px-4 md:px-6 z-10 animate-in fade-in-50 slide-in-from-bottom-10 duration-700">
             <div className="max-w-3xl mx-auto">
               <h1 className="text-4xl font-extrabold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl font-headline">
-                Instant Data, Unbeatable Prices
+                Instant Data & Airtime, Unbeatable Prices
               </h1>
               <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-                Stay connected with the cheapest and most reliable mobile data
+                Stay connected with the cheapest and most reliable mobile data and airtime
                 plans in Nigeria. Delivered in minutes, 24/7.
               </p>
-              <div className="mt-8">
+              <div className="mt-8 flex gap-4 justify-center">
                 <Link href="/buy-data" passHref>
                   <Button
                     size="lg"
                     className="bg-accent text-accent-foreground hover:bg-accent/90 text-lg py-7 px-10 font-bold rounded-full shadow-lg transition-transform hover:scale-105"
                   >
-                    Get Started Now
+                    Buy Data
+                  </Button>
+                </Link>
+                 <Link href="/buy-airtime" passHref>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="bg-background/80 text-lg py-7 px-10 font-bold rounded-full shadow-lg transition-transform hover:scale-105"
+                  >
+                    Buy Airtime
                   </Button>
                 </Link>
               </div>
@@ -51,14 +60,19 @@ export function LandingPage() {
                 Why Choose DataConnect?
               </h2>
               <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                We provide a seamless experience for purchasing data, ensuring you get the best value for your money.
+                We provide a seamless experience for purchasing data and airtime, ensuring you get the best value for your money.
               </p>
             </div>
-            <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:grid-cols-4">
-              <FeatureCard
+            <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:grid-cols-3">
+               <FeatureCard
                 icon={<Zap className="w-8 h-8 text-primary" />}
                 title="Instant Delivery"
                 description="Your data is delivered to your phone number within minutes of purchase. No delays, no stories."
+              />
+              <FeatureCard
+                icon={<Phone className="w-8 h-8 text-primary" />}
+                title="Airtime Top-up"
+                description="Easily top-up airtime for any network in Nigeria, anytime, anywhere."
               />
               <FeatureCard
                 icon={<Smartphone className="w-8 h-8 text-primary" />}
