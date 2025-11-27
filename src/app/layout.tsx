@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
+import { Nav } from '@/components/nav';
 
 export const metadata: Metadata = {
   title: 'DataConnect Nigeria',
@@ -27,6 +28,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased h-full bg-background">
+        <Nav />
         {children}
         <Toaster />
       </body>

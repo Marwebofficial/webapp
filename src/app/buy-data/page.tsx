@@ -1,0 +1,9 @@
+import { DataPurchaseForm } from '@/components/data-purchase-form';
+
+export default function BuyDataPage() {
+  return (
+    <main className="flex min-h-screen w-full items-center justify-center p-4 md:p-8 bg-background">
+      <DataPurchaseForm />
+    </main>
+  );
+}
