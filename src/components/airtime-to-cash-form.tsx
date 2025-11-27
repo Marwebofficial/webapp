@@ -80,12 +80,23 @@ export function AirtimeToCashForm() {
     const networkName =
       networkProviders.find((p) => p.id === data.network)?.name || data.network;
 
-    const message = `Hello, I'd like to convert ₦${data.amount} ${networkName} airtime to cash.
-Phone Number: ${data.phone}
+    const message = `Hello DataConnect,
+
+I would like to convert my airtime to cash.
+
+Service: Airtime to Cash
+Network: ${networkName}
+Airtime Amount: ₦${data.amount.toLocaleString()}
+Phone Number with Airtime: ${data.phone}
+
+My Bank Details:
 Bank: ${data.bankName}
 Account Number: ${data.accountNumber}
 Account Name: ${data.accountName}
-My Name: ${data.name}`;
+
+My Contact Name: ${data.name}
+
+Please guide me on the next steps. Thank you.`;
 
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
       message

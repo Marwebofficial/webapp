@@ -102,7 +102,21 @@ export function DataPurchaseForm() {
     const networkName =
       networkProviders.find((p) => p.id === data.network)?.name || data.network;
 
-    const message = `Hello, I'd like to buy ${planDetails.label} ${networkName} data for ${data.phone}. My name is ${data.name}.`;
+    const message = `Hello DataConnect,
+
+I would like to place an order for a data bundle.
+
+Service: Data Purchase
+Network: ${networkName}
+Data Plan: ${planDetails.label} (₦${planDetails.price.toLocaleString()})
+Recipient Phone Number: ${data.phone}
+
+My Details:
+Name: ${data.name}
+${data.email ? `Email: ${data.email}` : ""}
+${data.referral ? `Referral Code: ${data.referral}` : ""}
+
+Please proceed with the transaction. Thank you.`;
 
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
       message

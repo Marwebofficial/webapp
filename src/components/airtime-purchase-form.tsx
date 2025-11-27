@@ -75,7 +75,20 @@ export function AirtimePurchaseForm() {
     const networkName =
       networkProviders.find((p) => p.id === data.network)?.name || data.network;
 
-    const message = `Hello, I'd like to buy ₦${data.amount} ${networkName} airtime for ${data.phone}. My name is ${data.name}.`;
+    const message = `Hello DataConnect,
+
+I would like to purchase airtime.
+
+Service: Airtime Purchase
+Network: ${networkName}
+Amount: ₦${data.amount.toLocaleString()}
+Recipient Phone Number: ${data.phone}
+
+My Details:
+Name: ${data.name}
+${data.email ? `Email: ${data.email}` : ""}
+
+Please proceed with the top-up. Thank you.`;
 
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
       message
