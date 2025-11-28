@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import {
   Sheet,
   SheetContent,
+  SheetHeader,
+  SheetTitle,
   SheetTrigger,
-  SheetClose,
 } from '@/components/ui/sheet';
 import { Menu, Wifi, UserCircle } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -69,8 +70,8 @@ export function Nav() {
     <div className="flex items-center gap-2">
       {isUserLoading ? (
         <>
-         <Skeleton className="h-9 w-20" />
-         <Skeleton className="h-9 w-20" />
+          <Skeleton className="h-9 w-20" />
+          <Skeleton className="h-9 w-20" />
         </>
       ) : user ? (
         <DropdownMenu>
@@ -113,16 +114,20 @@ export function Nav() {
 
   const mobileAuthLinks = (
     <div className="flex flex-col gap-2 mt-4">
-       {isUserLoading ? (
+      {isUserLoading ? (
         <>
-         <Skeleton className="h-9 w-full" />
-         <Skeleton className="h-9 w-full" />
+          <Skeleton className="h-9 w-full" />
+          <Skeleton className="h-9 w-full" />
         </>
       ) : user ? (
-         <Button onClick={() => {
+        <Button
+          onClick={() => {
             handleSignOut();
             closeSheet();
-         }}>Sign Out</Button>
+          }}
+        >
+          Sign Out
+        </Button>
       ) : (
         <>
           <Button asChild variant="ghost" onClick={closeSheet}>
@@ -134,7 +139,7 @@ export function Nav() {
         </>
       )}
     </div>
-  )
+  );
 
   return (
     <header className="px-4 lg:px-6 h-16 flex items-center sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b">
@@ -157,6 +162,9 @@ export function Nav() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left">
+              <SheetHeader>
+                <SheetTitle className='sr-only'>Navigation Menu</SheetTitle>
+              </SheetHeader>
               <div className="flex flex-col gap-4 p-4">
                 <Link
                   href="/"
@@ -169,9 +177,7 @@ export function Nav() {
                   </span>
                 </Link>
                 <div className="flex flex-col gap-4 mt-4">{navLinks}</div>
-                <div className='mt-auto'>
-                  {mobileAuthLinks}
-                </div>
+                <div className="mt-auto">{mobileAuthLinks}</div>
               </div>
             </SheetContent>
           </Sheet>
