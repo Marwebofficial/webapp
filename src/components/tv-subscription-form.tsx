@@ -36,6 +36,7 @@ import { TvProviderIcon } from './tv-provider-icons';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking, useCollection } from '@/firebase';
 import { Skeleton } from './ui/skeleton';
+import { useRouter } from 'next/navigation';
 
 const WHATSAPP_NUMBER = '2349040367103';
 
@@ -73,12 +74,48 @@ interface UserProfile {
   phoneNumber: string;
 }
 
+function PurchaseFormSkeleton() {
+    return (
+        <Card className="w-full max-w-2xl mx-auto shadow-2xl">
+            <CardHeader className="items-center">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-64" />
+            </CardHeader>
+            <CardContent className="space-y-8">
+                <div className="space-y-3">
+                    <Skeleton className="h-6 w-40" />
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <Skeleton className="h-28 w-full" />
+                        <Skeleton className="h-28 w-full" />
+                        <Skeleton className="h-28 w-full" />
+                    </div>
+                </div>
+                 <div className="space-y-4">
+                    <Skeleton className="h-6 w-40" />
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                </div>
+            </CardContent>
+            <CardFooter>
+                <Skeleton className="h-12 w-full rounded-full" />
+            </CardFooter>
+        </Card>
+    )
+}
+
 export function TvSubscriptionForm() {
   const [selectedProvider, setSelectedProvider] = useState<TvProviderId | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<TvPlan | null>(null);
   const { toast } = useToast();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const router = useRouter();
 
   const userDocRef = useMemoFirebase(
     () => (user ? doc(firestore, 'users', user.uid) : null),
@@ -101,6 +138,12 @@ export function TvSubscriptionForm() {
       smartCardNumber: '',
     },
   });
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
 
   useEffect(() => {
     if (userProfile) {
@@ -184,6 +227,10 @@ Please proceed with the subscription. Thank you.`;
     )}`;
 
     window.open(whatsappUrl, '_blank');
+  }
+
+  if (isUserLoading || !user) {
+    return <PurchaseFormSkeleton />;
   }
 
   return (

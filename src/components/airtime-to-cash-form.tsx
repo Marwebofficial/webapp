@@ -38,6 +38,8 @@ import {
 } from '@/components/ui/select';
 import { nigerianBanks } from '@/lib/banks';
 import { useUser, useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
+import { useRouter } from 'next/navigation';
+import { Skeleton } from './ui/skeleton';
 
 const WHATSAPP_NUMBER = '2349040367103';
 
@@ -74,9 +76,46 @@ interface UserProfile {
   phoneNumber: string;
 }
 
+function PurchaseFormSkeleton() {
+    return (
+        <Card className="w-full max-w-2xl mx-auto shadow-2xl">
+            <CardHeader className="items-center">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-64" />
+            </CardHeader>
+            <CardContent className="space-y-8">
+                <div className="space-y-3">
+                    <Skeleton className="h-6 w-40" />
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <Skeleton className="h-28 w-full" />
+                        <Skeleton className="h-28 w-full" />
+                        <Skeleton className="h-28 w-full" />
+                        <Skeleton className="h-28 w-full" />
+                    </div>
+                </div>
+                 <div className="space-y-4">
+                    <Skeleton className="h-6 w-40" />
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                </div>
+            </CardContent>
+            <CardFooter>
+                <Skeleton className="h-12 w-full rounded-full" />
+            </CardFooter>
+        </Card>
+    )
+}
+
 export function AirtimeToCashForm() {
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const router = useRouter();
 
   const userDocRef = useMemoFirebase(
     () => (user ? doc(firestore, 'users', user.uid) : null),
@@ -94,6 +133,12 @@ export function AirtimeToCashForm() {
       accountName: '',
     },
   });
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
 
   useEffect(() => {
     if (userProfile) {
@@ -154,6 +199,10 @@ Please guide me on the next steps. Thank you.`;
     )}`;
 
     window.open(whatsappUrl, '_blank');
+  }
+
+  if (isUserLoading || !user) {
+    return <PurchaseFormSkeleton />;
   }
 
   return (

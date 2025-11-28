@@ -37,6 +37,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking, useCollection } from '@/firebase';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
+import { useRouter } from 'next/navigation';
 
 const WHATSAPP_NUMBER = '2349040367103';
 
@@ -77,12 +78,49 @@ interface NetworkStatus {
   status: 'Online' | 'Degraded' | 'Offline';
 }
 
+function PurchaseFormSkeleton() {
+    return (
+        <Card className="w-full max-w-2xl mx-auto shadow-2xl">
+            <CardHeader className="items-center">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-64" />
+            </CardHeader>
+            <CardContent className="space-y-8">
+                <div className="space-y-3">
+                    <Skeleton className="h-6 w-40" />
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <Skeleton className="h-28 w-full" />
+                        <Skeleton className="h-28 w-full" />
+                        <Skeleton className="h-28 w-full" />
+                        <Skeleton className="h-28 w-full" />
+                    </div>
+                </div>
+                 <div className="space-y-4">
+                    <Skeleton className="h-6 w-40" />
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                </div>
+            </CardContent>
+            <CardFooter>
+                <Skeleton className="h-12 w-full rounded-full" />
+            </CardFooter>
+        </Card>
+    )
+}
+
 export function DataPurchaseForm() {
   const [selectedNetwork, setSelectedNetwork] = useState<Network | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<DataPlan | null>(null);
   const { toast } = useToast();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const router = useRouter();
 
   const userDocRef = useMemoFirebase(
     () => (user ? doc(firestore, 'users', user.uid) : null),
@@ -107,7 +145,6 @@ export function DataPurchaseForm() {
     [networkStatuses, selectedNetwork]
   );
 
-
   const form = useForm<FormData>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -117,6 +154,12 @@ export function DataPurchaseForm() {
       referral: '',
     },
   });
+  
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
 
   useEffect(() => {
     if (userProfile) {
@@ -214,6 +257,10 @@ Please proceed with the transaction. Thank you.`;
         return 'outline';
     }
   };
+
+  if (isUserLoading || !user) {
+    return <PurchaseFormSkeleton />;
+  }
 
   return (
     <Card className="w-full max-w-2xl mx-auto shadow-2xl animate-in fade-in-50 zoom-in-95 duration-500">
@@ -411,5 +458,3 @@ Please proceed with the transaction. Thank you.`;
     </Card>
   );
 }
-
-    
