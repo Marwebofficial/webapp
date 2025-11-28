@@ -35,7 +35,6 @@ import { collection, doc } from 'firebase/firestore';
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { networkProviders } from '@/lib/data-plans';
 import { tvProviders } from '@/lib/tv-plans';
-import { examPinProviders } from '@/lib/exam-pins';
 import {
   Select,
   SelectContent,
@@ -85,7 +84,7 @@ function PlanForm({
       return;
     }
     const planId = plan?.id || doc(collection(firestore, 'dummy')).id;
-    const planRef = doc(firestore, collectionName, networkId, 'pins', planId);
+    const planRef = doc(firestore, collectionName, networkId, 'plans', planId);
     const data: Omit<Plan, 'id'> = { label, price };
     if (!isTvPlan && !isExamPin) {
       data.validity = validity;
@@ -167,14 +166,14 @@ function PlansManager({
   const { toast } = useToast();
 
   const plansQuery = useMemoFirebase(
-    () => collection(firestore, collectionName, selectedProvider, 'pins'),
+    () => collection(firestore, collectionName, selectedProvider, 'plans'),
     [firestore, collectionName, selectedProvider]
   );
   const { data: plans, isLoading } = useCollection<Plan>(plansQuery);
 
   const handleDelete = async (planId: string) => {
     if (window.confirm('Are you sure you want to delete this plan?')) {
-      const planRef = doc(firestore, collectionName, selectedProvider, 'pins', planId);
+      const planRef = doc(firestore, collectionName, selectedProvider, 'plans', planId);
       await deleteDocumentNonBlocking(planRef);
       toast({ title: 'Success', description: 'Plan deleted successfully.' });
     }
@@ -311,7 +310,6 @@ export default function AdminPage() {
       <h1 className="text-3xl font-bold">Admin Dashboard</h1>
       <PlansManager title="Data Plans" providers={networkProviders} collectionName="dataPlans" />
       <PlansManager title="TV Subscriptions" providers={tvProviders} collectionName="tvPlans" isTvPlan />
-      <PlansManager title="Exam Pins" providers={examPinProviders} collectionName="examPins" isExamPin />
     </div>
   );
 }
