@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -17,30 +16,8 @@ import {
   Heart,
 } from 'lucide-react';
 import Image from 'next/image';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { ReviewFormDialog } from './review-form-dialog';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
-
-interface Review {
-  id: string;
-  name: string;
-  reviewText: string;
-  rating: number;
-}
 
 export function LandingPage() {
-  const firestore = useFirestore();
-  const reviewsQuery = useMemoFirebase(
-    () =>
-      firestore
-        ? query(collection(firestore, 'reviews'), orderBy('createdAt', 'desc'), limit(3))
-        : null,
-    [firestore]
-  );
-  const { data: reviews, isLoading } = useCollection<Review>(reviewsQuery);
-  const { user } = useUser();
-
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-1">
@@ -173,49 +150,6 @@ export function LandingPage() {
             </div>
           </div>
         </section>
-
-        <section
-          id="reviews"
-          className="w-full py-12 md:py-24 lg:py-32 bg-secondary"
-        >
-          <div className="container px-4 md:px-6">
-            <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
-              <div className="inline-block rounded-lg bg-background px-3 py-1 text-sm">
-                Testimonials
-              </div>
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
-                What Our Users Say
-              </h2>
-              <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                Hear from our satisfied customers who trust us for their daily
-                transactions.
-              </p>
-            </div>
-            <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:grid-cols-3">
-              {isLoading && (
-                <>
-                  <ReviewCardSkeleton />
-                  <ReviewCardSkeleton />
-                  <ReviewCardSkeleton />
-                </>
-              )}
-              {reviews &&
-                reviews.map((review) => (
-                  <ReviewCard
-                    key={review.id}
-                    name={review.name}
-                    review={review.reviewText}
-                    avatarUrl={`https://picsum.photos/seed/${review.id}/100/100`}
-                    imageHint="user portrait"
-                    rating={review.rating}
-                  />
-                ))}
-            </div>
-            <div className="mt-12 text-center">
-              <ReviewFormDialog />
-            </div>
-          </div>
-        </section>
       </main>
 
       <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
@@ -258,61 +192,5 @@ function FeatureCard({
       <h3 className="text-lg font-bold">{title}</h3>
       <p className="text-sm text-muted-foreground">{description}</p>
     </div>
-  );
-}
-
-function ReviewCard({
-  name,
-  review,
-  avatarUrl,
-  imageHint,
-  rating,
-}: {
-  name: string;
-  review: string;
-  avatarUrl: string;
-  imageHint: string;
-  rating: number;
-}) {
-  return (
-    <Card className="bg-background">
-      <CardContent className="p-6 flex flex-col items-center text-center">
-        <Avatar className="w-20 h-20 mb-4 border-2 border-primary">
-          <AvatarImage src={avatarUrl} alt={name} data-ai-hint={imageHint} />
-          <AvatarFallback>{name.charAt(0)}</AvatarFallback>
-        </Avatar>
-        <div className="flex items-center gap-0.5 mb-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Star
-              key={i}
-              className={`w-5 h-5 ${
-                i < rating
-                  ? 'text-yellow-400 fill-yellow-400'
-                  : 'text-muted-foreground/50'
-              }`}
-            />
-          ))}
-        </div>
-        <p className="text-muted-foreground mb-4 text-sm">&quot;{review}&quot;</p>
-        <h4 className="font-semibold">{name}</h4>
-      </CardContent>
-    </Card>
-  );
-}
-
-function ReviewCardSkeleton() {
-  return (
-    <Card className="bg-background">
-      <CardContent className="p-6 flex flex-col items-center text-center animate-pulse">
-        <Avatar className="w-20 h-20 mb-4 border-2 border-primary bg-muted"></Avatar>
-        <div className="flex items-center gap-0.5 mb-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Star key={i} className="w-5 h-5 text-muted-foreground/20" />
-          ))}
-        </div>
-        <div className="h-4 w-3/4 bg-muted rounded mb-4"></div>
-        <div className="h-4 w-1/2 bg-muted rounded"></div>
-      </CardContent>
-    </Card>
   );
 }
