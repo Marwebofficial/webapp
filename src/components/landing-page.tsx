@@ -224,6 +224,12 @@ export function LandingPage() {
           reserved.
         </p>
         <nav className="sm:ml-auto flex gap-4 sm:gap-6">
+            <Link href="/terms-of-service" className="text-xs hover:underline underline-offset-4">
+                Terms of Service
+            </Link>
+             <Link href="/privacy-policy" className="text-xs hover:underline underline-offset-4">
+                Privacy Policy
+            </Link>
             <Link href="/contact" className="text-xs hover:underline underline-offset-4">
                 Contact Us
             </Link>

@@ -444,7 +444,10 @@ Please proceed with the transaction. Thank you.`;
               </div>
             </div>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex-col items-stretch space-y-4">
+            <p className="text-center text-xs text-muted-foreground">
+              You will be redirected to WhatsApp to complete your purchase.
+            </p>
             <Button
               type="submit"
               className="w-full bg-accent text-accent-foreground hover:bg-accent/90 text-lg py-6 font-bold rounded-full shadow-lg transition-transform hover:scale-105"

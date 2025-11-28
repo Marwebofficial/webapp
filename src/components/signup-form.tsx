@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,6 +29,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 const FormSchema = z
   .object({
@@ -41,6 +44,9 @@ const FormSchema = z
       ),
     password: z.string().min(6, "Password must be at least 6 characters."),
     confirmPassword: z.string(),
+    agreedToTerms: z.boolean().refine((val) => val === true, {
+      message: "You must accept the terms and conditions.",
+    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match.",
@@ -64,6 +70,7 @@ export function SignupForm() {
       phoneNumber: "",
       password: "",
       confirmPassword: "",
+      agreedToTerms: false,
     },
   });
 
@@ -190,6 +197,37 @@ export function SignupForm() {
                     <Input type="password" placeholder="••••••••" {...field} />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="agreedToTerms"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md p-4 border">
+                   <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <Label
+                      htmlFor="terms"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      I agree to the{" "}
+                      <Link href="/terms-of-service" className="text-primary hover:underline" target="_blank">
+                        Terms of Service
+                      </Link>{" "}
+                      and{" "}
+                      <Link href="/privacy-policy" className="text-primary hover:underline" target="_blank">
+                        Privacy Policy
+                      </Link>
+                      .
+                    </Label>
+                     <FormMessage />
+                  </div>
                 </FormItem>
               )}
             />
