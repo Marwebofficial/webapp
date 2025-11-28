@@ -28,14 +28,14 @@ import {
 } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
-  tvPlans,
   tvProviders,
   type TvPlan,
   type TvProviderId,
 } from '@/lib/tv-plans';
 import { TvProviderIcon } from './tv-provider-icons';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking, useCollection } from '@/firebase';
+import { Skeleton } from './ui/skeleton';
 
 const WHATSAPP_NUMBER = '2349040367103';
 
@@ -85,6 +85,12 @@ export function TvSubscriptionForm() {
     [user, firestore]
   );
   const { data: userProfile } = useDoc<UserProfile>(userDocRef);
+  
+  const tvPlansQuery = useMemoFirebase(
+    () => (firestore && selectedProvider ? collection(firestore, 'tvPlans', selectedProvider, 'plans') : null),
+    [firestore, selectedProvider]
+  );
+  const { data: tvPlans, isLoading: isLoadingPlans } = useCollection<TvPlan>(tvPlansQuery);
 
   const form = useForm<FormData>({
     resolver: zodResolver(FormSchema),
@@ -120,7 +126,8 @@ export function TvSubscriptionForm() {
   };
 
   async function onSubmit(data: FormData) {
-    const planDetails = tvPlans[data.provider].find(
+    if(!tvPlans) return;
+    const planDetails = tvPlans.find(
       (p) => p.id === data.plan
     );
     if (!planDetails) {
@@ -250,7 +257,14 @@ Please proceed with the subscription. Thank you.`;
                       </FormLabel>
                       <FormControl>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                          {tvPlans[selectedProvider].map((plan) => (
+                           {isLoadingPlans && (
+                            <>
+                              <Skeleton className="h-24 w-full" />
+                              <Skeleton className="h-24 w-full" />
+                              <Skeleton className="h-24 w-full" />
+                            </>
+                          )}
+                          {tvPlans && tvPlans.map((plan) => (
                             <Card
                               key={plan.id}
                               onClick={() => handlePlanSelect(plan)}

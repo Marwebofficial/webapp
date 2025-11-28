@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -57,7 +58,13 @@ export function LoginForm() {
         title: "Login Successful",
         description: "Welcome back!",
       });
-      router.push("/");
+
+      if (data.email === 'samuelmarvel21@gmail.com') {
+        router.push("/admin");
+      } else {
+        router.push("/");
+      }
+
     } catch (error: any) {
       console.error("Login Error:", error);
       toast({

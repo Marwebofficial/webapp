@@ -28,14 +28,14 @@ import {
 } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
-  dataPlans,
   networkProviders,
   type DataPlan,
   type Network,
 } from '@/lib/data-plans';
 import { NetworkIcon } from './network-icons';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking, useCollection } from '@/firebase';
+import { Skeleton } from './ui/skeleton';
 
 const WHATSAPP_NUMBER = '2349040367103';
 
@@ -83,6 +83,13 @@ export function DataPurchaseForm() {
   );
   const { data: userProfile } = useDoc<UserProfile>(userDocRef);
 
+  const dataPlansQuery = useMemoFirebase(
+    () => (firestore && selectedNetwork ? collection(firestore, 'dataPlans', selectedNetwork, 'plans') : null),
+    [firestore, selectedNetwork]
+  );
+  const { data: dataPlans, isLoading: isLoadingPlans } = useCollection<DataPlan>(dataPlansQuery);
+
+
   const form = useForm<FormData>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -117,7 +124,8 @@ export function DataPurchaseForm() {
   };
 
   async function onSubmit(data: FormData) {
-    const planDetails = dataPlans[data.network].find(
+    if (!dataPlans) return;
+    const planDetails = dataPlans.find(
       (p) => p.id === data.plan
     );
     if (!planDetails) {
@@ -247,7 +255,14 @@ Please proceed with the transaction. Thank you.`;
                       </FormLabel>
                       <FormControl>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                          {dataPlans[selectedNetwork].map((plan) => (
+                          {isLoadingPlans && (
+                            <>
+                              <Skeleton className="h-24 w-full" />
+                              <Skeleton className="h-24 w-full" />
+                              <Skeleton className="h-24 w-full" />
+                            </>
+                          )}
+                          {dataPlans && dataPlans.map((plan) => (
                             <Card
                               key={plan.id}
                               onClick={() => handlePlanSelect(plan)}

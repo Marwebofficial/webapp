@@ -1,36 +1,4 @@
 
-/**
- * This ruleset enforces a strict user-ownership security model for the
- * DataConnect Nigeria application.
- *
- * Core Philosophy:
- * The security model is centered around the principle that users have complete
- * control over their own data, and no access to anyone else's. All data is
- * considered private to the user who created it.
- *
- * Data Structure:
- * All application data is stored under the top-level `/users` collection.
- * Each user's data is contained within a single document whose ID is the
- * user's Firebase Authentication UID (e.g., `/users/{userId}`). This structure
- * creates a clean, scalable, and secure data boundary for each user.
- *
- * Key Security Decisions:
- * - User Enumeration is Disabled: Users are explicitly forbidden from listing
- *   the documents in the `/users` collection. This is a critical security measure
- *   to prevent malicious actors from harvesting a list of all application users.
- *   A user is only permitted to perform a query that specifically targets their
- *   own user document.
- * - Strict Ownership: All read and write operations are gated by an ownership
- *   check, ensuring a user can only ever interact with their own document.
- * - Relational Integrity: On creation, the rules enforce that the `id` field
- *   inside a user's document must match the document ID (their auth UID). This
- *   field is then enforced as immutable on all subsequent updates, guaranteeing
- *   a permanent and trustworthy link between the document and its owner.
- * - Prototyping Flexibility: In line with a rapid development approach, these
- *   rules do not validate the specific shape or data types of user-provided
- *   content (like `name` or `phoneNumber`). The focus is strictly on robust
- *   authorization.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -39,60 +7,34 @@ service cloud.firestore {
     // Helper Functions
     // ----------------------------------------------------------------
 
-    /**
-     * Checks if the user is authenticated.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Checks if the authenticated user's UID matches the provided userId.
-     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
+    
+    function isAdmin() {
+        return request.auth.token.email == 'samuelmarvel21@gmail.com';
+    }
 
-    /**
-     * Verifies ownership for an existing document. Used for updates and deletes.
-     * CRITICAL: Prevents operations on documents that do not exist.
-     */
     function isExistingOwner(userId) {
       return isOwner(userId) && resource != null;
     }
 
-    /**
-     * Validates relational integrity for user document creation.
-     * Ensures the internal 'id' field matches the user's auth UID (document ID).
-     */
     function userCreateHasValidData(userId) {
       return request.resource.data.id == userId;
     }
 
-    /**
-     * Enforces immutability of the critical 'id' field on updates.
-     * Prevents the ownership link from ever being changed.
-     */
     function userUpdateIsImmutable() {
       return request.resource.data.id == resource.data.id;
     }
-
 
     // ----------------------------------------------------------------
     // Collection Rules
     // ----------------------------------------------------------------
 
-    /**
-     * @description Manages user profile documents. A user can create, read,
-     *   update, and delete their own profile document, but cannot access anyone
-     *   else's. Listing all users is forbidden to prevent user enumeration.
-     * @path /users/{userId}
-     * @allow A signed-in user (auth.uid=`user_abc`) reading their own document at `/users/user_abc`. (get)
-     * @allow A new user (auth.uid=`user_xyz`) creating their profile document at `/users/user_xyz`, providing `{ "id": "user_xyz", "name": "..." }`. (create)
-     * @deny An anonymous user trying to read `/users/user_abc`. (get)
-     * @deny A signed-in user (auth.uid=`user_abc`) trying to list all documents in the `/users` collection. (list)
-     * @principle Restricts access to a user's own data tree and enforces relational integrity.
-     */
     match /users/{userId} {
       allow get: if isOwner(userId);
       allow list: if false; // Disallow listing all users
@@ -100,31 +42,25 @@ service cloud.firestore {
       allow update: if isExistingOwner(userId) && userUpdateIsImmutable();
       allow delete: if isExistingOwner(userId);
 
-      /**
-       * @description Manages a user's transaction history. A user can read their
-       *   own transactions and create new ones. Updating and deleting are also
-       *   allowed to manage their own history.
-       * @path /users/{userId}/transactions/{transactionId}
-       * @allow A signed-in user (auth.uid=`user_abc`) can list all documents in `/users/user_abc/transactions`. (list)
-       * @allow A signed-in user (auth.uid=`user_abc`) can create a new document in `/users/user_abc/transactions`. (create)
-       * @deny A signed-in user (auth.uid=`user_abc`) cannot access `/users/user_xyz/transactions`. (list, get)
-       */
       match /transactions/{transactionId} {
         allow read, write: if isOwner(userId);
       }
     }
 
-    /**
-     * @description Manages user-submitted reviews.
-     * @path /reviews/{reviewId}
-     * @allow Any user (signed-in or anonymous) can read reviews. (get, list)
-     * @allow Only a signed-in user can create a new review. The `userId` in the review must match their own UID. (create)
-     * @deny Users cannot update or delete reviews.
-     */
     match /reviews/{reviewId} {
         allow read: if true;
         allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
         allow update, delete: if false;
+    }
+
+    match /dataPlans/{network}/{planId} {
+        allow read: if true;
+        allow write: if isAdmin();
+    }
+
+    match /tvPlans/{provider}/{planId} {
+        allow read: if true;
+        allow write: if isAdmin();
     }
   }
 }

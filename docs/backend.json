@@ -144,6 +144,29 @@
         "rating",
         "createdAt"
       ]
+    },
+    "DataPlan": {
+      "title": "Data Plan",
+      "type": "object",
+      "description": "Represents a mobile data plan.",
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "price": { "type": "number" },
+        "validity": { "type": "string" }
+      },
+      "required": ["id", "label", "price"]
+    },
+    "TvPlan": {
+      "title": "TV Plan",
+      "type": "object",
+      "description": "Represents a TV subscription plan.",
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "price": { "type": "number" }
+      },
+      "required": ["id", "label", "price"]
     }
   },
   "auth": {
@@ -196,8 +219,40 @@
           "description": "A collection of user-submitted reviews. Anyone can read, but only authenticated users can create.",
           "params": []
         }
+      },
+      {
+        "path": "/dataPlans/{network}",
+        "definition": {
+          "entityName": "DataPlan",
+          "schema": {
+            "$ref": "#/backend/entities/DataPlan"
+          },
+          "description": "A collection containing data plans for a specific network provider.",
+          "params": [
+            {
+              "name": "network",
+              "description": "The network provider ID (e.g., 'mtn', 'airtel')."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/tvPlans/{provider}",
+        "definition": {
+          "entityName": "TvPlan",
+          "schema": {
+            "$ref": "#/backend/entities/TvPlan"
+          },
+          "description": "A collection containing TV subscription plans for a specific provider.",
+          "params": [
+            {
+              "name": "provider",
+              "description": "The TV provider ID (e.g., 'dstv', 'gotv')."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure now includes a 'transactions' subcollection for each user to store their purchase history. This allows for easy retrieval of a user's transactions while maintaining the strict ownership security model. The User entity is updated with a `createdAt` field. A top-level 'reviews' collection is added to store user testimonials."
+    "reasoning": "The Firestore structure now includes a 'transactions' subcollection for each user to store their purchase history. This allows for easy retrieval of a user's transactions while maintaining the strict ownership security model. The User entity is updated with a `createdAt` field. A top-level 'reviews' collection is added to store user testimonials. Collections for 'dataPlans' and 'tvPlans' are added to allow for dynamic management of service offerings from an admin panel."
   }
 }

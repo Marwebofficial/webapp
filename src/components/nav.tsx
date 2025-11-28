@@ -10,7 +10,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { Menu, Wifi, UserCircle, History, Tv } from 'lucide-react';
+import { Menu, Wifi, UserCircle, History, Tv, Shield } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useState } from 'react';
 import { useAuth, useUser } from '@/firebase';
@@ -30,6 +30,7 @@ export function Nav() {
   const [isSheetOpen, setSheetOpen] = useState(false);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const isAdmin = user?.email === 'samuelmarvel21@gmail.com';
 
   const handleSignOut = () => {
     auth.signOut();
@@ -104,6 +105,14 @@ export function Nav() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            {isAdmin && (
+              <DropdownMenuItem asChild>
+                <Link href="/admin">
+                  <Shield className="mr-2 h-4 w-4" />
+                  <span>Admin Dashboard</span>
+                </Link>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem asChild>
               <Link href="/history">
                 <History className="mr-2 h-4 w-4" />
@@ -136,6 +145,11 @@ export function Nav() {
         </>
       ) : user ? (
         <>
+          {isAdmin && (
+            <Button asChild variant="outline" onClick={closeSheet}>
+                <Link href="/admin">Admin Dashboard</Link>
+            </Button>
+          )}
           <Button asChild variant="outline" onClick={closeSheet}>
             <Link href="/history">Purchase History</Link>
           </Button>
@@ -173,7 +187,6 @@ export function Nav() {
       </Link>
       {isMobile ? (
         <div className="ml-auto flex items-center gap-4">
-          {authLinks}
           <Sheet open={isSheetOpen} onOpenChange={setSheetOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
@@ -183,19 +196,20 @@ export function Nav() {
             </SheetTrigger>
             <SheetContent side="left">
               <SheetHeader>
-                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                <SheetTitle>
+                  <Link
+                    href="/"
+                    className="flex items-center"
+                    onClick={closeSheet}
+                  >
+                    <Wifi className="h-6 w-6 text-primary" />
+                    <span className="ml-2 text-lg font-semibold">
+                      DataConnect
+                    </span>
+                  </Link>
+                </SheetTitle>
               </SheetHeader>
               <div className="flex flex-col gap-4 p-4">
-                <Link
-                  href="/"
-                  className="flex items-center"
-                  onClick={closeSheet}
-                >
-                  <Wifi className="h-6 w-6 text-primary" />
-                  <span className="ml-2 text-lg font-semibold">
-                    DataConnect
-                  </span>
-                </Link>
                 <div className="flex flex-col gap-4 mt-4">{navLinks}</div>
                 <div className="mt-auto">{mobileAuthLinks}</div>
               </div>
