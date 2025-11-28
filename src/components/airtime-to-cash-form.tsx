@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { doc } from 'firebase/firestore';
+import { doc, collection, serverTimestamp } from 'firebase/firestore';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -36,7 +36,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { nigerianBanks } from '@/lib/banks';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 
 const WHATSAPP_NUMBER = '2349040367103';
 
@@ -106,6 +106,20 @@ export function AirtimeToCashForm() {
   }, [user, userProfile, form]);
 
   function onSubmit(data: FormData) {
+    if (user) {
+        const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
+        const transactionData = {
+          type: 'Airtime to Cash',
+          network: data.network,
+          amount: data.amount,
+          details: 'Airtime to Cash Conversion',
+          recipientPhone: data.phone,
+          status: 'Pending',
+          createdAt: serverTimestamp(),
+        };
+        addDocumentNonBlocking(transactionsRef, transactionData);
+      }
+
     const networkName =
       networkProviders.find((p) => p.id === data.network)?.name ||
       data.network;

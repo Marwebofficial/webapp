@@ -26,12 +26,70 @@
         "referralCode": {
           "type": "string",
           "description": "Referral code used by the user (optional)."
+        },
+        "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when the user account was created."
         }
       },
       "required": [
         "id",
         "name",
         "phoneNumber"
+      ]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "type": "object",
+      "description": "Represents a single transaction made by a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the transaction."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["Data Purchase", "Airtime Purchase", "Airtime to Cash"],
+          "description": "The type of transaction."
+        },
+        "network": {
+          "type": "string",
+          "enum": ["mtn", "airtel", "glo", "9mobile"],
+          "description": "The mobile network provider."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The transaction amount in NGN."
+        },
+        "details": {
+          "type": "string",
+          "description": "A description of the transaction (e.g., data plan)."
+        },
+        "recipientPhone": {
+          "type": "string",
+          "description": "The phone number that received the service."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Pending", "Completed", "Failed"],
+          "description": "The status of the transaction."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the transaction was created."
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "network",
+        "amount",
+        "details",
+        "recipientPhone",
+        "status",
+        "createdAt"
       ]
     }
   },
@@ -58,8 +116,24 @@
             }
           ]
         }
+      },
+      {
+        "path": "/users/{userId}/transactions",
+        "definition": {
+            "entityName": "Transaction",
+            "schema": {
+                "$ref": "#/backend/entities/Transaction"
+            },
+            "description": "Stores a user's transaction history. Each document is a single purchase or conversion.",
+            "params": [
+                {
+                    "name": "userId",
+                    "description": "The UID of the user who owns these transactions."
+                }
+            ]
+        }
       }
     ],
-    "reasoning": "Given the limited backend requirements (primarily sending data via WhatsApp), a minimal Firestore structure is sufficient. User data captured during the order process (name, phone number, optional email, referral code) is transient and does not necessarily need to be persisted in Firestore unless usage trends determine otherwise (e.g. analytics). However, to provide a basic structure that allows for potential future expansion, and to allow for storing user information provided during signup we'll create a `/users/{userId}` collection. This allows tracking of user data while adhering to authorization independence. Since there is no collaborative data, a membership map is unnecessary. Given the mobile-first nature of the application we are creating the user document upon registration."
+    "reasoning": "The Firestore structure now includes a 'transactions' subcollection for each user to store their purchase history. This allows for easy retrieval of a user's transactions while maintaining the strict ownership security model. The User entity is updated with a `createdAt` field."
   }
 }

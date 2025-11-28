@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { doc } from 'firebase/firestore';
+import { doc, collection, serverTimestamp } from 'firebase/firestore';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,7 @@ import {
 } from '@/lib/data-plans';
 import { NetworkIcon } from './network-icons';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 
 const WHATSAPP_NUMBER = '2349040367103';
 
@@ -126,6 +126,20 @@ export function DataPurchaseForm() {
         variant: 'destructive',
       });
       return;
+    }
+
+    if (user) {
+      const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
+      const transactionData = {
+        type: 'Data Purchase',
+        network: data.network,
+        amount: planDetails.price,
+        details: planDetails.label,
+        recipientPhone: data.phone,
+        status: 'Pending',
+        createdAt: serverTimestamp(),
+      };
+      addDocumentNonBlocking(transactionsRef, transactionData);
     }
 
     const networkName =

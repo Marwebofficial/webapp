@@ -10,7 +10,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { Menu, Wifi, UserCircle } from 'lucide-react';
+import { Menu, Wifi, UserCircle, History } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useState } from 'react';
 import { useAuth, useUser } from '@/firebase';
@@ -96,6 +96,13 @@ export function Nav() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/history">
+                <History className="mr-2 h-4 w-4" />
+                <span>Purchase History</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -120,14 +127,19 @@ export function Nav() {
           <Skeleton className="h-9 w-full" />
         </>
       ) : user ? (
-        <Button
-          onClick={() => {
-            handleSignOut();
-            closeSheet();
-          }}
-        >
-          Sign Out
-        </Button>
+        <>
+          <Button asChild variant="outline" onClick={closeSheet}>
+            <Link href="/history">Purchase History</Link>
+          </Button>
+          <Button
+            onClick={() => {
+              handleSignOut();
+              closeSheet();
+            }}
+          >
+            Sign Out
+          </Button>
+        </>
       ) : (
         <>
           <Button asChild variant="ghost" onClick={closeSheet}>

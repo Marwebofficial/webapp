@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/card";
 import { useAuth, useFirestore, setDocumentNonBlocking } from "@/firebase";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { doc } from "firebase/firestore";
+import { doc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -85,6 +85,7 @@ export function SignupForm() {
         name: data.name,
         email: data.email,
         phoneNumber: data.phoneNumber,
+        createdAt: serverTimestamp(),
       };
 
       setDocumentNonBlocking(userDocRef, userData, { merge: true });
