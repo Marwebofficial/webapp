@@ -222,6 +222,11 @@ export function LandingPage() {
           &copy; {new Date().getFullYear()} DataConnect Nigeria. All rights
           reserved.
         </p>
+        <nav className="sm:ml-auto flex gap-4 sm:gap-6">
+            <Link href="/contact" className="text-xs hover:underline underline-offset-4">
+                Contact Us
+            </Link>
+        </nav>
       </footer>
     </div>
   );
