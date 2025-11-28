@@ -49,12 +49,13 @@ export function LandingPage() {
             src="https://picsum.photos/seed/hero/1800/1200"
             alt="Abstract background"
             fill
+            priority
             className="object-cover -z-10 opacity-20"
             data-ai-hint="abstract network"
           />
           <div className="container px-4 md:px-6 z-10 animate-in fade-in-50 slide-in-from-bottom-10 duration-700">
             <div className="max-w-3xl mx-auto">
-              <h1 className="text-4xl font-extrabold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl font-headline">
+              <h1 className="text-4xl font-extrabold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
                 Instant Data, Airtime, TV & More
               </h1>
               <p className="mt-4 text-lg md:text-xl text-muted-foreground">
