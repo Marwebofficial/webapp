@@ -1,0 +1,65 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the DataConnect Nigeria application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "name": {
+          "type": "string",
+          "description": "User's full name."
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "User's phone number."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address (optional).",
+          "format": "email"
+        },
+        "referralCode": {
+          "type": "string",
+          "description": "Referral code used by the user (optional)."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "phoneNumber"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user information. 'userId' is equal to `request.auth.uid`. This ensures path-based ownership. It is created upon user registration.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user. It is equal to the Firebase Authentication UID."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "Given the limited backend requirements (primarily sending data via WhatsApp), a minimal Firestore structure is sufficient. User data captured during the order process (name, phone number, optional email, referral code) is transient and does not necessarily need to be persisted in Firestore unless usage trends determine otherwise (e.g. analytics). However, to provide a basic structure that allows for potential future expansion, and to allow for storing user information provided during signup we'll create a `/users/{userId}` collection. This allows tracking of user data while adhering to authorization independence. Since there is no collaborative data, a membership map is unnecessary. Given the mobile-first nature of the application we are creating the user document upon registration."
+  }
+}
