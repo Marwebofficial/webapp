@@ -1,0 +1,88 @@
+/**
+ * This ruleset defines the security model for a mobile data plan sales application.
+ *
+ * Core Philosophy: The security model is designed for a public-facing catalog
+ * with a secure, write-only submission system for orders. It assumes no client-side
+ * user accounts are used for authorization. The product catalog (providers and plans)
+ * is publicly readable by anyone, but all modifications are locked down, requiring
+ * a trusted server environment (e.g., Cloud Functions with the Admin SDK) to manage content.
+ * Customer orders, which contain potentially sensitive information, can be created by anyone
+ * but cannot be read, listed, updated, or deleted by any client, effectively treating
+ * the collection as a secure "inbox" for backend processing.
+ *
+ * Data Structure: The data is organized into three distinct, top-level collections:
+ * - /networkProviders: A catalog of mobile network providers.
+ * - /dataPlans: A catalog of data plans offered by the providers.
+ * - /customerOrders: A collection for storing new customer order submissions.
+ *
+ * Key Security Decisions:
+ * - Public Catalog: `networkProviders` and `dataPlans` are world-readable to allow
+ *   any visitor to browse the available products without signing in.
+ * - Admin-Only Writes: All write operations (create, update, delete) on the
+ *   `networkProviders` and `dataPlans` collections are denied. This is a highly
+ *   secure posture that mandates using a backend service with admin privileges for
+ *   catalog management.
+ * - Secure Order Submission: The `customerOrders` collection is configured as a
+ *   write-only sink. Anyone can submit (create) a new order, but no one can
+ *   read or modify any order from the client-side, protecting customer privacy.
+ * - No User-Specific Data: The rules do not rely on user authentication (request.auth)
+ *   as the application logic does not involve user accounts or ownership of data.
+ *
+ * Denormalization for Authorization: This ruleset does not require denormalization
+ * because the access patterns are simple and not based on user ownership or
+ * collaborative relationships between documents.
+ *
+ * Structural Segregation: The use of separate collections for the public catalog
+ * (`networkProviders`, `dataPlans`) and private submissions (`customerOrders`)
+ * provides a clear and secure separation of data with different access requirements.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Controls access to the catalog of network providers.
+     * @path /networkProviders/{networkProviderId}
+     * @allow (get, list) An anonymous user can read a list of all providers or get a single one.
+     * @deny (create) A client, signed-in or not, attempts to create a new provider document.
+     * @principle Makes catalog data public for all users but locks down writes to a trusted environment.
+     */
+    match /networkProviders/{networkProviderId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Controls access to the catalog of data plans.
+     * @path /dataPlans/{dataPlanId}
+     * @allow (get, list) Any user can retrieve the details of a specific data plan or list all available plans.
+     * @deny (update, delete) A client attempts to modify or remove an existing data plan.
+     * @principle Makes catalog data public for all users but locks down writes to a trusted environment.
+     */
+    match /dataPlans/{dataPlanId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Manages the submission of customer orders for data plans.
+     * @path /customerOrders/{customerOrderId}
+     * @allow (create) An anonymous user can submit a new order for a data plan.
+     * @deny (get, list) A user attempts to read another user's order or list all orders in the system.
+     * @principle Establishes a secure "write-only" collection to protect sensitive customer order information from being read by other clients.
+     */
+    match /customerOrders/{customerOrderId} {
+      allow create: if true;
+      allow get: if false;
+      allow list: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}
