@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { collection, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, query, orderBy, deleteDoc } from 'firebase/firestore';
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { networkProviders } from '@/lib/data-plans';
 import { tvProviders } from '@/lib/tv-plans';
@@ -70,8 +70,17 @@ function ReviewManager() {
     const handleDelete = async (reviewId: string) => {
         if (window.confirm('Are you sure you want to delete this review?')) {
             const reviewRef = doc(firestore, 'reviews', reviewId);
-            await deleteDocumentNonBlocking(reviewRef);
-            toast({ title: 'Success', description: 'Review deleted successfully.' });
+            try {
+                await deleteDoc(reviewRef);
+                toast({ title: 'Success', description: 'Review deleted successfully.' });
+            } catch (error: any) {
+                console.error("Error deleting review:", error);
+                toast({ 
+                    title: 'Error', 
+                    description: `Could not delete review: ${error.message}`,
+                    variant: 'destructive'
+                });
+            }
         }
     }
 
@@ -580,3 +589,5 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
