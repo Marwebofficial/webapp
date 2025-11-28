@@ -1,8 +1,10 @@
+
 import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import { Nav } from '@/components/nav';
 import { FirebaseClientProvider } from '@/firebase';
+import { HoursBanner } from '@/components/hours-banner';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:9002';
 
@@ -55,6 +57,7 @@ export default function RootLayout({
       <body className="font-body antialiased h-full bg-background">
         <FirebaseClientProvider>
           <Nav />
+          <HoursBanner />
           {children}
           <Toaster />
         </FirebaseClientProvider>
