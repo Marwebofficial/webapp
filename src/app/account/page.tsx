@@ -1,0 +1,289 @@
+
+'use client';
+
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useRouter } from 'next/navigation';
+import { useEffect, useMemo } from 'react';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
+import { format } from 'date-fns';
+import { User as UserIcon, Hash, Sigma } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+
+interface Transaction {
+  id: string;
+  type: string;
+  network: string;
+  amount: number;
+  details: string;
+  recipientPhone: string;
+  status: 'Pending' | 'Completed' | 'Failed';
+  createdAt: {
+    seconds: number;
+    nanoseconds: number;
+  } | null;
+}
+
+function AccountInfoSkeleton() {
+    return (
+        <Card>
+            <CardHeader className="flex flex-row items-center gap-4">
+                <Skeleton className="h-16 w-16 rounded-full" />
+                <div className="space-y-2">
+                    <Skeleton className="h-6 w-40" />
+                    <Skeleton className="h-4 w-52" />
+                </div>
+            </CardHeader>
+        </Card>
+    );
+}
+
+function StatsSkeleton() {
+    return (
+        <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
+                    <Sigma className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-8 w-24" />
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
+                    <Hash className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-8 w-12" />
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+function RecentTransactionsSkeleton() {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Recent Transactions</CardTitle>
+                <CardDescription>Your last 5 transactions.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead><Skeleton className="h-6 w-24" /></TableHead>
+                            <TableHead><Skeleton className="h-6 w-32" /></TableHead>
+                            <TableHead><Skeleton className="h-6 w-20" /></TableHead>
+                            <TableHead><Skeleton className="h-6 w-24" /></TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                         {Array.from({ length: 3 }).map((_, i) => (
+                            <TableRow key={i}>
+                                <TableCell><Skeleton className="h-5 w-full" /></TableCell>
+                                <TableCell><Skeleton className="h-5 w-full" /></TableCell>
+                                <TableCell><Skeleton className="h-5 w-full" /></TableCell>
+                                <TableCell><Skeleton className="h-5 w-full" /></TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    )
+}
+
+export default function AccountPage() {
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+  const router = useRouter();
+
+  const allTransactionsQuery = useMemoFirebase(
+    () => {
+        if (!firestore || !user) return null;
+        return query(
+          collection(firestore, 'users', user.uid, 'transactions'),
+          orderBy('createdAt', 'desc')
+        );
+    },
+    [firestore, user]
+  );
+  
+  const { data: allTransactions, isLoading: isLoadingAll } = useCollection<Transaction>(allTransactionsQuery);
+  
+  const recentTransactions = useMemo(() => allTransactions?.slice(0, 5) || [], [allTransactions]);
+
+  const transactionStats = useMemo(() => {
+    if (!allTransactions) return { totalSpent: 0, totalCount: 0 };
+    return allTransactions.reduce((acc, tx) => {
+        if (tx.status === 'Completed') {
+            acc.totalSpent += tx.amount;
+        }
+        acc.totalCount += 1;
+        return acc;
+    }, { totalSpent: 0, totalCount: 0 });
+  }, [allTransactions]);
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
+
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case 'Completed':
+        return 'default';
+      case 'Pending':
+        return 'secondary';
+      case 'Failed':
+        return 'destructive';
+      default:
+        return 'outline';
+    }
+  };
+
+  const formatDate = (timestamp: { seconds: number; nanoseconds: number } | null) => {
+    if (!timestamp) return 'N/A';
+    const date = new Date(timestamp.seconds * 1000);
+    return format(date, "MMM d, yyyy");
+  };
+
+  if (isUserLoading) {
+    return (
+      <div className="container mx-auto p-4 py-8 md:p-12 space-y-8">
+        <AccountInfoSkeleton />
+        <StatsSkeleton />
+        <RecentTransactionsSkeleton />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null; // Redirecting
+  }
+
+  return (
+    <div className="container mx-auto p-4 py-8 md:p-12 space-y-8">
+      <Card>
+        <CardHeader className="flex flex-row items-center gap-4">
+          <Avatar className="h-16 w-16">
+            <AvatarFallback className="text-2xl">
+              <UserIcon />
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <CardTitle className="text-2xl">{user.displayName}</CardTitle>
+            <CardDescription>{user.email}</CardDescription>
+          </div>
+        </CardHeader>
+      </Card>
+      
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
+                <Sigma className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                {isLoadingAll ? <Skeleton className="h-8 w-24" /> : (
+                    <div className="text-2xl font-bold">₦{transactionStats.totalSpent.toLocaleString()}</div>
+                )}
+                <p className="text-xs text-muted-foreground">on successful transactions</p>
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
+                <Hash className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                 {isLoadingAll ? <Skeleton className="h-8 w-12" /> : (
+                    <div className="text-2xl font-bold">{transactionStats.totalCount}</div>
+                )}
+                <p className="text-xs text-muted-foreground">across all services</p>
+            </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader className="flex flex-row justify-between items-start">
+            <div>
+                <CardTitle>Recent Transactions</CardTitle>
+                <CardDescription>Your last 5 transactions.</CardDescription>
+            </div>
+            <Button asChild variant="outline" size="sm">
+                <Link href="/history">View All</Link>
+            </Button>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Details</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoadingAll ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                    </TableRow>
+                ))
+              ) : recentTransactions.length > 0 ? (
+                recentTransactions.map((tx) => (
+                  <TableRow key={tx.id}>
+                    <TableCell className="font-medium">{formatDate(tx.createdAt)}</TableCell>
+                    <TableCell>
+                        <div className="font-medium">{tx.type}</div>
+                        <div className="text-sm text-muted-foreground">{tx.details}</div>
+                    </TableCell>
+                    <TableCell>₦{tx.amount.toLocaleString()}</TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusVariant(tx.status)}>{tx.status}</Badge>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-24 text-center">
+                    You have no transactions yet.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+    

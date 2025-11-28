@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -9,7 +10,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { Menu, Wifi, UserCircle, History, Tv, Shield } from 'lucide-react';
+import { Menu, Wifi, UserCircle, History, Shield, User } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useState } from 'react';
 import { useAuth, useUser } from '@/firebase';
@@ -112,6 +113,12 @@ export function Nav() {
                 </Link>
               </DropdownMenuItem>
             )}
+             <DropdownMenuItem asChild>
+              <Link href="/account">
+                <User className="mr-2 h-4 w-4" />
+                <span>My Account</span>
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/history">
                 <History className="mr-2 h-4 w-4" />
@@ -149,6 +156,9 @@ export function Nav() {
                 <Link href="/admin">Admin Dashboard</Link>
             </Button>
           )}
+           <Button asChild variant="outline" onClick={closeSheet}>
+            <Link href="/account">My Account</Link>
+          </Button>
           <Button asChild variant="outline" onClick={closeSheet}>
             <Link href="/history">Purchase History</Link>
           </Button>
@@ -224,3 +234,5 @@ export function Nav() {
     </header>
   );
 }
+
+    
