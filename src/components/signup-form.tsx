@@ -54,38 +54,32 @@ export function SignupForm() {
         },
     });
 
-    const onSubmit = async (data: z.infer<typeof FormSchema>) => {
-        try {
-            // Non-blocking call
-            initiateEmailSignUp(auth, data.email, data.password);
+    const onSubmit = (data: z.infer<typeof FormSchema>) => {
+        initiateEmailSignUp(auth, data.email, data.password);
 
-            auth.onAuthStateChanged(user => {
-                if (user) {
-                    const userProfile = {
-                        id: user.uid,
-                        name: data.name,
-                        email: data.email,
-                        createdAt: serverTimestamp(),
-                    };
-                    const userDocRef = doc(firestore, 'users', user.uid);
-                    setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
-                    
-                    toast({
-                        title: 'Account Created',
-                        description: "You've been successfully signed up.",
-                    });
-                    router.push('/');
-                }
-            });
-
-        } catch (error: any) {
-            toast({
-                variant: 'destructive',
-                title: 'Uh oh! Something went wrong.',
-                description:
-                error.message || 'There was a problem with your request.',
-            });
-        }
+        const unsubscribe = auth.onAuthStateChanged(user => {
+            if (user) {
+                const userProfile = {
+                    id: user.uid,
+                    name: data.name,
+                    email: data.email,
+                    createdAt: serverTimestamp(),
+                };
+                const userDocRef = doc(firestore, 'users', user.uid);
+                
+                // Use the correct non-blocking function
+                setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
+                
+                toast({
+                    title: 'Account Created',
+                    description: "You've been successfully signed up.",
+                });
+                router.push('/');
+                
+                // Unsubscribe after we're done to prevent memory leaks
+                unsubscribe();
+            }
+        });
     };
 
   return (
