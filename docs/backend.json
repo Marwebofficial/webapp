@@ -1,5 +1,31 @@
 {
   "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "type": "object",
+      "description": "Represents a user's profile information.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The user's unique ID, matching their Firebase Auth UID."
+        },
+        "name": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp when the user profile was created."
+        }
+      },
+      "required": ["id", "email", "createdAt"]
+    },
     "NetworkProvider": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "NetworkProvider",
@@ -116,6 +142,16 @@
   },
   "firestore": {
     "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores user profile information, keyed by the user's UID."
+        }
+      },
       {
         "path": "/networkProviders/{networkProviderId}",
         "definition": {

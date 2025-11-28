@@ -1,5 +1,5 @@
 
-"use client";
+'use client';
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -7,12 +7,24 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu, Wifi } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useState } from 'react';
+import { useUser } from '@/firebase';
+import { getAuth, signOut } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 
 export function Nav() {
   const isMobile = useIsMobile();
   const [isSheetOpen, setSheetOpen] = useState(false);
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
 
   const closeSheet = () => setSheetOpen(false);
+
+  const handleSignOut = async () => {
+    const auth = getAuth();
+    await signOut(auth);
+    closeSheet();
+    router.push('/');
+  };
 
   const navLinks = (
     <>
@@ -43,6 +55,23 @@ export function Nav() {
     </>
   );
 
+  const authLinks = (
+    <>
+      {user ? (
+        <Button onClick={handleSignOut} variant="ghost">Sign Out</Button>
+      ) : (
+        <>
+          <Link href="/login" passHref>
+            <Button variant="ghost" onClick={closeSheet}>Login</Button>
+          </Link>
+          <Link href="/signup" passHref>
+            <Button onClick={closeSheet}>Sign Up</Button>
+          </Link>
+        </>
+      )}
+    </>
+  );
+
   return (
     <header className="px-4 lg:px-6 h-16 flex items-center sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b">
       <Link href="/" className="flex items-center justify-center" onClick={closeSheet}>
@@ -50,7 +79,8 @@ export function Nav() {
         <span className="ml-2 text-lg font-semibold">DataConnect</span>
       </Link>
       {isMobile ? (
-        <nav className="ml-auto">
+        <nav className="ml-auto flex items-center">
+          {!isUserLoading && authLinks}
           <Sheet open={isSheetOpen} onOpenChange={setSheetOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
@@ -74,6 +104,9 @@ export function Nav() {
       ) : (
         <nav className="ml-auto flex gap-4 sm:gap-6 items-center">
           {navLinks}
+          <div className='flex items-center gap-2'>
+            {!isUserLoading && authLinks}
+          </div>
         </nav>
       )}
     </header>
