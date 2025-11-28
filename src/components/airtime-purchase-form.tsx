@@ -30,7 +30,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { networkProviders, type Network } from '@/lib/data-plans';
 import { NetworkIcon } from './network-icons';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking, useCollection } from '@/firebase';
+import { Badge } from './ui/badge';
 
 const WHATSAPP_NUMBER = '2349040367103';
 
@@ -67,6 +68,12 @@ interface UserProfile {
   phoneNumber: string;
 }
 
+interface NetworkStatus {
+  id: string;
+  name: string;
+  status: 'Online' | 'Degraded' | 'Offline';
+}
+
 export function AirtimePurchaseForm() {
   const { toast } = useToast();
   const { user } = useUser();
@@ -77,6 +84,12 @@ export function AirtimePurchaseForm() {
     [user, firestore]
   );
   const { data: userProfile } = useDoc<UserProfile>(userDocRef);
+  
+  const networkStatusQuery = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'networkStatus') : null),
+    [firestore]
+  );
+  const { data: networkStatuses } = useCollection<NetworkStatus>(networkStatusQuery);
 
   const form = useForm<FormData>({
     resolver: zodResolver(FormSchema),
@@ -87,6 +100,13 @@ export function AirtimePurchaseForm() {
       amount: 100,
     },
   });
+
+  const selectedNetwork = form.watch('network');
+
+  const currentNetworkStatus = useMemoFirebase(
+    () => networkStatuses?.find(s => s.id === selectedNetwork),
+    [networkStatuses, selectedNetwork]
+  );
 
   useEffect(() => {
     if (userProfile) {
@@ -146,6 +166,19 @@ Please proceed with the top-up. Thank you.`;
     window.open(whatsappUrl, '_blank');
   }
 
+  const getStatusVariant = (status?: string) => {
+    switch (status) {
+      case 'Online':
+        return 'default';
+      case 'Degraded':
+        return 'secondary';
+      case 'Offline':
+        return 'destructive';
+      default:
+        return 'outline';
+    }
+  };
+
   return (
     <Card className="w-full max-w-2xl mx-auto shadow-2xl animate-in fade-in-50 zoom-in-95 duration-500">
       <CardHeader>
@@ -164,8 +197,13 @@ Please proceed with the top-up. Thank you.`;
               name="network"
               render={({ field }) => (
                 <FormItem className="space-y-3">
-                  <FormLabel className="text-lg font-semibold font-headline">
-                    1. Select Network
+                  <FormLabel className="text-lg font-semibold font-headline flex justify-between items-center">
+                    <span>1. Select Network</span>
+                    {currentNetworkStatus && (
+                      <Badge variant={getStatusVariant(currentNetworkStatus.status)}>
+                        {currentNetworkStatus.status}
+                      </Badge>
+                    )}
                   </FormLabel>
                   <FormControl>
                     <RadioGroup
@@ -279,3 +317,5 @@ Please proceed with the top-up. Thank you.`;
     </Card>
   );
 }
+
+    

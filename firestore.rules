@@ -62,5 +62,12 @@ service cloud.firestore {
         allow read: if true;
         allow write: if isAdmin();
     }
+
+    match /networkStatus/{networkId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
   }
 }
+
+    

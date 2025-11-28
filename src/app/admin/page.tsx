@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { networkProviders } from '@/lib/data-plans';
 import { tvProviders } from '@/lib/tv-plans';
@@ -43,6 +43,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { Pencil } from 'lucide-react';
 
 interface Plan {
   id: string;
@@ -280,6 +282,126 @@ function PlansManager({
   );
 }
 
+type NetworkStatusType = 'Online' | 'Degraded' | 'Offline';
+interface NetworkStatus {
+    id: string;
+    name: string;
+    status: NetworkStatusType;
+}
+
+function NetworkStatusManager() {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const statuses: NetworkStatusType[] = ['Online', 'Degraded', 'Offline'];
+
+    const networkStatusQuery = useMemoFirebase(
+        () => collection(firestore, 'networkStatus'),
+        [firestore]
+    );
+    const { data: networkStatuses, isLoading } = useCollection<NetworkStatus>(networkStatusQuery);
+
+    const handleStatusChange = (networkId: string, status: NetworkStatusType) => {
+        const statusRef = doc(firestore, 'networkStatus', networkId);
+        setDocumentNonBlocking(statusRef, { status, lastChecked: serverTimestamp() }, { merge: true });
+        toast({ title: 'Success', description: 'Network status updated.' });
+    };
+    
+    useEffect(() => {
+        // Initialize statuses if they don't exist
+        if (!isLoading && firestore) {
+            const existingIds = networkStatuses?.map(s => s.id) || [];
+            networkProviders.forEach(provider => {
+                if (!existingIds.includes(provider.id)) {
+                    const statusRef = doc(firestore, 'networkStatus', provider.id);
+                    setDocumentNonBlocking(statusRef, {
+                        id: provider.id,
+                        name: provider.name,
+                        status: 'Online',
+                        lastChecked: serverTimestamp(),
+                    }, { merge: true });
+                }
+            });
+        }
+    }, [isLoading, networkStatuses, firestore]);
+
+    const getStatusVariant = (status: string) => {
+        switch (status) {
+          case 'Online':
+            return 'default';
+          case 'Degraded':
+            return 'secondary';
+          case 'Offline':
+            return 'destructive';
+          default:
+            return 'outline';
+        }
+      };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Network Status</CardTitle>
+                <CardDescription>
+                    Update the operational status of the mobile networks.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Network</TableHead>
+                            <TableHead>Current Status</TableHead>
+                            <TableHead className="text-right">Change Status</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading ? (
+                            <TableRow>
+                                <TableCell colSpan={3} className="h-24 text-center">Loading...</TableCell>
+                            </TableRow>
+                        ) : networkStatuses && networkStatuses.length > 0 ? (
+                            networkStatuses.map(network => (
+                                <TableRow key={network.id}>
+                                    <TableCell className="font-medium">{network.name}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={getStatusVariant(network.status)}>{network.status}</Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Dialog>
+                                            <DialogTrigger asChild>
+                                                <Button variant="outline" size="sm"><Pencil className="w-4 h-4 mr-2" /> Edit</Button>
+                                            </DialogTrigger>
+                                            <DialogContent>
+                                                <DialogHeader>
+                                                    <DialogTitle>Update {network.name} Status</DialogTitle>
+                                                </DialogHeader>
+                                                <div className="py-4">
+                                                    <Select onValueChange={(value) => handleStatusChange(network.id, value as NetworkStatusType)} defaultValue={network.status}>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Select status" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {statuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </DialogContent>
+                                        </Dialog>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={3} className="h-24 text-center">No network statuses found.</TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function AdminPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
@@ -303,8 +425,11 @@ export default function AdminPage() {
   return (
     <div className="container mx-auto p-4 py-8 md:p-12 space-y-8">
       <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+      <NetworkStatusManager />
       <PlansManager title="Data Plans" providers={networkProviders} collectionName="dataPlans" />
       <PlansManager title="TV Subscriptions" providers={tvProviders} collectionName="tvPlans" isTvPlan />
     </div>
   );
 }
+
+    

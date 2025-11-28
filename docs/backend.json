@@ -167,6 +167,32 @@
         "price": { "type": "number" }
       },
       "required": ["id", "label", "price"]
+    },
+    "NetworkStatus": {
+      "title": "Network Status",
+      "type": "object",
+      "description": "Represents the operational status of a network provider.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The network provider ID (e.g., 'mtn', 'airtel')."
+        },
+        "name": {
+          "type": "string",
+          "description": "The network provider's name (e.g., 'MTN')."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Online", "Degraded", "Offline"],
+          "description": "The current operational status."
+        },
+        "lastChecked": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the last status update."
+        }
+      },
+      "required": ["id", "name", "status", "lastChecked"]
     }
   },
   "auth": {
@@ -251,8 +277,26 @@
             }
           ]
         }
+      },
+      {
+        "path": "/networkStatus/{networkId}",
+        "definition": {
+          "entityName": "NetworkStatus",
+          "schema": {
+            "$ref": "#/backend/entities/NetworkStatus"
+          },
+          "description": "A collection containing the operational status of network providers.",
+          "params": [
+            {
+              "name": "networkId",
+              "description": "The network provider ID (e.g., 'mtn')."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure now includes a 'transactions' subcollection for each user to store their purchase history. This allows for easy retrieval of a user's transactions while maintaining the strict ownership security model. The User entity is updated with a `createdAt` field. A top-level 'reviews' collection is added to store user testimonials. Collections for 'dataPlans', 'tvPlans' are added to allow for dynamic management of service offerings from an admin panel. The ExamPins feature has been removed."
+    "reasoning": "The Firestore structure now includes a 'transactions' subcollection for each user to store their purchase history. This allows for easy retrieval of a user's transactions while maintaining the strict ownership security model. The User entity is updated with a `createdAt` field. A top-level 'reviews' collection is added to store user testimonials. Collections for 'dataPlans', 'tvPlans' are added to allow for dynamic management of service offerings from an admin panel. A 'networkStatus' collection is added for admins to manually update and users to view the status of service providers. The ExamPins feature has been removed."
   }
 }
+
+    
