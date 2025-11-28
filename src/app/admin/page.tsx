@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
@@ -44,7 +44,9 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { Pencil } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Plan {
   id: string;
@@ -54,6 +56,135 @@ interface Plan {
 }
 
 const ADMIN_EMAIL = 'samuelmarvel21@gmail.com';
+
+function ReviewManager() {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+
+    const reviewsQuery = useMemoFirebase(
+        () => query(collection(firestore, 'reviews'), orderBy('createdAt', 'desc')),
+        [firestore]
+    );
+    const { data: reviews, isLoading } = useCollection<Review>(reviewsQuery);
+
+    const handleDelete = async (reviewId: string) => {
+        if (window.confirm('Are you sure you want to delete this review?')) {
+            const reviewRef = doc(firestore, 'reviews', reviewId);
+            await deleteDocumentNonBlocking(reviewRef);
+            toast({ title: 'Success', description: 'Review deleted successfully.' });
+        }
+    }
+
+    const formatDate = (timestamp: { seconds: number; nanoseconds: number } | null) => {
+        if (!timestamp) return 'N/A';
+        const date = new Date(timestamp.seconds * 1000);
+        return date.toLocaleString();
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Review Management</CardTitle>
+                <CardDescription>View and delete customer reviews.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Rating</TableHead>
+                            <TableHead>Review</TableHead>
+                            <TableHead className="text-right">Action</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="h-24 text-center">Loading reviews...</TableCell>
+                            </TableRow>
+                        ) : reviews && reviews.length > 0 ? (
+                            reviews.map(review => (
+                                <TableRow key={review.id}>
+                                    <TableCell>{formatDate(review.createdAt)}</TableCell>
+                                    <TableCell>{review.name}</TableCell>
+                                    <TableCell>{review.rating}/5</TableCell>
+                                    <TableCell className="max-w-xs truncate">{review.reviewText}</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="destructive" size="sm" onClick={() => handleDelete(review.id)}>
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={5} className="h-24 text-center">No reviews found.</TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    )
+}
+
+function AnnouncementManager() {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const announcementRef = useMemoFirebase(() => doc(firestore, 'announcement', 'current'), [firestore]);
+    const { data: announcement, isLoading } = useDoc<Announcement>(announcementRef);
+
+    const [text, setText] = useState('');
+    const [enabled, setEnabled] = useState(false);
+
+    useEffect(() => {
+        if (announcement) {
+            setText(announcement.text);
+            setEnabled(announcement.enabled);
+        }
+    }, [announcement]);
+
+    const handleSave = async () => {
+        await setDocumentNonBlocking(announcementRef, { text, enabled, updatedAt: serverTimestamp() }, { merge: true });
+        toast({ title: 'Success', description: 'Announcement updated!' });
+    }
+
+    if (isLoading) {
+        return <Card>
+            <CardHeader><CardTitle>Broadcast Announcement</CardTitle></CardHeader>
+            <CardContent><p>Loading...</p></CardContent>
+        </Card>
+    }
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Broadcast Announcement</CardTitle>
+                <CardDescription>Display a site-wide banner for all users.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                 <div className="flex items-center space-x-2">
+                    <Switch id="announcement-enabled" checked={enabled} onCheckedChange={setEnabled} />
+                    <Label htmlFor="announcement-enabled">Enable Announcement Banner</Label>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="announcement-text">Announcement Text</Label>
+                    <Textarea
+                        id="announcement-text"
+                        placeholder="Enter your announcement here..."
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                        />
+                </div>
+            </CardContent>
+            <CardFooter>
+                <Button onClick={handleSave}>Save Announcement</Button>
+            </CardFooter>
+        </Card>
+    )
+}
+
 
 function PlanForm({
   plan,
@@ -289,6 +420,22 @@ interface NetworkStatus {
     status: NetworkStatusType;
 }
 
+interface Review {
+    id: string;
+    name: string;
+    reviewText: string;
+    rating: number;
+    createdAt: {
+        seconds: number;
+        nanoseconds: number;
+    } | null;
+}
+
+interface Announcement {
+    text: string;
+    enabled: boolean;
+}
+
 function NetworkStatusManager() {
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -425,7 +572,9 @@ export default function AdminPage() {
   return (
     <div className="container mx-auto p-4 py-8 md:p-12 space-y-8">
       <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+      <AnnouncementManager />
       <NetworkStatusManager />
+      <ReviewManager />
       <PlansManager title="Data Plans" providers={networkProviders} collectionName="dataPlans" />
       <PlansManager title="TV Subscriptions" providers={tvProviders} collectionName="tvPlans" isTvPlan />
     </div>

@@ -1,0 +1,77 @@
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----------------------------------------------------------------
+    // Helper Functions
+    // ----------------------------------------------------------------
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+        return request.auth.token.email == 'samuelmarvel21@gmail.com';
+    }
+
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    function userCreateHasValidData(userId) {
+      return request.resource.data.id == userId;
+    }
+
+    function userUpdateIsImmutable() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+    // ----------------------------------------------------------------
+    // Collection Rules
+    // ----------------------------------------------------------------
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false; // Disallow listing all users
+      allow create: if isOwner(userId) && userCreateHasValidData(userId);
+      allow update: if isExistingOwner(userId) && userUpdateIsImmutable();
+      allow delete: if isExistingOwner(userId);
+
+      match /transactions/{transactionId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+        allow update: if false;
+        allow delete: if isAdmin();
+    }
+
+    match /dataPlans/{network}/plans/{planId} {
+        allow read: if true;
+        allow write: if isAdmin();
+    }
+
+    match /tvPlans/{provider}/plans/{planId} {
+        allow read: if true;
+        allow write: if isAdmin();
+    }
+
+    match /networkStatus/{networkId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /announcement/current {
+        allow read: if true;
+        allow write: if isAdmin();
+    }
+  }
+}
