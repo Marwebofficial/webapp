@@ -59,14 +59,12 @@ function PlanForm({
   collectionName,
   onSave,
   isTvPlan = false,
-  isExamPin = false,
 }: {
   plan?: Plan;
   networkId: string;
   collectionName: string;
   onSave: () => void;
   isTvPlan?: boolean;
-  isExamPin?: boolean;
 }) {
   const firestore = useFirestore();
   const [label, setLabel] = useState(plan?.label || '');
@@ -86,7 +84,7 @@ function PlanForm({
     const planId = plan?.id || doc(collection(firestore, 'dummy')).id;
     const planRef = doc(firestore, collectionName, networkId, 'plans', planId);
     const data: Omit<Plan, 'id'> = { label, price };
-    if (!isTvPlan && !isExamPin) {
+    if (!isTvPlan) {
       data.validity = validity;
     }
 
@@ -120,7 +118,7 @@ function PlanForm({
           className="col-span-3"
         />
       </div>
-      {!isTvPlan && !isExamPin && (
+      {!isTvPlan && (
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="validity" className="text-right">
             Validity
@@ -151,13 +149,11 @@ function PlansManager({
   providers,
   collectionName,
   isTvPlan = false,
-  isExamPin = false,
 }: {
   title: string;
   providers: { id: string; name: string }[];
   collectionName: string;
   isTvPlan?: boolean;
-  isExamPin?: boolean;
 }) {
   const [selectedProvider, setSelectedProvider] = useState(providers[0].id);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -189,7 +185,7 @@ function PlansManager({
     setEditingPlan(undefined);
   }
 
-  const colSpan = isTvPlan || isExamPin ? 3 : 4;
+  const colSpan = isTvPlan ? 3 : 4;
 
   return (
     <Card>
@@ -230,7 +226,6 @@ function PlansManager({
                     collectionName={collectionName}
                     onSave={closeForm}
                     isTvPlan={isTvPlan}
-                    isExamPin={isExamPin}
                 />
             </DialogContent>
           </Dialog>
@@ -240,7 +235,7 @@ function PlansManager({
             <TableRow>
               <TableHead>Label</TableHead>
               <TableHead>Price</TableHead>
-              {!isTvPlan && !isExamPin && <TableHead>Validity</TableHead>}
+              {!isTvPlan && <TableHead>Validity</TableHead>}
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -256,7 +251,7 @@ function PlansManager({
                 <TableRow key={plan.id}>
                   <TableCell>{plan.label}</TableCell>
                   <TableCell>₦{plan.price.toLocaleString()}</TableCell>
-                  {!isTvPlan && !isExamPin && <TableCell>{plan.validity}</TableCell>}
+                  {!isTvPlan && <TableCell>{plan.validity}</TableCell>}
                   <TableCell className="text-right space-x-2">
                     <Button variant="outline" size="sm" onClick={() => openForm(plan)}>
                         Edit

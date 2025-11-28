@@ -55,8 +55,7 @@
             "Data Purchase",
             "Airtime Purchase",
             "Airtime to Cash",
-            "TV Subscription",
-            "Exam Pin Purchase"
+            "TV Subscription"
           ],
           "description": "The type of transaction."
         },
@@ -69,9 +68,7 @@
             "9mobile",
             "dstv",
             "gotv",
-            "startimes",
-            "waec",
-            "neco"
+            "startimes"
           ],
           "description": "The mobile network or service provider."
         },
@@ -170,17 +167,6 @@
         "price": { "type": "number" }
       },
       "required": ["id", "label", "price"]
-    },
-    "ExamPin": {
-      "title": "Exam Pin",
-      "type": "object",
-      "description": "Represents an exam result checker pin.",
-      "properties": {
-        "id": { "type": "string" },
-        "label": { "type": "string" },
-        "price": { "type": "number" }
-      },
-      "required": ["id", "label", "price"]
     }
   },
   "auth": {
@@ -265,24 +251,8 @@
             }
           ]
         }
-      },
-      {
-        "path": "/examPins/{provider}",
-        "definition": {
-          "entityName": "ExamPin",
-          "schema": {
-            "$ref": "#/backend/entities/ExamPin"
-          },
-          "description": "A collection containing exam pins for a specific provider.",
-          "params": [
-            {
-              "name": "provider",
-              "description": "The exam provider ID (e.g., 'waec', 'neco')."
-            }
-          ]
-        }
       }
     ],
-    "reasoning": "The Firestore structure now includes a 'transactions' subcollection for each user to store their purchase history. This allows for easy retrieval of a user's transactions while maintaining the strict ownership security model. The User entity is updated with a `createdAt` field. A top-level 'reviews' collection is added to store user testimonials. Collections for 'dataPlans', 'tvPlans', and 'examPins' are added to allow for dynamic management of service offerings from an admin panel."
+    "reasoning": "The Firestore structure now includes a 'transactions' subcollection for each user to store their purchase history. This allows for easy retrieval of a user's transactions while maintaining the strict ownership security model. The User entity is updated with a `createdAt` field. A top-level 'reviews' collection is added to store user testimonials. Collections for 'dataPlans', 'tvPlans' are added to allow for dynamic management of service offerings from an admin panel. The ExamPins feature has been removed."
   }
 }
