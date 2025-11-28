@@ -20,11 +20,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useAuth, useFirestore, initiateEmailSignUp, setDocumentNonBlocking } from '@/firebase';
+import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { doc, serverTimestamp } from 'firebase/firestore';
+import { initiateEmailSignUp } from '@/firebase/non-blocking-login';
 
 const FormSchema = z.object({
     name: z.string().min(2, {

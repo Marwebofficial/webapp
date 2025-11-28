@@ -20,10 +20,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useAuth, initiateEmailSignIn } from '@/firebase';
+import { useAuth } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
 
 const FormSchema = z.object({
   email: z.string().email({
