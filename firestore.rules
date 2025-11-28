@@ -53,12 +53,12 @@ service cloud.firestore {
         allow update, delete: if false;
     }
 
-    match /dataPlans/{network}/{planId} {
+    match /dataPlans/{network}/plans/{planId} {
         allow read: if true;
         allow write: if isAdmin();
     }
 
-    match /tvPlans/{provider}/{planId} {
+    match /tvPlans/{provider}/plans/{planId} {
         allow read: if true;
         allow write: if isAdmin();
     }
