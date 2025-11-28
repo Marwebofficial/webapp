@@ -298,5 +298,3 @@
     "reasoning": "The Firestore structure now includes a 'transactions' subcollection for each user to store their purchase history. This allows for easy retrieval of a user's transactions while maintaining the strict ownership security model. The User entity is updated with a `createdAt` field. A top-level 'reviews' collection is added to store user testimonials. Collections for 'dataPlans', 'tvPlans' are added to allow for dynamic management of service offerings from an admin panel. A 'networkStatus' collection is added for admins to manually update and users to view the status of service providers. The ExamPins feature has been removed."
   }
 }
-
-    
