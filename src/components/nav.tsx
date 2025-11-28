@@ -10,7 +10,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { Menu, Wifi, UserCircle, History } from 'lucide-react';
+import { Menu, Wifi, UserCircle, History, Tv } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useState } from 'react';
 import { useAuth, useUser } from '@/firebase';
@@ -62,6 +62,14 @@ export function Nav() {
         onClick={closeSheet}
       >
         Airtime to Cash
+      </Link>
+      <Link
+        href="/tv-subscription"
+        className="text-sm font-medium hover:underline underline-offset-4"
+        prefetch={false}
+        onClick={closeSheet}
+      >
+        TV Subscription
       </Link>
     </>
   );
@@ -175,7 +183,7 @@ export function Nav() {
             </SheetTrigger>
             <SheetContent side="left">
               <SheetHeader>
-                <SheetTitle className='sr-only'>Navigation Menu</SheetTitle>
+                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
               </SheetHeader>
               <div className="flex flex-col gap-4 p-4">
                 <Link

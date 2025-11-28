@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -50,13 +51,13 @@
         },
         "type": {
           "type": "string",
-          "enum": ["Data Purchase", "Airtime Purchase", "Airtime to Cash"],
+          "enum": ["Data Purchase", "Airtime Purchase", "Airtime to Cash", "TV Subscription"],
           "description": "The type of transaction."
         },
         "network": {
           "type": "string",
-          "enum": ["mtn", "airtel", "glo", "9mobile"],
-          "description": "The mobile network provider."
+          "enum": ["mtn", "airtel", "glo", "9mobile", "dstv", "gotv", "startimes"],
+          "description": "The mobile network or service provider."
         },
         "amount": {
           "type": "number",
@@ -64,11 +65,11 @@
         },
         "details": {
           "type": "string",
-          "description": "A description of the transaction (e.g., data plan)."
+          "description": "A description of the transaction (e.g., data plan, TV package)."
         },
         "recipientPhone": {
           "type": "string",
-          "description": "The phone number that received the service."
+          "description": "The phone number or Smart Card/IUC number that received the service."
         },
         "status": {
           "type": "string",

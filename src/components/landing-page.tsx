@@ -1,9 +1,10 @@
+
 "use client";
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Zap, Smartphone, ShieldCheck, Clock, Phone, Repeat } from 'lucide-react';
+import { Zap, Smartphone, ShieldCheck, Clock, Phone, Repeat, Tv } from 'lucide-react';
 import Image from 'next/image';
 
 export function LandingPage() {
@@ -21,10 +22,10 @@ export function LandingPage() {
           <div className="container px-4 md:px-6 z-10 animate-in fade-in-50 slide-in-from-bottom-10 duration-700">
             <div className="max-w-3xl mx-auto">
               <h1 className="text-4xl font-extrabold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl font-headline">
-                Instant Data, Airtime & Cash Conversion
+                Instant Data, Airtime, TV & More
               </h1>
               <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-                Stay connected with the cheapest mobile data, airtime, and easily convert airtime to cash. Delivered in minutes, 24/7.
+                Stay connected with the cheapest mobile data, airtime, TV subscriptions, and easily convert airtime to cash. Delivered in minutes, 24/7.
               </p>
               <div className="mt-8 flex flex-wrap gap-4 justify-center">
                 <Link href="/buy-data" passHref>
@@ -44,13 +45,13 @@ export function LandingPage() {
                     Buy Airtime
                   </Button>
                 </Link>
-                <Link href="/airtime-to-cash" passHref>
+                <Link href="/tv-subscription" passHref>
                   <Button
                     size="lg"
                     variant="outline"
                     className="bg-primary/10 border-primary/20 text-lg py-7 px-10 font-bold rounded-full shadow-lg transition-transform hover:scale-105"
                   >
-                    Airtime to Cash
+                    TV Subscription
                   </Button>
                 </Link>
               </div>
@@ -77,10 +78,10 @@ export function LandingPage() {
                 title="Instant Delivery"
                 description="Your data is delivered to your phone number within minutes of purchase. No delays, no stories."
               />
-              <FeatureCard
-                icon={<Phone className="w-8 h-8 text-primary" />}
-                title="Airtime Top-up"
-                description="Easily top-up airtime for any network in Nigeria, anytime, anywhere."
+               <FeatureCard
+                icon={<Tv className="w-8 h-8 text-primary" />}
+                title="TV Subscription"
+                description="Renew your DSTV, GOtv, and StarTimes subscriptions instantly and never miss a show."
               />
               <FeatureCard
                 icon={<Repeat className="w-8 h-8 text-primary" />}
