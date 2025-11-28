@@ -10,7 +10,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { Menu, Wifi, UserCircle, History, Tv, Shield } from 'lucide-react';
+import { Menu, Wifi, UserCircle, History, Tv, Shield, BookCopy } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useState } from 'react';
 import { useAuth, useUser } from '@/firebase';
@@ -71,6 +71,14 @@ export function Nav() {
         onClick={closeSheet}
       >
         TV Subscription
+      </Link>
+      <Link
+        href="/exam-pins"
+        className="text-sm font-medium hover:underline underline-offset-4"
+        prefetch={false}
+        onClick={closeSheet}
+      >
+        Exam Pins
       </Link>
     </>
   );

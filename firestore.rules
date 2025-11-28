@@ -62,5 +62,10 @@ service cloud.firestore {
         allow read: if true;
         allow write: if isAdmin();
     }
+
+    match /examPins/{provider}/pins/{pinId} {
+        allow read: if true;
+        allow write: if isAdmin();
+    }
   }
 }

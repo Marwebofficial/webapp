@@ -35,6 +35,7 @@ import { collection, doc } from 'firebase/firestore';
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { networkProviders } from '@/lib/data-plans';
 import { tvProviders } from '@/lib/tv-plans';
+import { examPinProviders } from '@/lib/exam-pins';
 import {
   Select,
   SelectContent,
@@ -59,12 +60,14 @@ function PlanForm({
   collectionName,
   onSave,
   isTvPlan = false,
+  isExamPin = false,
 }: {
   plan?: Plan;
   networkId: string;
   collectionName: string;
   onSave: () => void;
   isTvPlan?: boolean;
+  isExamPin?: boolean;
 }) {
   const firestore = useFirestore();
   const [label, setLabel] = useState(plan?.label || '');
@@ -82,9 +85,9 @@ function PlanForm({
       return;
     }
     const planId = plan?.id || doc(collection(firestore, 'dummy')).id;
-    const planRef = doc(firestore, collectionName, networkId, 'plans', planId);
+    const planRef = doc(firestore, collectionName, networkId, 'pins', planId);
     const data: Omit<Plan, 'id'> = { label, price };
-    if (!isTvPlan) {
+    if (!isTvPlan && !isExamPin) {
       data.validity = validity;
     }
 
@@ -118,7 +121,7 @@ function PlanForm({
           className="col-span-3"
         />
       </div>
-      {!isTvPlan && (
+      {!isTvPlan && !isExamPin && (
         <div className="grid grid-cols-4 items-center gap-4">
           <Label htmlFor="validity" className="text-right">
             Validity
@@ -149,11 +152,13 @@ function PlansManager({
   providers,
   collectionName,
   isTvPlan = false,
+  isExamPin = false,
 }: {
   title: string;
   providers: { id: string; name: string }[];
   collectionName: string;
   isTvPlan?: boolean;
+  isExamPin?: boolean;
 }) {
   const [selectedProvider, setSelectedProvider] = useState(providers[0].id);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -162,14 +167,14 @@ function PlansManager({
   const { toast } = useToast();
 
   const plansQuery = useMemoFirebase(
-    () => collection(firestore, collectionName, selectedProvider, 'plans'),
+    () => collection(firestore, collectionName, selectedProvider, 'pins'),
     [firestore, collectionName, selectedProvider]
   );
   const { data: plans, isLoading } = useCollection<Plan>(plansQuery);
 
   const handleDelete = async (planId: string) => {
     if (window.confirm('Are you sure you want to delete this plan?')) {
-      const planRef = doc(firestore, collectionName, selectedProvider, 'plans', planId);
+      const planRef = doc(firestore, collectionName, selectedProvider, 'pins', planId);
       await deleteDocumentNonBlocking(planRef);
       toast({ title: 'Success', description: 'Plan deleted successfully.' });
     }
@@ -184,6 +189,8 @@ function PlansManager({
     setIsFormOpen(false);
     setEditingPlan(undefined);
   }
+
+  const colSpan = isTvPlan || isExamPin ? 3 : 4;
 
   return (
     <Card>
@@ -224,6 +231,7 @@ function PlansManager({
                     collectionName={collectionName}
                     onSave={closeForm}
                     isTvPlan={isTvPlan}
+                    isExamPin={isExamPin}
                 />
             </DialogContent>
           </Dialog>
@@ -233,14 +241,14 @@ function PlansManager({
             <TableRow>
               <TableHead>Label</TableHead>
               <TableHead>Price</TableHead>
-              {!isTvPlan && <TableHead>Validity</TableHead>}
+              {!isTvPlan && !isExamPin && <TableHead>Validity</TableHead>}
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={isTvPlan ? 3 : 4} className="h-24 text-center">
+                <TableCell colSpan={colSpan} className="h-24 text-center">
                   Loading...
                 </TableCell>
               </TableRow>
@@ -249,7 +257,7 @@ function PlansManager({
                 <TableRow key={plan.id}>
                   <TableCell>{plan.label}</TableCell>
                   <TableCell>₦{plan.price.toLocaleString()}</TableCell>
-                  {!isTvPlan && <TableCell>{plan.validity}</TableCell>}
+                  {!isTvPlan && !isExamPin && <TableCell>{plan.validity}</TableCell>}
                   <TableCell className="text-right space-x-2">
                     <Button variant="outline" size="sm" onClick={() => openForm(plan)}>
                         Edit
@@ -266,7 +274,7 @@ function PlansManager({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={isTvPlan ? 3 : 4} className="h-24 text-center">
+                <TableCell colSpan={colSpan} className="h-24 text-center">
                   No plans found for this provider.
                 </TableCell>
               </TableRow>
@@ -303,6 +311,7 @@ export default function AdminPage() {
       <h1 className="text-3xl font-bold">Admin Dashboard</h1>
       <PlansManager title="Data Plans" providers={networkProviders} collectionName="dataPlans" />
       <PlansManager title="TV Subscriptions" providers={tvProviders} collectionName="tvPlans" isTvPlan />
+      <PlansManager title="Exam Pins" providers={examPinProviders} collectionName="examPins" isExamPin />
     </div>
   );
 }
