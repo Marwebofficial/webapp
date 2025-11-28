@@ -4,8 +4,9 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Zap, Smartphone, ShieldCheck, Clock, Phone, Repeat, Tv } from 'lucide-react';
+import { Zap, Smartphone, ShieldCheck, Clock, Phone, Repeat, Tv, Star } from 'lucide-react';
 import Image from 'next/image';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 export function LandingPage() {
   return (
@@ -106,6 +107,46 @@ export function LandingPage() {
             </div>
           </div>
         </section>
+
+        <section id="reviews" className="w-full py-12 md:py-24 lg:py-32 bg-secondary">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
+              <div className="inline-block rounded-lg bg-background px-3 py-1 text-sm">
+                Testimonials
+              </div>
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
+                What Our Users Say
+              </h2>
+              <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                Hear from our satisfied customers who trust us for their daily transactions.
+              </p>
+            </div>
+            <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:grid-cols-3">
+              <ReviewCard
+                name="Adebayo Adekunle"
+                review="DataConnect is a lifesaver! I can buy data anytime, even in the middle of the night. Super fast and reliable."
+                avatarUrl="https://picsum.photos/seed/review1/100/100"
+                imageHint="man portrait"
+                rating={5}
+              />
+              <ReviewCard
+                name="Chidinma Okoro"
+                review="The airtime to cash feature is fantastic. I had some excess airtime and got the cash in my bank account in minutes. Highly recommend!"
+                avatarUrl="https://picsum.photos/seed/review2/100/100"
+                imageHint="woman portrait"
+                rating={5}
+              />
+              <ReviewCard
+                name="Musa Ibrahim"
+                review="Finally, a data service that just works. The prices are great and the service is reliable. I've been using it for months now."
+                avatarUrl="https://picsum.photos/seed/review3/100/100"
+                imageHint="man smiling"
+                rating={4}
+              />
+            </div>
+          </div>
+        </section>
+
       </main>
 
       <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
@@ -136,5 +177,42 @@ function FeatureCard({
       <h3 className="text-lg font-bold">{title}</h3>
       <p className="text-sm text-muted-foreground">{description}</p>
     </div>
+  );
+}
+
+function ReviewCard({
+  name,
+  review,
+  avatarUrl,
+  imageHint,
+  rating,
+}: {
+  name: string;
+  review: string;
+  avatarUrl: string;
+  imageHint: string;
+  rating: number;
+}) {
+  return (
+    <Card className="bg-background">
+      <CardContent className="p-6 flex flex-col items-center text-center">
+        <Avatar className="w-20 h-20 mb-4 border-2 border-primary">
+          <AvatarImage src={avatarUrl} alt={name} data-ai-hint={imageHint} />
+          <AvatarFallback>{name.charAt(0)}</AvatarFallback>
+        </Avatar>
+        <div className="flex items-center gap-0.5 mb-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Star
+              key={i}
+              className={`w-5 h-5 ${
+                i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/50'
+              }`}
+            />
+          ))}
+        </div>
+        <p className="text-muted-foreground mb-4 text-sm">&quot;{review}&quot;</p>
+        <h4 className="font-semibold">{name}</h4>
+      </CardContent>
+    </Card>
   );
 }
