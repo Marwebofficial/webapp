@@ -1,0 +1,300 @@
+
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the DataConnect Nigeria application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "name": {
+          "type": "string",
+          "description": "User's full name."
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "User's phone number."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address (optional).",
+          "format": "email"
+        },
+        "referralCode": {
+          "type": "string",
+          "description": "Referral code used by the user (optional)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the user account was created."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "phoneNumber"
+      ]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "type": "object",
+      "description": "Represents a single transaction made by a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the transaction."
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "Data Purchase",
+            "Airtime Purchase",
+            "Airtime to Cash",
+            "TV Subscription"
+          ],
+          "description": "The type of transaction."
+        },
+        "network": {
+          "type": "string",
+          "enum": [
+            "mtn",
+            "airtel",
+            "glo",
+            "9mobile",
+            "dstv",
+            "gotv",
+            "startimes"
+          ],
+          "description": "The mobile network or service provider."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The transaction amount in NGN."
+        },
+        "details": {
+          "type": "string",
+          "description": "A description of the transaction (e.g., data plan, TV package)."
+        },
+        "recipientPhone": {
+          "type": "string",
+          "description": "The phone number or Smart Card/IUC number that received the service."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Pending",
+            "Completed",
+            "Failed"
+          ],
+          "description": "The status of the transaction."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the transaction was created."
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "network",
+        "amount",
+        "details",
+        "recipientPhone",
+        "status",
+        "createdAt"
+      ]
+    },
+    "Review": {
+      "title": "Review",
+      "type": "object",
+      "description": "Represents a user review for the service.",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user who wrote the review."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the user who wrote the review."
+        },
+        "reviewText": {
+          "type": "string",
+          "description": "The content of the user's review."
+        },
+        "rating": {
+          "type": "number",
+          "description": "A rating from 1 to 5."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the review was created."
+        }
+      },
+      "required": [
+        "userId",
+        "name",
+        "reviewText",
+        "rating",
+        "createdAt"
+      ]
+    },
+    "DataPlan": {
+      "title": "Data Plan",
+      "type": "object",
+      "description": "Represents a mobile data plan.",
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "price": { "type": "number" },
+        "validity": { "type": "string" }
+      },
+      "required": ["id", "label", "price"]
+    },
+    "TvPlan": {
+      "title": "TV Plan",
+      "type": "object",
+      "description": "Represents a TV subscription plan.",
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "price": { "type": "number" }
+      },
+      "required": ["id", "label", "price"]
+    },
+    "NetworkStatus": {
+      "title": "Network Status",
+      "type": "object",
+      "description": "Represents the operational status of a network provider.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The network provider ID (e.g., 'mtn', 'airtel')."
+        },
+        "name": {
+          "type": "string",
+          "description": "The network provider's name (e.g., 'MTN')."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Online", "Degraded", "Offline"],
+          "description": "The current operational status."
+        },
+        "lastChecked": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the last status update."
+        }
+      },
+      "required": ["id", "name", "status", "lastChecked"]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user information. 'userId' is equal to `request.auth.uid`. This ensures path-based ownership. It is created upon user registration.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user. It is equal to the Firebase Authentication UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/transactions",
+        "definition": {
+          "entityName": "Transaction",
+          "schema": {
+            "$ref": "#/backend/entities/Transaction"
+          },
+          "description": "Stores a user's transaction history. Each document is a single purchase or conversion.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The UID of the user who owns these transactions."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/reviews",
+        "definition": {
+          "entityName": "Review",
+          "schema": {
+            "$ref": "#/backend/entities/Review"
+          },
+          "description": "A collection of user-submitted reviews. Anyone can read, but only authenticated users can create.",
+          "params": []
+        }
+      },
+      {
+        "path": "/dataPlans/{network}",
+        "definition": {
+          "entityName": "DataPlan",
+          "schema": {
+            "$ref": "#/backend/entities/DataPlan"
+          },
+          "description": "A collection containing data plans for a specific network provider.",
+          "params": [
+            {
+              "name": "network",
+              "description": "The network provider ID (e.g., 'mtn', 'airtel')."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/tvPlans/{provider}",
+        "definition": {
+          "entityName": "TvPlan",
+          "schema": {
+            "$ref": "#/backend/entities/TvPlan"
+          },
+          "description": "A collection containing TV subscription plans for a specific provider.",
+          "params": [
+            {
+              "name": "provider",
+              "description": "The TV provider ID (e.g., 'dstv', 'gotv')."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/networkStatus/{networkId}",
+        "definition": {
+          "entityName": "NetworkStatus",
+          "schema": {
+            "$ref": "#/backend/entities/NetworkStatus"
+          },
+          "description": "A collection containing the operational status of network providers.",
+          "params": [
+            {
+              "name": "networkId",
+              "description": "The network provider ID (e.g., 'mtn')."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure now includes a 'transactions' subcollection for each user to store their purchase history. This allows for easy retrieval of a user's transactions while maintaining the strict ownership security model. The User entity is updated with a `createdAt` field. A top-level 'reviews' collection is added to store user testimonials. Collections for 'dataPlans', 'tvPlans' are added to allow for dynamic management of service offerings from an admin panel. A 'networkStatus' collection is added for admins to manually update and users to view the status of service providers. The ExamPins feature has been removed."
+  }
+}
