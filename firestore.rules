@@ -94,10 +94,23 @@ service cloud.firestore {
      */
     match /users/{userId} {
       allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
+      allow list: if false; // Disallow listing all users
       allow create: if isOwner(userId) && userCreateHasValidData(userId);
       allow update: if isExistingOwner(userId) && userUpdateIsImmutable();
       allow delete: if isExistingOwner(userId);
+
+      /**
+       * @description Manages a user's transaction history. A user can read their
+       *   own transactions and create new ones. Updating and deleting are also
+       *   allowed to manage their own history.
+       * @path /users/{userId}/transactions/{transactionId}
+       * @allow A signed-in user (auth.uid=`user_abc`) can list all documents in `/users/user_abc/transactions`. (list)
+       * @allow A signed-in user (auth.uid=`user_abc`) can create a new document in `/users/user_abc/transactions`. (create)
+       * @deny A signed-in user (auth.uid=`user_abc`) cannot access `/users/user_xyz/transactions`. (list, get)
+       */
+      match /transactions/{transactionId} {
+        allow read, write: if isOwner(userId);
+      }
     }
   }
 }
