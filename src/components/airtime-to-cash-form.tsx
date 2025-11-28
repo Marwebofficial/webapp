@@ -1,10 +1,11 @@
+
 "use client";
 
 import { useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { doc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, updateDoc } from 'firebase/firestore';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -105,7 +106,7 @@ export function AirtimeToCashForm() {
     }
   }, [user, userProfile, form]);
 
-  function onSubmit(data: FormData) {
+  async function onSubmit(data: FormData) {
     if (user) {
         const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
         const transactionData = {
@@ -117,7 +118,13 @@ export function AirtimeToCashForm() {
           status: 'Pending',
           createdAt: serverTimestamp(),
         };
-        addDocumentNonBlocking(transactionsRef, transactionData);
+        const newDocRef = await addDocumentNonBlocking(transactionsRef, transactionData);
+
+        if (newDocRef) {
+            setTimeout(() => {
+                updateDoc(newDocRef, { status: 'Completed' });
+            }, 120000); // 2 minutes
+        }
       }
 
     const networkName =
