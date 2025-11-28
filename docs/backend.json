@@ -29,9 +29,9 @@
           "description": "Referral code used by the user (optional)."
         },
         "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Timestamp when the user account was created."
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the user account was created."
         }
       },
       "required": [
@@ -51,12 +51,25 @@
         },
         "type": {
           "type": "string",
-          "enum": ["Data Purchase", "Airtime Purchase", "Airtime to Cash", "TV Subscription"],
+          "enum": [
+            "Data Purchase",
+            "Airtime Purchase",
+            "Airtime to Cash",
+            "TV Subscription"
+          ],
           "description": "The type of transaction."
         },
         "network": {
           "type": "string",
-          "enum": ["mtn", "airtel", "glo", "9mobile", "dstv", "gotv", "startimes"],
+          "enum": [
+            "mtn",
+            "airtel",
+            "glo",
+            "9mobile",
+            "dstv",
+            "gotv",
+            "startimes"
+          ],
           "description": "The mobile network or service provider."
         },
         "amount": {
@@ -73,7 +86,11 @@
         },
         "status": {
           "type": "string",
-          "enum": ["Pending", "Completed", "Failed"],
+          "enum": [
+            "Pending",
+            "Completed",
+            "Failed"
+          ],
           "description": "The status of the transaction."
         },
         "createdAt": {
@@ -90,6 +107,41 @@
         "details",
         "recipientPhone",
         "status",
+        "createdAt"
+      ]
+    },
+    "Review": {
+      "title": "Review",
+      "type": "object",
+      "description": "Represents a user review for the service.",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user who wrote the review."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the user who wrote the review."
+        },
+        "reviewText": {
+          "type": "string",
+          "description": "The content of the user's review."
+        },
+        "rating": {
+          "type": "number",
+          "description": "A rating from 1 to 5."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the review was created."
+        }
+      },
+      "required": [
+        "userId",
+        "name",
+        "reviewText",
+        "rating",
         "createdAt"
       ]
     }
@@ -121,20 +173,31 @@
       {
         "path": "/users/{userId}/transactions",
         "definition": {
-            "entityName": "Transaction",
-            "schema": {
-                "$ref": "#/backend/entities/Transaction"
-            },
-            "description": "Stores a user's transaction history. Each document is a single purchase or conversion.",
-            "params": [
-                {
-                    "name": "userId",
-                    "description": "The UID of the user who owns these transactions."
-                }
-            ]
+          "entityName": "Transaction",
+          "schema": {
+            "$ref": "#/backend/entities/Transaction"
+          },
+          "description": "Stores a user's transaction history. Each document is a single purchase or conversion.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The UID of the user who owns these transactions."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/reviews",
+        "definition": {
+          "entityName": "Review",
+          "schema": {
+            "$ref": "#/backend/entities/Review"
+          },
+          "description": "A collection of user-submitted reviews. Anyone can read, but only authenticated users can create.",
+          "params": []
         }
       }
     ],
-    "reasoning": "The Firestore structure now includes a 'transactions' subcollection for each user to store their purchase history. This allows for easy retrieval of a user's transactions while maintaining the strict ownership security model. The User entity is updated with a `createdAt` field."
+    "reasoning": "The Firestore structure now includes a 'transactions' subcollection for each user to store their purchase history. This allows for easy retrieval of a user's transactions while maintaining the strict ownership security model. The User entity is updated with a `createdAt` field. A top-level 'reviews' collection is added to store user testimonials."
   }
 }

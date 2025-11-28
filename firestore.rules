@@ -1,3 +1,4 @@
+
 /**
  * This ruleset enforces a strict user-ownership security model for the
  * DataConnect Nigeria application.
@@ -111,6 +112,19 @@ service cloud.firestore {
       match /transactions/{transactionId} {
         allow read, write: if isOwner(userId);
       }
+    }
+
+    /**
+     * @description Manages user-submitted reviews.
+     * @path /reviews/{reviewId}
+     * @allow Any user (signed-in or anonymous) can read reviews. (get, list)
+     * @allow Only a signed-in user can create a new review. The `userId` in the review must match their own UID. (create)
+     * @deny Users cannot update or delete reviews.
+     */
+    match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+        allow update, delete: if false;
     }
   }
 }

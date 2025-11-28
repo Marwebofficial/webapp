@@ -1,14 +1,45 @@
 
-"use client";
+'use client';
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Zap, Smartphone, ShieldCheck, Clock, Phone, Repeat, Tv, Star } from 'lucide-react';
+import {
+  Zap,
+  Smartphone,
+  ShieldCheck,
+  Clock,
+  Phone,
+  Repeat,
+  Tv,
+  Star,
+  MessageSquare,
+} from 'lucide-react';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { ReviewFormDialog } from './review-form-dialog';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
+
+interface Review {
+  id: string;
+  name: string;
+  reviewText: string;
+  rating: number;
+}
 
 export function LandingPage() {
+  const firestore = useFirestore();
+  const reviewsQuery = useMemoFirebase(
+    () =>
+      firestore
+        ? query(collection(firestore, 'reviews'), orderBy('createdAt', 'desc'), limit(3))
+        : null,
+    [firestore]
+  );
+  const { data: reviews, isLoading } = useCollection<Review>(reviewsQuery);
+  const { user } = useUser();
+
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-1">
@@ -26,7 +57,9 @@ export function LandingPage() {
                 Instant Data, Airtime, TV & More
               </h1>
               <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-                Stay connected with the cheapest mobile data, airtime, TV subscriptions, and easily convert airtime to cash. Delivered in minutes, 24/7.
+                Stay connected with the cheapest mobile data, airtime, TV
+                subscriptions, and easily convert airtime to cash. Delivered in
+                minutes, 24/7.
               </p>
               <div className="mt-8 flex flex-wrap gap-4 justify-center">
                 <Link href="/buy-data" passHref>
@@ -37,7 +70,7 @@ export function LandingPage() {
                     Buy Data
                   </Button>
                 </Link>
-                 <Link href="/buy-airtime" passHref>
+                <Link href="/buy-airtime" passHref>
                   <Button
                     size="lg"
                     variant="outline"
@@ -70,16 +103,17 @@ export function LandingPage() {
                 Why Choose DataConnect?
               </h2>
               <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                We provide a seamless experience for all your mobile transactions, ensuring you get the best value for your money.
+                We provide a seamless experience for all your mobile
+                transactions, ensuring you get the best value for your money.
               </p>
             </div>
             <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:grid-cols-3">
-               <FeatureCard
+              <FeatureCard
                 icon={<Zap className="w-8 h-8 text-primary" />}
                 title="Instant Delivery"
                 description="Your data is delivered to your phone number within minutes of purchase. No delays, no stories."
               />
-               <FeatureCard
+              <FeatureCard
                 icon={<Tv className="w-8 h-8 text-primary" />}
                 title="TV Subscription"
                 description="Renew your DSTV, GOtv, and StarTimes subscriptions instantly and never miss a show."
@@ -108,7 +142,10 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="reviews" className="w-full py-12 md:py-24 lg:py-32 bg-secondary">
+        <section
+          id="reviews"
+          className="w-full py-12 md:py-24 lg:py-32 bg-secondary"
+        >
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
               <div className="inline-block rounded-lg bg-background px-3 py-1 text-sm">
@@ -118,40 +155,41 @@ export function LandingPage() {
                 What Our Users Say
               </h2>
               <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                Hear from our satisfied customers who trust us for their daily transactions.
+                Hear from our satisfied customers who trust us for their daily
+                transactions.
               </p>
             </div>
             <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:grid-cols-3">
-              <ReviewCard
-                name="Adebayo Adekunle"
-                review="DataConnect is a lifesaver! I can buy data anytime, even in the middle of the night. Super fast and reliable."
-                avatarUrl="https://picsum.photos/seed/review1/100/100"
-                imageHint="man portrait"
-                rating={5}
-              />
-              <ReviewCard
-                name="Chidinma Okoro"
-                review="The airtime to cash feature is fantastic. I had some excess airtime and got the cash in my bank account in minutes. Highly recommend!"
-                avatarUrl="https://picsum.photos/seed/review2/100/100"
-                imageHint="woman portrait"
-                rating={5}
-              />
-              <ReviewCard
-                name="Musa Ibrahim"
-                review="Finally, a data service that just works. The prices are great and the service is reliable. I've been using it for months now."
-                avatarUrl="https://picsum.photos/seed/review3/100/100"
-                imageHint="man smiling"
-                rating={4}
-              />
+              {isLoading && (
+                <>
+                  <ReviewCardSkeleton />
+                  <ReviewCardSkeleton />
+                  <ReviewCardSkeleton />
+                </>
+              )}
+              {reviews &&
+                reviews.map((review) => (
+                  <ReviewCard
+                    key={review.id}
+                    name={review.name}
+                    review={review.reviewText}
+                    avatarUrl={`https://picsum.photos/seed/${review.id}/100/100`}
+                    imageHint="user portrait"
+                    rating={review.rating}
+                  />
+                ))}
+            </div>
+            <div className="mt-12 text-center">
+              <ReviewFormDialog />
             </div>
           </div>
         </section>
-
       </main>
 
       <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
         <p className="text-xs text-muted-foreground">
-          &copy; {new Date().getFullYear()} DataConnect Nigeria. All rights reserved.
+          &copy; {new Date().getFullYear()} DataConnect Nigeria. All rights
+          reserved.
         </p>
       </footer>
     </div>
@@ -205,13 +243,32 @@ function ReviewCard({
             <Star
               key={i}
               className={`w-5 h-5 ${
-                i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/50'
+                i < rating
+                  ? 'text-yellow-400 fill-yellow-400'
+                  : 'text-muted-foreground/50'
               }`}
             />
           ))}
         </div>
         <p className="text-muted-foreground mb-4 text-sm">&quot;{review}&quot;</p>
         <h4 className="font-semibold">{name}</h4>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ReviewCardSkeleton() {
+  return (
+    <Card className="bg-background">
+      <CardContent className="p-6 flex flex-col items-center text-center animate-pulse">
+        <Avatar className="w-20 h-20 mb-4 border-2 border-primary bg-muted"></Avatar>
+        <div className="flex items-center gap-0.5 mb-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Star key={i} className="w-5 h-5 text-muted-foreground/20" />
+          ))}
+        </div>
+        <div className="h-4 w-3/4 bg-muted rounded mb-4"></div>
+        <div className="h-4 w-1/2 bg-muted rounded"></div>
       </CardContent>
     </Card>
   );
