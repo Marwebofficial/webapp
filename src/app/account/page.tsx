@@ -23,7 +23,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
-import { User as UserIcon, Hash, Sigma } from 'lucide-react';
+import { User as UserIcon, Hash, Sigma, Smartphone, Phone, Tv, Repeat } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -111,6 +111,19 @@ function RecentTransactionsSkeleton() {
                 </Table>
             </CardContent>
         </Card>
+    )
+}
+
+function ActionCard({ icon, title, href }: { icon: React.ReactNode, title: string, href: string }) {
+    return (
+        <Link href={href} passHref>
+            <Card className="hover:bg-accent/50 transition-colors h-full">
+                <CardContent className="p-4 flex flex-col items-center justify-center text-center space-y-2 h-full">
+                    {icon}
+                    <p className="font-semibold text-sm">{title}</p>
+                </CardContent>
+            </Card>
+        </Link>
     )
 }
 
@@ -228,6 +241,22 @@ export default function AccountPage() {
       </div>
 
       <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>Access our services quickly.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <ActionCard href="/buy-data" title="Buy Data" icon={<Smartphone className="w-8 h-8 text-primary" />} />
+            <ActionCard href="/buy-airtime" title="Buy Airtime" icon={<Phone className="w-8 h-8 text-primary" />} />
+            <ActionCard href="/tv-subscription" title="TV Subscription" icon={<Tv className="w-8 h-8 text-primary" />} />
+            <ActionCard href="/airtime-to-cash" title="Airtime to Cash" icon={<Repeat className="w-8 h-8 text-primary" />} />
+          </div>
+        </CardContent>
+      </Card>
+
+
+      <Card>
         <CardHeader className="flex flex-row justify-between items-start">
             <div>
                 <CardTitle>Recent Transactions</CardTitle>
@@ -285,5 +314,3 @@ export default function AccountPage() {
     </div>
   );
 }
-
-    
