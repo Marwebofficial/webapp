@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { useState, useEffect } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { doc } from 'firebase/firestore';
 
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -14,8 +15,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import {
   Card,
   CardContent,
@@ -23,57 +24,84 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { networkProviders, type Network } from "@/lib/data-plans";
-import { NetworkIcon } from "./network-icons";
-import { useToast } from "@/hooks/use-toast";
+} from '@/components/ui/card';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { networkProviders, type Network } from '@/lib/data-plans';
+import { NetworkIcon } from './network-icons';
+import { useToast } from '@/hooks/use-toast';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 
-const WHATSAPP_NUMBER = "2349040367103";
+const WHATSAPP_NUMBER = '2349040367103';
 
 const FormSchema = z.object({
   network: z.custom<Network>(
     (val) => networkProviders.some((p) => p.id === val),
     {
-      message: "Please select a network provider.",
+      message: 'Please select a network provider.',
     }
   ),
   amount: z.coerce
     .number()
-    .min(50, "Amount must be at least ₦50.")
-    .max(10000, "Amount must not exceed ₦10,000."),
+    .min(50, 'Amount must be at least ₦50.')
+    .max(10000, 'Amount must not exceed ₦10,000.'),
   phone: z
     .string()
     .regex(
       /^(\+234|0)?[7-9][01]\d{8}$/,
-      "Please enter a valid Nigerian phone number."
+      'Please enter a valid Nigerian phone number.'
     ),
-  name: z.string().min(2, "Name must be at least 2 characters.").max(50),
+  name: z.string().min(2, 'Name must be at least 2 characters.').max(50),
   email: z
     .string()
-    .email("Please enter a valid email.")
+    .email('Please enter a valid email.')
     .optional()
-    .or(z.literal("")),
+    .or(z.literal('')),
 });
 
 type FormData = z.infer<typeof FormSchema>;
 
+interface UserProfile {
+  name: string;
+  email: string;
+  phoneNumber: string;
+}
+
 export function AirtimePurchaseForm() {
   const { toast } = useToast();
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const userDocRef = useMemoFirebase(
+    () => (user ? doc(firestore, 'users', user.uid) : null),
+    [user, firestore]
+  );
+  const { data: userProfile } = useDoc<UserProfile>(userDocRef);
 
   const form = useForm<FormData>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      name: "",
-      phone: "",
-      email: "",
+      name: '',
+      phone: '',
+      email: '',
       amount: 100,
     },
   });
 
+  useEffect(() => {
+    if (userProfile) {
+      form.setValue('name', userProfile.name || '');
+      form.setValue('email', userProfile.email || '');
+      form.setValue('phone', userProfile.phoneNumber || '');
+    } else if (user) {
+      form.setValue('name', user.displayName || '');
+      form.setValue('email', user.email || '');
+    }
+  }, [user, userProfile, form]);
+
   function onSubmit(data: FormData) {
     const networkName =
-      networkProviders.find((p) => p.id === data.network)?.name || data.network;
+      networkProviders.find((p) => p.id === data.network)?.name ||
+      data.network;
 
     const message = `Hello DataConnect,
 
@@ -86,7 +114,7 @@ Recipient Phone Number: ${data.phone}
 
 My Details:
 Name: ${data.name}
-${data.email ? `Email: ${data.email}` : ""}
+${data.email ? `Email: ${data.email}` : ''}
 
 Please proceed with the top-up. Thank you.`;
 
@@ -94,7 +122,7 @@ Please proceed with the top-up. Thank you.`;
       message
     )}`;
 
-    window.open(whatsappUrl, "_blank");
+    window.open(whatsappUrl, '_blank');
   }
 
   return (
@@ -134,9 +162,9 @@ Please proceed with the top-up. Thank you.`;
                           </FormControl>
                           <FormLabel
                             className={cn(
-                              "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent/10 hover:border-primary cursor-pointer transition-all",
+                              'flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent/10 hover:border-primary cursor-pointer transition-all',
                               field.value === provider.id &&
-                                "border-primary ring-2 ring-primary bg-accent/10"
+                                'border-primary ring-2 ring-primary bg-accent/10'
                             )}
                           >
                             <NetworkIcon
@@ -155,7 +183,9 @@ Please proceed with the top-up. Thank you.`;
             />
 
             <div className="space-y-4">
-              <p className="text-lg font-semibold font-headline">2. Enter Details</p>
+              <p className="text-lg font-semibold font-headline">
+                2. Enter Details
+              </p>
               <FormField
                 control={form.control}
                 name="amount"
@@ -196,18 +226,22 @@ Please proceed with the top-up. Thank you.`;
                 )}
               />
               <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email (Optional)</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="For receipt" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email (Optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="For receipt"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           </CardContent>
           <CardFooter>

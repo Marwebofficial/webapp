@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { useState, useEffect } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { doc } from 'firebase/firestore';
 
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -14,8 +15,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import {
   Card,
   CardContent,
@@ -23,84 +24,113 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+} from '@/components/ui/card';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   dataPlans,
   networkProviders,
   type DataPlan,
   type Network,
-} from "@/lib/data-plans";
-import { NetworkIcon } from "./network-icons";
-import { useToast } from "@/hooks/use-toast";
+} from '@/lib/data-plans';
+import { NetworkIcon } from './network-icons';
+import { useToast } from '@/hooks/use-toast';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 
-const WHATSAPP_NUMBER = "2349040367103";
+const WHATSAPP_NUMBER = '2349040367103';
 
 const FormSchema = z.object({
   network: z.custom<Network>(
     (val) => networkProviders.some((p) => p.id === val),
     {
-      message: "Please select a network provider.",
+      message: 'Please select a network provider.',
     }
   ),
-  plan: z.string().min(1, "Please select a data plan."),
+  plan: z.string().min(1, 'Please select a data plan.'),
   phone: z
     .string()
     .regex(
       /^(\+234|0)?[7-9][01]\d{8}$/,
-      "Please enter a valid Nigerian phone number."
+      'Please enter a valid Nigerian phone number.'
     ),
-  name: z.string().min(2, "Name must be at least 2 characters.").max(50),
+  name: z.string().min(2, 'Name must be at least 2 characters.').max(50),
   email: z
     .string()
-    .email("Please enter a valid email.")
+    .email('Please enter a valid email.')
     .optional()
-    .or(z.literal("")),
+    .or(z.literal('')),
   referral: z.string().optional(),
 });
 
 type FormData = z.infer<typeof FormSchema>;
 
+interface UserProfile {
+  name: string;
+  email: string;
+  phoneNumber: string;
+}
+
 export function DataPurchaseForm() {
   const [selectedNetwork, setSelectedNetwork] = useState<Network | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<DataPlan | null>(null);
   const { toast } = useToast();
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const userDocRef = useMemoFirebase(
+    () => (user ? doc(firestore, 'users', user.uid) : null),
+    [user, firestore]
+  );
+  const { data: userProfile } = useDoc<UserProfile>(userDocRef);
 
   const form = useForm<FormData>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      name: "",
-      phone: "",
-      email: "",
-      referral: "",
+      name: '',
+      phone: '',
+      email: '',
+      referral: '',
     },
   });
 
+  useEffect(() => {
+    if (userProfile) {
+      form.setValue('name', userProfile.name || '');
+      form.setValue('email', userProfile.email || '');
+      form.setValue('phone', userProfile.phoneNumber || '');
+    } else if (user) {
+      form.setValue('name', user.displayName || '');
+      form.setValue('email', user.email || '');
+    }
+  }, [user, userProfile, form]);
+
   const handleNetworkChange = (networkId: Network) => {
     setSelectedNetwork(networkId);
-    form.setValue("network", networkId);
+    form.setValue('network', networkId);
     setSelectedPlan(null); // Reset plan when network changes
-    form.resetField("plan");
+    form.resetField('plan');
   };
 
   const handlePlanSelect = (plan: DataPlan) => {
     setSelectedPlan(plan);
-    form.setValue("plan", plan.id, { shouldValidate: true });
+    form.setValue('plan', plan.id, { shouldValidate: true });
   };
 
   function onSubmit(data: FormData) {
-    const planDetails = dataPlans[data.network].find((p) => p.id === data.plan);
+    const planDetails = dataPlans[data.network].find(
+      (p) => p.id === data.plan
+    );
     if (!planDetails) {
       toast({
-        title: "Error",
-        description: "Selected plan not found. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Selected plan not found. Please try again.',
+        variant: 'destructive',
       });
       return;
     }
 
     const networkName =
-      networkProviders.find((p) => p.id === data.network)?.name || data.network;
+      networkProviders.find((p) => p.id === data.network)?.name ||
+      data.network;
 
     const message = `Hello DataConnect,
 
@@ -113,8 +143,8 @@ Recipient Phone Number: ${data.phone}
 
 My Details:
 Name: ${data.name}
-${data.email ? `Email: ${data.email}` : ""}
-${data.referral ? `Referral Code: ${data.referral}` : ""}
+${data.email ? `Email: ${data.email}` : ''}
+${data.referral ? `Referral Code: ${data.referral}` : ''}
 
 Please proceed with the transaction. Thank you.`;
 
@@ -122,7 +152,7 @@ Please proceed with the transaction. Thank you.`;
       message
     )}`;
 
-    window.open(whatsappUrl, "_blank");
+    window.open(whatsappUrl, '_blank');
   }
 
   return (
@@ -164,9 +194,9 @@ Please proceed with the transaction. Thank you.`;
                           </FormControl>
                           <FormLabel
                             className={cn(
-                              "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent/10 hover:border-primary cursor-pointer transition-all",
+                              'flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent/10 hover:border-primary cursor-pointer transition-all',
                               field.value === provider.id &&
-                                "border-primary ring-2 ring-primary bg-accent/10"
+                                'border-primary ring-2 ring-primary bg-accent/10'
                             )}
                           >
                             <NetworkIcon
@@ -201,10 +231,10 @@ Please proceed with the transaction. Thank you.`;
                               key={plan.id}
                               onClick={() => handlePlanSelect(plan)}
                               className={cn(
-                                "cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1",
+                                'cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1',
                                 selectedPlan?.id === plan.id
-                                  ? "border-primary ring-2 ring-primary"
-                                  : "border-border"
+                                  ? 'border-primary ring-2 ring-primary'
+                                  : 'border-border'
                               )}
                             >
                               <CardContent className="p-4 text-center flex flex-col items-center justify-center h-full">
@@ -232,7 +262,9 @@ Please proceed with the transaction. Thank you.`;
             )}
 
             <div className="space-y-4">
-              <p className="text-lg font-semibold font-headline">3. Your Details</p>
+              <p className="text-lg font-semibold font-headline">
+                3. Your Details
+              </p>
               <FormField
                 control={form.control}
                 name="phone"
@@ -267,7 +299,11 @@ Please proceed with the transaction. Thank you.`;
                     <FormItem>
                       <FormLabel>Email (Optional)</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="For receipt" {...field} />
+                        <Input
+                          type="email"
+                          placeholder="For receipt"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

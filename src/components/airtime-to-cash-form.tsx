@@ -1,11 +1,13 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { useEffect } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { doc } from 'firebase/firestore';
 
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -13,8 +15,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import {
   Card,
   CardContent,
@@ -22,63 +24,91 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { networkProviders, type Network } from "@/lib/data-plans";
-import { NetworkIcon } from "./network-icons";
+} from '@/components/ui/card';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { networkProviders, type Network } from '@/lib/data-plans';
+import { NetworkIcon } from './network-icons';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { nigerianBanks } from "@/lib/banks";
+} from '@/components/ui/select';
+import { nigerianBanks } from '@/lib/banks';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 
-const WHATSAPP_NUMBER = "2349040367103";
+const WHATSAPP_NUMBER = '2349040367103';
 
 const FormSchema = z.object({
   network: z.custom<Network>(
     (val) => networkProviders.some((p) => p.id === val),
     {
-      message: "Please select a network provider.",
+      message: 'Please select a network provider.',
     }
   ),
   amount: z.coerce
     .number()
-    .min(100, "Amount must be at least ₦100.")
-    .max(10000, "Amount must not exceed ₦10,000."),
+    .min(100, 'Amount must be at least ₦100.')
+    .max(10000, 'Amount must not exceed ₦10,000.'),
   phone: z
     .string()
     .regex(
       /^(\+234|0)?[7-9][01]\d{8}$/,
-      "Please enter the phone number with the airtime."
+      'Please enter the phone number with the airtime.'
     ),
-  bankName: z.string().min(1, "Please select your bank."),
-  accountNumber: z.string().length(10, "Account number must be 10 digits."),
+  bankName: z.string().min(1, 'Please select your bank.'),
+  accountNumber: z.string().length(10, 'Account number must be 10 digits.'),
   accountName: z
     .string()
-    .min(3, "Account name must be at least 3 characters."),
-  name: z.string().min(2, "Name must be at least 2 characters.").max(50),
+    .min(3, 'Account name must be at least 3 characters.'),
+  name: z.string().min(2, 'Name must be at least 2 characters.').max(50),
 });
 
 type FormData = z.infer<typeof FormSchema>;
 
+interface UserProfile {
+  name: string;
+  email: string;
+  phoneNumber: string;
+}
+
 export function AirtimeToCashForm() {
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const userDocRef = useMemoFirebase(
+    () => (user ? doc(firestore, 'users', user.uid) : null),
+    [user, firestore]
+  );
+  const { data: userProfile } = useDoc<UserProfile>(userDocRef);
+
   const form = useForm<FormData>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      name: "",
-      phone: "",
+      name: '',
+      phone: '',
       amount: 1000,
-      accountNumber: "",
-      accountName: "",
+      accountNumber: '',
+      accountName: '',
     },
   });
 
+  useEffect(() => {
+    if (userProfile) {
+      form.setValue('name', userProfile.name || '');
+      form.setValue('phone', userProfile.phoneNumber || '');
+      form.setValue('accountName', userProfile.name || '');
+    } else if (user) {
+      form.setValue('name', user.displayName || '');
+      form.setValue('accountName', user.displayName || '');
+    }
+  }, [user, userProfile, form]);
+
   function onSubmit(data: FormData) {
     const networkName =
-      networkProviders.find((p) => p.id === data.network)?.name || data.network;
+      networkProviders.find((p) => p.id === data.network)?.name ||
+      data.network;
 
     const message = `Hello DataConnect,
 
@@ -102,7 +132,7 @@ Please guide me on the next steps. Thank you.`;
       message
     )}`;
 
-    window.open(whatsappUrl, "_blank");
+    window.open(whatsappUrl, '_blank');
   }
 
   return (
@@ -142,9 +172,9 @@ Please guide me on the next steps. Thank you.`;
                           </FormControl>
                           <FormLabel
                             className={cn(
-                              "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent/10 hover:border-primary cursor-pointer transition-all",
+                              'flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent/10 hover:border-primary cursor-pointer transition-all',
                               field.value === provider.id &&
-                                "border-primary ring-2 ring-primary bg-accent/10"
+                                'border-primary ring-2 ring-primary bg-accent/10'
                             )}
                           >
                             <NetworkIcon
@@ -173,7 +203,11 @@ Please guide me on the next steps. Thank you.`;
                   <FormItem>
                     <FormLabel>Airtime Amount (₦)</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="e.g., 2000" {...field} />
+                      <Input
+                        type="number"
+                        placeholder="e.g., 2000"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -256,7 +290,7 @@ Please guide me on the next steps. Thank you.`;
                   </FormItem>
                 )}
               />
-               <FormField
+              <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
