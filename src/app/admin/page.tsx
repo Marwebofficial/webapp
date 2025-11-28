@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { collection, doc, serverTimestamp, query, orderBy, deleteDoc } from 'firebase/firestore';
+import { collection, doc, query, orderBy, deleteDoc } from 'firebase/firestore';
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { networkProviders } from '@/lib/data-plans';
 import { tvProviders } from '@/lib/tv-plans';
@@ -45,8 +45,6 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Pencil, Trash2 } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
 
 interface Plan {
   id: string;
@@ -62,12 +60,13 @@ function ReviewManager() {
     const { toast } = useToast();
 
     const reviewsQuery = useMemoFirebase(
-        () => query(collection(firestore, 'reviews'), orderBy('createdAt', 'desc')),
+        () => firestore ? query(collection(firestore, 'reviews'), orderBy('createdAt', 'desc')) : null,
         [firestore]
     );
     const { data: reviews, isLoading } = useCollection<Review>(reviewsQuery);
 
     const handleDelete = async (reviewId: string) => {
+        if (!firestore) return;
         if (window.confirm('Are you sure you want to delete this review?')) {
             const reviewRef = doc(firestore, 'reviews', reviewId);
             try {
@@ -138,63 +137,6 @@ function ReviewManager() {
     )
 }
 
-function AnnouncementManager() {
-    const firestore = useFirestore();
-    const { toast } = useToast();
-    const announcementRef = useMemoFirebase(() => doc(firestore, 'announcement', 'current'), [firestore]);
-    const { data: announcement, isLoading } = useDoc<Announcement>(announcementRef);
-
-    const [text, setText] = useState('');
-    const [enabled, setEnabled] = useState(false);
-
-    useEffect(() => {
-        if (announcement) {
-            setText(announcement.text);
-            setEnabled(announcement.enabled);
-        }
-    }, [announcement]);
-
-    const handleSave = async () => {
-        await setDocumentNonBlocking(announcementRef, { text, enabled, updatedAt: serverTimestamp() }, { merge: true });
-        toast({ title: 'Success', description: 'Announcement updated!' });
-    }
-
-    if (isLoading) {
-        return <Card>
-            <CardHeader><CardTitle>Broadcast Announcement</CardTitle></CardHeader>
-            <CardContent><p>Loading...</p></CardContent>
-        </Card>
-    }
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Broadcast Announcement</CardTitle>
-                <CardDescription>Display a site-wide banner for all users.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                 <div className="flex items-center space-x-2">
-                    <Switch id="announcement-enabled" checked={enabled} onCheckedChange={setEnabled} />
-                    <Label htmlFor="announcement-enabled">Enable Announcement Banner</Label>
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="announcement-text">Announcement Text</Label>
-                    <Textarea
-                        id="announcement-text"
-                        placeholder="Enter your announcement here..."
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        />
-                </div>
-            </CardContent>
-            <CardFooter>
-                <Button onClick={handleSave}>Save Announcement</Button>
-            </CardFooter>
-        </Card>
-    )
-}
-
-
 function PlanForm({
   plan,
   networkId,
@@ -215,6 +157,7 @@ function PlanForm({
   const { toast } = useToast();
 
   const handleSave = async () => {
+    if (!firestore) return;
     if (!label || price <= 0) {
       toast({
         title: 'Invalid Input',
@@ -304,12 +247,13 @@ function PlansManager({
   const { toast } = useToast();
 
   const plansQuery = useMemoFirebase(
-    () => collection(firestore, collectionName, selectedProvider, 'plans'),
+    () => firestore ? collection(firestore, collectionName, selectedProvider, 'plans') : null,
     [firestore, collectionName, selectedProvider]
   );
   const { data: plans, isLoading } = useCollection<Plan>(plansQuery);
 
   const handleDelete = async (planId: string) => {
+    if (!firestore) return;
     if (window.confirm('Are you sure you want to delete this plan?')) {
       const planRef = doc(firestore, collectionName, selectedProvider, 'plans', planId);
       await deleteDocumentNonBlocking(planRef);
@@ -440,25 +384,21 @@ interface Review {
     } | null;
 }
 
-interface Announcement {
-    text: string;
-    enabled: boolean;
-}
-
 function NetworkStatusManager() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const statuses: NetworkStatusType[] = ['Online', 'Degraded', 'Offline'];
 
     const networkStatusQuery = useMemoFirebase(
-        () => collection(firestore, 'networkStatus'),
+        () => firestore ? collection(firestore, 'networkStatus') : null,
         [firestore]
     );
     const { data: networkStatuses, isLoading } = useCollection<NetworkStatus>(networkStatusQuery);
 
     const handleStatusChange = (networkId: string, status: NetworkStatusType) => {
+        if (!firestore) return;
         const statusRef = doc(firestore, 'networkStatus', networkId);
-        setDocumentNonBlocking(statusRef, { status, lastChecked: serverTimestamp() }, { merge: true });
+        setDocumentNonBlocking(statusRef, { status }, { merge: true });
         toast({ title: 'Success', description: 'Network status updated.' });
     };
     
@@ -473,7 +413,6 @@ function NetworkStatusManager() {
                         id: provider.id,
                         name: provider.name,
                         status: 'Online',
-                        lastChecked: serverTimestamp(),
                     }, { merge: true });
                 }
             });
@@ -581,7 +520,6 @@ export default function AdminPage() {
   return (
     <div className="container mx-auto p-4 py-8 md:p-12 space-y-8">
       <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-      <AnnouncementManager />
       <NetworkStatusManager />
       <ReviewManager />
       <PlansManager title="Data Plans" providers={networkProviders} collectionName="dataPlans" />
@@ -589,5 +527,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
-    

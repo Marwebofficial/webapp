@@ -7,7 +7,6 @@ import { Nav } from '@/components/nav';
 import { FirebaseClientProvider } from '@/firebase';
 import { HoursBanner } from '@/components/hours-banner';
 import { cn } from '@/lib/utils';
-import { AnnouncementBanner } from '@/components/announcement-banner';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:9002';
 
@@ -54,7 +53,6 @@ export default function RootLayout({
       <body className={cn('font-body antialiased h-full bg-background', ptSans.variable)}>
         <FirebaseClientProvider>
           <Nav />
-          <AnnouncementBanner />
           <HoursBanner />
           {children}
           <Toaster />
