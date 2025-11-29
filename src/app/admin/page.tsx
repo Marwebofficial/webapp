@@ -47,6 +47,7 @@ import { Badge } from '@/components/ui/badge';
 import { Pencil, Trash2, Megaphone } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Plan {
   id: string;
