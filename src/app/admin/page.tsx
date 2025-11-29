@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
@@ -32,7 +32,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { collection, doc, query, orderBy, deleteDoc } from 'firebase/firestore';
-import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { networkProviders } from '@/lib/data-plans';
 import { tvProviders } from '@/lib/tv-plans';
 import {
@@ -44,7 +44,9 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Megaphone } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Plan {
   id: string;
@@ -54,6 +56,83 @@ interface Plan {
 }
 
 const ADMIN_EMAIL = 'samuelmarvel21@gmail.com';
+
+interface Announcement {
+    text: string;
+    enabled: boolean;
+}
+
+function AnnouncementManager() {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+
+    const announcementRef = useMemoFirebase(
+        () => firestore ? doc(firestore, 'announcement', 'current') : null,
+        [firestore]
+    );
+    const { data: announcement, isLoading } = useDoc<Announcement>(announcementRef);
+
+    const [text, setText] = useState('');
+    const [enabled, setEnabled] = useState(false);
+
+    useEffect(() => {
+        if (announcement) {
+            setText(announcement.text);
+            setEnabled(announcement.enabled);
+        }
+    }, [announcement]);
+
+    const handleSave = () => {
+        if (!announcementRef) return;
+        setDocumentNonBlocking(announcementRef, { text, enabled }, { merge: true });
+        toast({ title: 'Success', description: 'Announcement updated.' });
+    };
+
+    if (isLoading) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Broadcast Announcement</CardTitle>
+                    <CardDescription>Manage site-wide announcements.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-20 w-full" />
+                    <Skeleton className="h-10 w-24" />
+                </CardContent>
+            </Card>
+        )
+    }
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Broadcast Announcement</CardTitle>
+                <CardDescription>Manage the site-wide announcement banner.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                 <div className="flex items-center space-x-2">
+                    <Switch
+                        id="announcement-enabled"
+                        checked={enabled}
+                        onCheckedChange={setEnabled}
+                    />
+                    <Label htmlFor="announcement-enabled">Enable Announcement Banner</Label>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="announcement-text">Announcement Text</Label>
+                    <Textarea
+                        id="announcement-text"
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                        placeholder="Enter your announcement here..."
+                    />
+                </div>
+                <Button onClick={handleSave}><Megaphone className="mr-2 h-4 w-4"/> Save Announcement</Button>
+            </CardContent>
+        </Card>
+    );
+}
 
 function ReviewManager() {
     const firestore = useFirestore();
@@ -173,7 +252,7 @@ function PlanForm({
       data.validity = validity;
     }
 
-    await setDocumentNonBlocking(planRef, data, { merge: true });
+    setDocumentNonBlocking(planRef, data, { merge: true });
     toast({ title: 'Success', description: 'Plan saved successfully!' });
     onSave();
   };
@@ -256,7 +335,7 @@ function PlansManager({
     if (!firestore) return;
     if (window.confirm('Are you sure you want to delete this plan?')) {
       const planRef = doc(firestore, collectionName, selectedProvider, 'plans', planId);
-      await deleteDocumentNonBlocking(planRef);
+      await deleteDoc(planRef);
       toast({ title: 'Success', description: 'Plan deleted successfully.' });
     }
   };
@@ -340,14 +419,14 @@ function PlansManager({
                   {!isTvPlan && <TableCell>{plan.validity}</TableCell>}
                   <TableCell className="text-right space-x-2">
                     <Button variant="outline" size="sm" onClick={() => openForm(plan)}>
-                        Edit
+                        <Pencil className="w-4 h-4 mr-2" /> Edit
                     </Button>
                     <Button
                       variant="destructive"
                       size="sm"
                       onClick={() => handleDelete(plan.id)}
                     >
-                      Delete
+                      <Trash2 className="w-4 h-4 mr-2" /> Delete
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -520,6 +599,7 @@ export default function AdminPage() {
   return (
     <div className="container mx-auto p-4 py-8 md:p-12 space-y-8">
       <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+      <AnnouncementManager />
       <NetworkStatusManager />
       <ReviewManager />
       <PlansManager title="Data Plans" providers={networkProviders} collectionName="dataPlans" />

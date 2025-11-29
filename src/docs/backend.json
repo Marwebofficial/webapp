@@ -193,6 +193,22 @@
         }
       },
       "required": ["id", "name", "status", "lastChecked"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "type": "object",
+      "description": "Represents a site-wide announcement banner.",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "The content of the announcement."
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether the announcement banner is currently active."
+        }
+      },
+      "required": ["text", "enabled"]
     }
   },
   "auth": {
@@ -293,8 +309,19 @@
             }
           ]
         }
+      },
+       {
+        "path": "/announcement/current",
+        "definition": {
+          "entityName": "Announcement",
+          "schema": {
+            "$ref": "#/backend/entities/Announcement"
+          },
+          "description": "A singleton document that stores the current site-wide announcement.",
+          "params": []
+        }
       }
     ],
-    "reasoning": "The Firestore structure now includes a 'transactions' subcollection for each user to store their purchase history. This allows for easy retrieval of a user's transactions while maintaining the strict ownership security model. The User entity is updated with a `createdAt` field. A top-level 'reviews' collection is added to store user testimonials. Collections for 'dataPlans', 'tvPlans' are added to allow for dynamic management of service offerings from an admin panel. A 'networkStatus' collection is added for admins to manually update and users to view the status of service providers. The ExamPins feature has been removed."
+    "reasoning": "The Firestore structure now includes a 'transactions' subcollection for each user to store their purchase history. This allows for easy retrieval of a user's transactions while maintaining the strict ownership security model. The User entity is updated with a `createdAt` field. A top-level 'reviews' collection is added to store user testimonials. Collections for 'dataPlans', 'tvPlans' are added to allow for dynamic management of service offerings from an admin panel. A 'networkStatus' collection is added for admins to manually update and users to view the status of service providers. The ExamPins feature has been removed. An `announcement` singleton document is added to store the site-wide banner content."
   }
 }
