@@ -102,7 +102,7 @@ export function SignupForm() {
         description: "Welcome to DataConnect. You are now logged in.",
       });
 
-      router.push("/");
+      router.push("/account");
     } catch (error: any) {
       console.error("Signup Error:", error);
       toast({

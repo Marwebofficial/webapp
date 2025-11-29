@@ -62,7 +62,7 @@ export function LoginForm() {
       if (data.email === 'samuelmarvel21@gmail.com') {
         router.push("/admin");
       } else {
-        router.push("/");
+        router.push("/account");
       }
 
     } catch (error: any) {
