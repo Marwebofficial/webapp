@@ -1,11 +1,11 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { doc, collection, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, updateDoc, getDocs } from 'firebase/firestore';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,7 @@ import {
 } from '@/lib/tv-plans';
 import { TvProviderIcon } from './tv-provider-icons';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking, useCollection } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { Skeleton } from './ui/skeleton';
 import { useRouter } from 'next/navigation';
 
@@ -112,6 +112,9 @@ function PurchaseFormSkeleton() {
 export function TvSubscriptionForm() {
   const [selectedProvider, setSelectedProvider] = useState<TvProviderId | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<TvPlan | null>(null);
+  const [tvPlans, setTvPlans] = useState<TvPlan[]>([]);
+  const [isLoadingPlans, setIsLoadingPlans] = useState(false);
+  
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
@@ -122,12 +125,6 @@ export function TvSubscriptionForm() {
     [user, firestore]
   );
   const { data: userProfile } = useDoc<UserProfile>(userDocRef);
-  
-  const tvPlansQuery = useMemoFirebase(
-    () => (firestore && selectedProvider ? collection(firestore, 'tvPlans', selectedProvider, 'plans') : null),
-    [firestore, selectedProvider]
-  );
-  const { data: tvPlans, isLoading: isLoadingPlans } = useCollection<TvPlan>(tvPlansQuery);
 
   const form = useForm<FormData>({
     resolver: zodResolver(FormSchema),
@@ -156,11 +153,33 @@ export function TvSubscriptionForm() {
     }
   }, [user, userProfile, form]);
 
+  const fetchPlans = useCallback(async (providerId: TvProviderId) => {
+    if (!firestore) return;
+    setIsLoadingPlans(true);
+    setTvPlans([]);
+    try {
+      const plansQuery = collection(firestore, 'tvPlans', providerId, 'plans');
+      const querySnapshot = await getDocs(plansQuery);
+      const plans = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TvPlan));
+      setTvPlans(plans);
+    } catch (error) {
+      console.error("Error fetching TV plans:", error);
+      toast({
+        title: 'Error',
+        description: 'Could not fetch TV plans. Please try again later.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingPlans(false);
+    }
+  }, [firestore, toast]);
+
   const handleProviderChange = (providerId: TvProviderId) => {
     setSelectedProvider(providerId);
     form.setValue('provider', providerId);
     setSelectedPlan(null); // Reset plan when provider changes
     form.resetField('plan');
+    fetchPlans(providerId);
   };
 
   const handlePlanSelect = (plan: TvPlan) => {

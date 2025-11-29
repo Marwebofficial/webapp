@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/carousel';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 interface Review {
   id: string;
@@ -144,18 +145,21 @@ function Testimonials() {
 }
 
 export function LandingPage() {
+  const heroImage = PlaceHolderImages.find(img => img.id === 'hero');
+  const aboutImage = PlaceHolderImages.find(img => img.id === 'about');
+
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-1">
         <section className="relative w-full h-[80vh] flex items-center justify-center text-center bg-gradient-to-r from-primary/10 to-accent/10">
-          <Image
-            src="https://picsum.photos/seed/hero/1800/1200"
-            alt="Abstract background"
+          {heroImage && <Image
+            src={heroImage.imageUrl}
+            alt={heroImage.description}
             fill
             priority
             className="object-cover -z-10 opacity-20"
-            data-ai-hint="abstract network"
-          />
+            data-ai-hint={heroImage.imageHint}
+          />}
           <div className="container px-4 md:px-6 z-10 animate-in fade-in-50 slide-in-from-bottom-10 duration-700">
             <div className="max-w-3xl mx-auto">
               <h1 className="text-4xl font-extrabold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
@@ -267,13 +271,13 @@ export function LandingPage() {
                 </p>
               </div>
               <div className="relative aspect-video rounded-xl overflow-hidden">
-                <Image
-                    src="https://picsum.photos/seed/about/600/400"
-                    alt="Our Team"
+                {aboutImage && <Image
+                    src={aboutImage.imageUrl}
+                    alt={aboutImage.description}
                     fill
                     className="object-cover"
-                    data-ai-hint="team collaboration"
-                />
+                    data-ai-hint={aboutImage.imageHint}
+                />}
               </div>
             </div>
           </div>

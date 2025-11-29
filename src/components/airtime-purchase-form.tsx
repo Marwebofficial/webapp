@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { doc, collection, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, updateDoc, getDocs } from 'firebase/firestore';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -30,7 +30,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { networkProviders, type Network } from '@/lib/data-plans';
 import { NetworkIcon } from './network-icons';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking, useCollection } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { Badge } from './ui/badge';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from './ui/skeleton';
@@ -117,6 +117,7 @@ export function AirtimePurchaseForm() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  const [networkStatuses, setNetworkStatuses] = useState<NetworkStatus[]>([]);
 
   const userDocRef = useMemoFirebase(
     () => (user ? doc(firestore, 'users', user.uid) : null),
@@ -124,11 +125,18 @@ export function AirtimePurchaseForm() {
   );
   const { data: userProfile } = useDoc<UserProfile>(userDocRef);
   
-  const networkStatusQuery = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'networkStatus') : null),
-    [firestore]
-  );
-  const { data: networkStatuses } = useCollection<NetworkStatus>(networkStatusQuery);
+  useEffect(() => {
+    async function fetchNetworkStatuses() {
+      if (firestore) {
+        const statusCol = collection(firestore, 'networkStatus');
+        const statusSnapshot = await getDocs(statusCol);
+        const statuses = statusSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NetworkStatus));
+        setNetworkStatuses(statuses);
+      }
+    }
+    fetchNetworkStatuses();
+  }, [firestore]);
+
 
   const form = useForm<FormData>({
     resolver: zodResolver(FormSchema),

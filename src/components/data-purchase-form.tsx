@@ -1,11 +1,11 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { doc, collection, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, updateDoc, getDocs } from 'firebase/firestore';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,7 @@ import {
 } from '@/lib/data-plans';
 import { NetworkIcon } from './network-icons';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking, useCollection } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
 import { useRouter } from 'next/navigation';
@@ -117,6 +117,10 @@ function PurchaseFormSkeleton() {
 export function DataPurchaseForm() {
   const [selectedNetwork, setSelectedNetwork] = useState<Network | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<DataPlan | null>(null);
+  const [dataPlans, setDataPlans] = useState<DataPlan[]>([]);
+  const [isLoadingPlans, setIsLoadingPlans] = useState(false);
+  const [networkStatuses, setNetworkStatuses] = useState<NetworkStatus[]>([]);
+
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
@@ -128,22 +132,23 @@ export function DataPurchaseForm() {
   );
   const { data: userProfile } = useDoc<UserProfile>(userDocRef);
 
-  const dataPlansQuery = useMemoFirebase(
-    () => (firestore && selectedNetwork ? collection(firestore, 'dataPlans', selectedNetwork, 'plans') : null),
-    [firestore, selectedNetwork]
-  );
-  const { data: dataPlans, isLoading: isLoadingPlans } = useCollection<DataPlan>(dataPlansQuery);
-
-  const networkStatusQuery = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'networkStatus') : null),
-    [firestore]
-  );
-  const { data: networkStatuses } = useCollection<NetworkStatus>(networkStatusQuery);
-
   const currentNetworkStatus = useMemo(
     () => networkStatuses?.find(s => s.id === selectedNetwork),
     [networkStatuses, selectedNetwork]
   );
+  
+  useEffect(() => {
+    async function fetchNetworkStatuses() {
+      if (firestore) {
+        const statusCol = collection(firestore, 'networkStatus');
+        const statusSnapshot = await getDocs(statusCol);
+        const statuses = statusSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NetworkStatus));
+        setNetworkStatuses(statuses);
+      }
+    }
+    fetchNetworkStatuses();
+  }, [firestore]);
+
 
   const form = useForm<FormData>({
     resolver: zodResolver(FormSchema),
@@ -172,11 +177,33 @@ export function DataPurchaseForm() {
     }
   }, [user, userProfile, form]);
 
+  const fetchPlans = useCallback(async (networkId: Network) => {
+    if (!firestore) return;
+    setIsLoadingPlans(true);
+    setDataPlans([]);
+    try {
+      const plansQuery = collection(firestore, 'dataPlans', networkId, 'plans');
+      const querySnapshot = await getDocs(plansQuery);
+      const plans = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DataPlan));
+      setDataPlans(plans);
+    } catch (error) {
+      console.error("Error fetching data plans:", error);
+      toast({
+        title: 'Error',
+        description: 'Could not fetch data plans. Please try again later.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingPlans(false);
+    }
+  }, [firestore, toast]);
+
   const handleNetworkChange = (networkId: Network) => {
     setSelectedNetwork(networkId);
     form.setValue('network', networkId);
     setSelectedPlan(null); // Reset plan when network changes
     form.resetField('plan');
+    fetchPlans(networkId);
   };
 
   const handlePlanSelect = (plan: DataPlan) => {
