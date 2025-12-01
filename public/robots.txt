@@ -1,0 +1,8 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+Disallow: /account
+Disallow: /admin
+Disallow: /history
+
+Sitemap: https://dataconnect-f35af.web.app/sitemap.xml

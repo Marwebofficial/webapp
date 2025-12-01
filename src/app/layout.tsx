@@ -5,11 +5,10 @@ import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import { Nav } from '@/components/nav';
 import { FirebaseClientProvider } from '@/firebase';
-import { HoursBanner } from '@/components/hours-banner';
 import { cn } from '@/lib/utils';
 import { AnnouncementBanner } from '@/components/announcement-banner';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:9002';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dataconnect-f35af.web.app';
 
 const ptSans = PT_Sans({
   subsets: ['latin'],
@@ -18,6 +17,7 @@ const ptSans = PT_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: 'DataConnect Nigeria',
   description: 'Buy mobile data plans in Nigeria quickly and easily.',
   openGraph: {
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     siteName: 'DataConnect Nigeria',
     images: [
       {
-        url: `${siteUrl}/logo.png`,
+        url: `/logo.png`,
         width: 1200,
         height: 630,
         alt: 'DataConnect Nigeria Logo',
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'DataConnect Nigeria',
     description: 'Instant Data, Airtime & Cash Conversion in Nigeria.',
-    images: [`${siteUrl}/logo.png`],
+    images: [`/logo.png`],
   },
 };
 
@@ -55,7 +55,6 @@ export default function RootLayout({
         <FirebaseClientProvider>
           <AnnouncementBanner />
           <Nav />
-          <HoursBanner />
           {children}
           <Toaster />
         </FirebaseClientProvider>
