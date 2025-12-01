@@ -13,13 +13,11 @@ import {
   Repeat,
   Tv,
   Star,
-  MessageSquare,
-  Heart,
 } from 'lucide-react';
 import Image from 'next/image';
 import { ReviewFormDialog } from './review-form-dialog';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
+import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { Skeleton } from './ui/skeleton';
 import {
   Carousel,
@@ -31,122 +29,14 @@ import {
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 
-interface Review {
-  id: string;
-  name: string;
-  reviewText: string;
-  rating: number;
-  createdAt: {
-    seconds: number;
-    nanoseconds: number;
-  } | null;
-}
+const Testimonials = lazy(() => import('./testimonials-section'));
+const AboutSection = lazy(() => import('./about-section'));
 
-function Testimonials() {
-  const firestore = useFirestore();
-  const reviewsQuery = useMemoFirebase(
-    () => {
-        if (!firestore) return null;
-        return query(
-          collection(firestore, 'reviews'),
-          orderBy('createdAt', 'desc'),
-          limit(10)
-        );
-    },
-    [firestore]
-  );
-  
-  const { data: reviews, isLoading } = useCollection<Review>(reviewsQuery);
-  
-  const formatDate = (timestamp: { seconds: number; nanoseconds: number } | null) => {
-    if (!timestamp) return 'N/A';
-    const date = new Date(timestamp.seconds * 1000);
-    return formatDistanceToNow(date, { addSuffix: true });
-  };
-  
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        className={`w-5 h-5 ${
-          i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
-        }`}
-      />
-    ));
-  };
-
-
-  return (
-    <section id="testimonials" className="w-full py-12 md:py-24 lg:py-32 bg-secondary">
-      <div className="container px-4 md:px-6">
-        <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
-            <div className="inline-block rounded-lg bg-background px-3 py-1 text-sm">
-                Testimonials
-            </div>
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
-                What Our Customers Say
-            </h2>
-            <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                Hear from our satisfied customers who trust DataConnect for their digital needs.
-            </p>
-        </div>
-        
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Skeleton className="h-60 w-full" />
-            <Skeleton className="h-60 w-full" />
-            <Skeleton className="h-60 w-full" />
-          </div>
-        ) : reviews && reviews.length > 0 ? (
-          <Carousel
-            opts={{
-              align: "start",
-              loop: true,
-            }}
-            className="w-full max-w-sm sm:max-w-xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto"
-          >
-            <CarouselContent>
-              {reviews.map((review) => (
-                <CarouselItem key={review.id} className="md:basis-1/2 lg:basis-1/3">
-                  <div className="p-1 h-full">
-                    <Card className="h-full flex flex-col">
-                      <CardHeader className="flex-row items-center gap-4 pb-4">
-                         <Avatar className="w-12 h-12">
-                            <AvatarFallback>{review.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                            <CardTitle className="text-lg">{review.name}</CardTitle>
-                            <p className="text-sm text-muted-foreground">{formatDate(review.createdAt)}</p>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="flex-1 flex flex-col justify-between pt-0">
-                         <p className="text-muted-foreground mb-4">"{review.reviewText}"</p>
-                         <div className="flex items-center gap-1">{renderStars(review.rating)}</div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="hidden sm:flex" />
-            <CarouselNext className="hidden sm:flex" />
-          </Carousel>
-        ) : (
-          <p className="text-center text-muted-foreground">No reviews yet. Be the first to write one!</p>
-        )}
-
-        <div className="mt-12 text-center">
-            <ReviewFormDialog />
-        </div>
-      </div>
-    </section>
-  )
-}
 
 export function LandingPage() {
   const heroImage = PlaceHolderImages.find(img => img.id === 'hero');
-  const aboutImage = PlaceHolderImages.find(img => img.id === 'about');
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -250,38 +140,15 @@ export function LandingPage() {
             </div>
           </div>
         </section>
+        
+        <Suspense fallback={<TestimonialsSkeleton />}>
+            <Testimonials />
+        </Suspense>
 
-        <Testimonials />
+        <Suspense fallback={<AboutSkeleton />}>
+            <AboutSection />
+        </Suspense>
 
-        <section id="about" className="w-full py-12 md:py-24 lg:py-32 bg-background">
-          <div className="container px-4 md:px-6">
-            <div className="grid gap-10 lg:grid-cols-2 lg:gap-16 items-center">
-              <div>
-                <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm mb-4">
-                  About Us
-                </div>
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-                  Your Trusted Partner in Digital Connectivity
-                </h2>
-                <p className="mt-4 text-muted-foreground md:text-xl/relaxed">
-                  DataConnect Nigeria was born from a simple idea: to make digital services accessible and affordable for everyone. We believe that staying connected shouldn't be complicated or expensive.
-                </p>
-                <p className="mt-4 text-muted-foreground md:text-xl/relaxed">
-                  Our mission is to provide a fast, reliable, and secure platform for all your mobile needs. We are a team of passionate individuals dedicated to customer satisfaction, constantly innovating to bring you the best deals and the most convenient experience.
-                </p>
-              </div>
-              <div className="relative aspect-video rounded-xl overflow-hidden">
-                {aboutImage && <Image
-                    src={aboutImage.imageUrl}
-                    alt={aboutImage.description}
-                    fill
-                    className="object-cover"
-                    data-ai-hint={aboutImage.imageHint}
-                />}
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
 
       <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
@@ -325,4 +192,53 @@ function FeatureCard({
       <p className="text-sm text-muted-foreground">{description}</p>
     </div>
   );
+}
+
+function TestimonialsSkeleton() {
+    return (
+        <section id="testimonials" className="w-full py-12 md:py-24 lg:py-32 bg-secondary">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
+                <div className="inline-block rounded-lg bg-background px-3 py-1 text-sm">
+                    Testimonials
+                </div>
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
+                    What Our Customers Say
+                </h2>
+                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                    Hear from our satisfied customers who trust DataConnect for their digital needs.
+                </p>
+            </div>
+            
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Skeleton className="h-60 w-full" />
+                <Skeleton className="h-60 w-full" />
+                <Skeleton className="h-60 w-full" />
+              </div>
+          </div>
+        </section>
+    )
+}
+
+function AboutSkeleton() {
+    return (
+         <section id="about" className="w-full py-12 md:py-24 lg:py-32 bg-background">
+          <div className="container px-4 md:px-6">
+            <div className="grid gap-10 lg:grid-cols-2 lg:gap-16 items-center">
+              <div>
+                <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm mb-4">
+                  About Us
+                </div>
+                <Skeleton className="h-10 w-3/4 mb-4" />
+                <Skeleton className="h-6 w-full mb-2" />
+                <Skeleton className="h-6 w-full mb-2" />
+                <Skeleton className="h-6 w-4/5" />
+              </div>
+              <div className="relative aspect-video rounded-xl overflow-hidden">
+                <Skeleton className="h-full w-full" />
+              </div>
+            </div>
+          </div>
+        </section>
+    )
 }
