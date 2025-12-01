@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'DataConnect Nigeria',
     description: 'Instant Data, Airtime & Cash Conversion in Nigeria.',
-    images: [`/logo.png`],
+    images: [`${siteUrl}/logo.png`],
   },
 };
 
