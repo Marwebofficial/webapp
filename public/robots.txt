@@ -1,8 +1,20 @@
-# https://www.robotstxt.org/robotstxt.html
+# See https://www.robotstxt.org/robotstxt.html for documentation on how to use the robots.txt file
+#
+# To allow all robots to crawl your site, use:
+# User-agent: *
+# Allow: /
+#
+# To prevent all robots from crawling your site, use:
+# User-agent: *
+# Disallow: /
+#
+# To prevent a specific robot from crawling your site, use:
+# User-agent: Googlebot
+# Disallow: /
+#
+# To prevent a specific file from being crawled, use:
+# User-agent: *
+# Disallow: /private/
 User-agent: *
 Allow: /
-Disallow: /account
-Disallow: /admin
-Disallow: /history
-
 Sitemap: https://dataconnect-f35af.web.app/sitemap.xml
