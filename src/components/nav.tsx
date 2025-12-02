@@ -72,6 +72,14 @@ export function Nav() {
       >
         TV Subscription
       </Link>
+       <Link
+        href="/blog"
+        className="text-sm font-medium hover:underline underline-offset-4"
+        prefetch={false}
+        onClick={closeSheet}
+      >
+        Blog
+      </Link>
       <Link
         href="/contact"
         className="text-sm font-medium hover:underline underline-offset-4"
@@ -242,3 +250,5 @@ export function Nav() {
     </header>
   );
 }
+
+    

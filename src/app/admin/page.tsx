@@ -44,18 +44,25 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { Pencil, Trash2, Megaphone, CheckCircle, WalletCards } from 'lucide-react';
+import { Pencil, Trash2, Megaphone, CheckCircle, WalletCards, PlusCircle } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import Link from 'next/link';
 
 interface Plan {
   id: string;
   label: string;
   price: number;
   validity?: string;
+}
+
+interface BlogPost {
+  id: string;
+  title: string;
+  createdAt: { seconds: number };
 }
 
 const ADMIN_EMAIL = 'samuelmarvel21@gmail.com';
@@ -76,6 +83,84 @@ interface UserProfile {
         userName: string;
         createdAt: { seconds: number, nanoseconds: number };
     }
+}
+
+function BlogManager() {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+
+    const postsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'blogPosts'), orderBy('createdAt', 'desc'));
+    }, [firestore]);
+
+    const { data: posts, isLoading, error } = useCollection<BlogPost>(postsQuery);
+
+    const handleDelete = async (postId: string) => {
+        if (!firestore) return;
+        if (window.confirm('Are you sure you want to delete this blog post?')) {
+            try {
+                await deleteDoc(doc(firestore, 'blogPosts', postId));
+                toast({ title: 'Success', description: 'Blog post deleted.' });
+            } catch (err: any) {
+                toast({ title: 'Error', description: `Could not delete post: ${err.message}`, variant: 'destructive' });
+            }
+        }
+    };
+
+    return (
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle>Blog Management</CardTitle>
+                    <CardDescription>Create, edit, and delete blog posts.</CardDescription>
+                </div>
+                <Button asChild>
+                    <Link href="/admin/blog/editor">
+                        <PlusCircle className="w-4 h-4 mr-2" />
+                        Create New Post
+                    </Link>
+                </Button>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Title</TableHead>
+                            <TableHead>Date Created</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading ? (
+                            <TableRow><TableCell colSpan={3} className="h-24 text-center">Loading posts...</TableCell></TableRow>
+                        ) : posts && posts.length > 0 ? (
+                            posts.map(post => (
+                                <TableRow key={post.id}>
+                                    <TableCell className="font-medium">{post.title}</TableCell>
+                                    <TableCell>
+                                        {post.createdAt ? format(new Date(post.createdAt.seconds * 1000), 'MMM d, yyyy') : 'N/A'}
+                                    </TableCell>
+                                    <TableCell className="text-right space-x-2">
+                                        <Button asChild variant="outline" size="sm">
+                                            <Link href={`/admin/blog/editor?slug=${post.id}`}>
+                                                <Pencil className="w-4 h-4 mr-2" /> Edit
+                                            </Link>
+                                        </Button>
+                                        <Button variant="destructive" size="sm" onClick={() => handleDelete(post.id)}>
+                                            <Trash2 className="w-4 h-4 mr-2" /> Delete
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow><TableCell colSpan={3} className="h-24 text-center">No blog posts found.</TableCell></TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    );
 }
 
 function UserManagement() {
@@ -887,6 +972,7 @@ export default function AdminPage() {
       <h1 className="text-3xl font-bold">Admin Dashboard</h1>
       <FundingApprovalManager />
       <UserManagement />
+      <BlogManager />
       <AnnouncementManager />
       <NetworkStatusManager />
       <ReviewManager />
@@ -895,5 +981,7 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
 
     
