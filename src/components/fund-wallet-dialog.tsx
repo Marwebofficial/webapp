@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -27,6 +26,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
+import { Copy } from 'lucide-react';
 
 const fundingSchema = z.object({
   amount: z.coerce
@@ -37,8 +37,13 @@ const fundingSchema = z.object({
 
 type FundingFormData = z.infer<typeof fundingSchema>;
 
+const ACCOUNT_NUMBER = '9040367103';
+const BANK_NAME = 'Palmpay';
+const ACCOUNT_NAME = 'Onyeka Marvelous';
+
 export function FundWalletDialog({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [fundingStep, setFundingStep] = useState<'amount' | 'details'>('amount');
   const { toast } = useToast();
 
   const form = useForm<FundingFormData>({
@@ -52,63 +57,137 @@ export function FundWalletDialog({ children }: { children: React.ReactNode }) {
   const charge = amount * 0.01;
   const amountToReceive = amount - charge;
 
-  const onSubmit = (data: FundingFormData) => {
-    // TODO: Implement the actual funding logic
-    console.log('Funding request:', data);
-    toast({
-      title: 'Proceeding to Funding',
-      description: 'You will be redirected to complete the payment.',
-    });
-    setOpen(false); // Close the dialog for now
+  const onSubmit = () => {
+    setFundingStep('details');
   };
 
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      // Reset to the first step when the dialog is closed
+      setTimeout(() => {
+        form.reset();
+        setFundingStep('amount');
+      }, 300);
+    }
+  };
+  
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: 'Copied!',
+      description: `${text} copied to clipboard.`,
+    });
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Fund Your Wallet</DialogTitle>
-          <DialogDescription>
-            Enter the amount you want to add to your wallet. A 1% processing fee will be applied.
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Amount to Fund (₦)</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="e.g., 5000" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="space-y-2 rounded-md border bg-secondary/50 p-4 text-sm">
-                <div className="flex justify-between">
+      <DialogContent className="sm:max-w-md">
+        {fundingStep === 'amount' ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Fund Your Wallet</DialogTitle>
+              <DialogDescription>
+                Enter the amount you want to add. A 1% processing fee will be applied.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Amount to Fund (₦)</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="e.g., 5000" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="space-y-2 rounded-md border bg-secondary/50 p-4 text-sm">
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">Processing Fee (1%):</span>
                     <span className="font-medium">₦{charge.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                </div>
-                <div className="flex justify-between font-semibold text-lg">
+                  </div>
+                  <div className="flex justify-between font-semibold text-lg">
                     <span>You will receive:</span>
                     <span className="text-primary">₦{amountToReceive.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
                 </div>
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button type="button" variant="ghost">
+                      Cancel
+                    </Button>
+                  </DialogClose>
+                  <Button type="submit" disabled={!form.formState.isValid}>
+                    Proceed
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle>Complete Your Transfer</DialogTitle>
+              <DialogDescription>
+                Transfer the exact amount below to the specified account.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+                <div className="text-center">
+                    <p className="text-sm text-muted-foreground">Amount to Transfer</p>
+                    <p className="text-3xl font-bold tracking-tight">₦{amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                </div>
+                <div className="space-y-3 rounded-md border bg-background p-4">
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <p className="text-xs text-muted-foreground">Account Number</p>
+                            <p className="font-mono font-semibold">{ACCOUNT_NUMBER}</p>
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={() => copyToClipboard(ACCOUNT_NUMBER)}>
+                            <Copy className="h-4 w-4" />
+                        </Button>
+                    </div>
+                     <div className="flex justify-between items-center">
+                        <div>
+                            <p className="text-xs text-muted-foreground">Bank Name</p>
+                            <p className="font-semibold">{BANK_NAME}</p>
+                        </div>
+                         <Button variant="ghost" size="icon" onClick={() => copyToClipboard(BANK_NAME)}>
+                            <Copy className="h-4 w-4" />
+                        </Button>
+                    </div>
+                     <div className="flex justify-between items-center">
+                        <div>
+                            <p className="text-xs text-muted-foreground">Account Name</p>
+                            <p className="font-semibold">{ACCOUNT_NAME}</p>
+                        </div>
+                         <Button variant="ghost" size="icon" onClick={() => copyToClipboard(ACCOUNT_NAME)}>
+                            <Copy className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
+                <p className="text-center text-xs text-destructive px-2">
+                    IMPORTANT: After making the transfer, please contact us on WhatsApp with a screenshot of your receipt to get your wallet funded.
+                </p>
             </div>
             <DialogFooter>
+              <Button onClick={() => setFundingStep('amount')}>
+                Go Back
+              </Button>
               <DialogClose asChild>
-                <Button type="button" variant="ghost">
-                  Cancel
+                <Button type="button" variant="outline">
+                  Close
                 </Button>
               </DialogClose>
-              <Button type="submit" disabled={!form.formState.isValid}>
-                Proceed to Fund
-              </Button>
             </DialogFooter>
-          </form>
-        </Form>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
