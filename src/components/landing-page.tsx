@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { ReviewFormDialog } from './review-form-dialog';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { Skeleton } from './ui/skeleton';
 import {
@@ -30,6 +30,7 @@ import { Avatar, AvatarFallback } from './ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import React, { Suspense, lazy, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 const Testimonials = lazy(() => import('./testimonials-section'));
 const AboutSection = lazy(() => import('./about-section'));
@@ -37,6 +38,22 @@ const AboutSection = lazy(() => import('./about-section'));
 
 export function LandingPage() {
   const heroImage = PlaceHolderImages.find(img => img.id === 'hero');
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      router.replace('/account');
+    }
+  }, [user, isUserLoading, router]);
+
+  if (isUserLoading || user) {
+    return (
+        <div className="flex h-screen items-center justify-center">
+            <p>Loading...</p>
+        </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -242,3 +259,5 @@ function AboutSkeleton() {
         </section>
     )
 }
+
+    
