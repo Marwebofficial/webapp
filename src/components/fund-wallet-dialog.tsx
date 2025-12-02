@@ -26,7 +26,10 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { Copy } from 'lucide-react';
+import { Copy, Mail } from 'lucide-react';
+import { useUser, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import Link from 'next/link';
 
 const fundingSchema = z.object({
   amount: z.coerce
@@ -40,11 +43,25 @@ type FundingFormData = z.infer<typeof fundingSchema>;
 const ACCOUNT_NUMBER = '9040367103';
 const BANK_NAME = 'Palmpay';
 const ACCOUNT_NAME = 'Onyeka Marvelous';
+const ADMIN_EMAIL = 'samuelmarvel21@gmail.com';
+
+interface UserProfile {
+  phoneNumber: string;
+}
 
 export function FundWalletDialog({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [fundingStep, setFundingStep] = useState<'amount' | 'details'>('amount');
   const { toast } = useToast();
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const userDocRef = useMemoFirebase(
+    () => (user ? doc(firestore, 'users', user.uid) : null),
+    [user, firestore]
+  );
+  const { data: userProfile } = useDoc<UserProfile>(userDocRef);
+
 
   const form = useForm<FundingFormData>({
     resolver: zodResolver(fundingSchema),
@@ -79,6 +96,13 @@ export function FundWalletDialog({ children }: { children: React.ReactNode }) {
       description: `${text} copied to clipboard.`,
     });
   }
+
+  const mailtoLink = `mailto:${ADMIN_EMAIL}?subject=${encodeURIComponent(
+    `Wallet Funding Request - ₦${amount}`
+  )}&body=${encodeURIComponent(
+    `Hello Admin,\n\nI have just sent ₦${amount.toLocaleString()} for my wallet funding.\n\nMy Details:\nName: ${user?.displayName || 'N/A'}\nPhone: ${userProfile?.phoneNumber || 'N/A'}\n\nPlease credit my wallet. Thank you.`
+  )}`;
+
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -135,7 +159,7 @@ export function FundWalletDialog({ children }: { children: React.ReactNode }) {
             <DialogHeader>
               <DialogTitle>Complete Your Transfer</DialogTitle>
               <DialogDescription>
-                Transfer the exact amount below to the specified account.
+                Transfer the exact amount below, then click the 'Notify Admin' button.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -172,17 +196,20 @@ export function FundWalletDialog({ children }: { children: React.ReactNode }) {
                         </Button>
                     </div>
                 </div>
-                <p className="text-center text-xs text-destructive px-2">
-                    IMPORTANT: After making the transfer, please contact us on WhatsApp with a screenshot of your receipt to get your wallet funded.
-                </p>
+                <Button asChild className="w-full">
+                  <Link href={mailtoLink}>
+                    <Mail className="mr-2 h-4 w-4" />
+                    Notify Admin of Transfer
+                  </Link>
+                </Button>
             </div>
-            <DialogFooter>
-              <Button onClick={() => setFundingStep('amount')}>
+            <DialogFooter className="sm:justify-between gap-2">
+              <Button variant="outline" onClick={() => setFundingStep('amount')}>
                 Go Back
               </Button>
               <DialogClose asChild>
-                <Button type="button" variant="outline">
-                  Close
+                <Button type="button">
+                  Done
                 </Button>
               </DialogClose>
             </DialogFooter>
