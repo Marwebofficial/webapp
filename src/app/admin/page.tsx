@@ -70,6 +70,8 @@ interface UserProfile {
     email: string;
     pendingFundingRequest?: {
         amount: number;
+        bankName: string;
+        userName: string;
         createdAt: { seconds: number, nanoseconds: number };
     }
 }
@@ -143,6 +145,7 @@ function FundingApprovalManager() {
                         <TableRow>
                             <TableHead>User</TableHead>
                             <TableHead>Amount</TableHead>
+                            <TableHead>Bank</TableHead>
                             <TableHead>Date</TableHead>
                             <TableHead className="text-right">Action</TableHead>
                         </TableRow>
@@ -150,16 +153,17 @@ function FundingApprovalManager() {
                     <TableBody>
                         {isLoading ? (
                              <TableRow>
-                                <TableCell colSpan={4} className="h-24 text-center">Loading requests...</TableCell>
+                                <TableCell colSpan={5} className="h-24 text-center">Loading requests...</TableCell>
                             </TableRow>
                         ) : usersWithRequests && usersWithRequests.length > 0 ? (
                             usersWithRequests.map(user => (
                                 <TableRow key={user.id}>
                                     <TableCell>
-                                        <div className="font-medium">{user.name}</div>
+                                        <div className="font-medium">{user.pendingFundingRequest?.userName || user.name}</div>
                                         <div className="text-sm text-muted-foreground">{user.email}</div>
                                     </TableCell>
                                     <TableCell>₦{user.pendingFundingRequest?.amount.toLocaleString()}</TableCell>
+                                    <TableCell>{user.pendingFundingRequest?.bankName}</TableCell>
                                     <TableCell>
                                         {user.pendingFundingRequest?.createdAt ?
                                             format(new Date(user.pendingFundingRequest.createdAt.seconds * 1000), "MMM d, yyyy, h:mm a")
@@ -176,7 +180,7 @@ function FundingApprovalManager() {
                             ))
                         ) : (
                              <TableRow>
-                                <TableCell colSpan={4} className="h-24 text-center">No pending funding requests.</TableCell>
+                                <TableCell colSpan={5} className="h-24 text-center">No pending funding requests.</TableCell>
                             </TableRow>
                         )}
                     </TableBody>

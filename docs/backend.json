@@ -42,6 +42,8 @@
             "description": "Details of a pending wallet funding request.",
             "properties": {
                 "amount": { "type": "number" },
+                "bankName": { "type": "string" },
+                "userName": { "type": "string" },
                 "createdAt": { "type": "string", "format": "date-time" }
             }
         }

@@ -29,12 +29,15 @@ import { useToast } from '@/hooks/use-toast';
 import { Copy } from 'lucide-react';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc, serverTimestamp } from 'firebase/firestore';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { nigerianBanks } from '@/lib/banks';
 
 const fundingSchema = z.object({
   amount: z.coerce
     .number()
     .min(100, 'Minimum funding amount is ₦100.')
     .max(50000, 'Maximum funding amount is ₦50,000.'),
+  bankName: z.string().min(1, 'Please select your bank.'),
 });
 
 type FundingFormData = z.infer<typeof fundingSchema>;
@@ -54,6 +57,7 @@ export function FundWalletDialog({ children }: { children: React.ReactNode }) {
     resolver: zodResolver(fundingSchema),
     defaultValues: {
       amount: 1000,
+      bankName: '',
     },
   });
 
@@ -61,7 +65,7 @@ export function FundWalletDialog({ children }: { children: React.ReactNode }) {
   const charge = amount * 0.01;
   const amountToReceive = amount - charge;
 
-  const onSubmit = () => {
+  const onSubmit = (data: FundingFormData) => {
     if (!user) {
         toast({ title: "Not Logged In", description: "You must be logged in to fund your wallet.", variant: "destructive" });
         return;
@@ -69,7 +73,9 @@ export function FundWalletDialog({ children }: { children: React.ReactNode }) {
     const userDocRef = doc(firestore, 'users', user.uid);
     updateDocumentNonBlocking(userDocRef, {
         pendingFundingRequest: {
-            amount: amount,
+            amount: data.amount,
+            bankName: data.bankName,
+            userName: user.displayName || 'N/A',
             createdAt: serverTimestamp(),
         }
     });
@@ -105,7 +111,7 @@ export function FundWalletDialog({ children }: { children: React.ReactNode }) {
             <DialogHeader>
               <DialogTitle>Fund Your Wallet</DialogTitle>
               <DialogDescription>
-                Enter the amount you want to add. A 1% processing fee will be applied.
+                Enter your details below. A 1% processing fee will be applied.
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -122,6 +128,30 @@ export function FundWalletDialog({ children }: { children: React.ReactNode }) {
                       <FormMessage />
                     </FormItem>
                   )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="bankName"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Your Bank</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                            <SelectValue placeholder="Select the bank you're transferring from" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {nigerianBanks.map((bank) => (
+                            <SelectItem key={bank} value={bank}>
+                                {bank}
+                            </SelectItem>
+                            ))}
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
                 />
                 <div className="space-y-2 rounded-md border bg-secondary/50 p-4 text-sm">
                   <div className="flex justify-between">
