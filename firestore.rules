@@ -18,6 +18,10 @@ service cloud.firestore {
     function isAdmin() {
         return request.auth.token.email == 'samuelmarvel21@gmail.com';
     }
+    
+    function isUpdatingOwnRequest(userId) {
+      return isOwner(userId) && request.resource.data.keys().hasOnly(['pendingFundingRequest']);
+    }
 
     // ----------------------------------------------------------------
     // Collection Rules
@@ -27,7 +31,7 @@ service cloud.firestore {
       allow read: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId) || isAdmin();
+      allow update: if isUpdatingOwnRequest(userId) || isAdmin();
       allow delete: if isOwner(userId) || isAdmin();
 
       match /transactions/{transactionId} {

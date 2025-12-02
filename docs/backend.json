@@ -67,7 +67,8 @@
             "Data Purchase",
             "Airtime Purchase",
             "Airtime to Cash",
-            "TV Subscription"
+            "TV Subscription",
+            "Wallet Funding"
           ],
           "description": "The type of transaction."
         },
@@ -80,7 +81,8 @@
             "9mobile",
             "dstv",
             "gotv",
-            "startimes"
+            "startimes",
+            "system"
           ],
           "description": "The mobile network or service provider."
         },

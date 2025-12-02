@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import {
@@ -31,8 +31,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { collection, doc, deleteDoc, getDocs } from 'firebase/firestore';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, doc, deleteDoc, getDocs, query, where, serverTimestamp, writeBatch, increment } from 'firebase/firestore';
+import { setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { networkProviders } from '@/lib/data-plans';
 import { tvProviders } from '@/lib/tv-plans';
 import {
@@ -44,7 +44,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { Pencil, Trash2, Megaphone } from 'lucide-react';
+import { Pencil, Trash2, Megaphone, CheckCircle } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -62,6 +62,128 @@ const ADMIN_EMAIL = 'samuelmarvel21@gmail.com';
 interface Announcement {
     text: string;
     enabled: boolean;
+}
+
+interface UserProfile {
+    id: string;
+    name: string;
+    email: string;
+    pendingFundingRequest?: {
+        amount: number;
+        createdAt: { seconds: number, nanoseconds: number };
+    }
+}
+
+function FundingApprovalManager() {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+
+    const usersWithRequestsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'users'), where('pendingFundingRequest', '!=', null));
+    }, [firestore]);
+
+    const { data: usersWithRequests, isLoading, error } = useCollection<UserProfile>(usersWithRequestsQuery);
+
+    const handleApprove = async (user: UserProfile) => {
+        if (!firestore || !user.pendingFundingRequest) return;
+
+        const amountToCredit = user.pendingFundingRequest.amount * 0.99; // Apply 1% charge
+        const userRef = doc(firestore, 'users', user.id);
+        const transactionRef = doc(collection(firestore, 'users', user.id, 'transactions'));
+
+        const batch = writeBatch(firestore);
+
+        // Update user's wallet balance and clear the pending request
+        batch.update(userRef, {
+            walletBalance: increment(amountToCredit),
+            pendingFundingRequest: null
+        });
+        
+        // Create a transaction record
+        batch.set(transactionRef, {
+            type: 'Wallet Funding',
+            network: 'system',
+            amount: amountToCredit,
+            details: `Wallet funded with ₦${user.pendingFundingRequest.amount.toLocaleString()}`,
+            recipientPhone: user.id,
+            status: 'Completed',
+            createdAt: serverTimestamp(),
+        });
+
+        try {
+            await batch.commit();
+            toast({
+                title: "Success!",
+                description: `${user.name}'s wallet has been credited with ₦${amountToCredit.toLocaleString()}.`,
+            });
+        } catch (error: any) {
+            console.error("Approval Error: ", error);
+            toast({
+                title: "Approval Failed",
+                description: `Could not approve request. Error: ${error.message}`,
+                variant: 'destructive',
+            });
+        }
+    };
+    
+    if (error) {
+        console.error("Firestore Error in FundingApprovalManager: ", error);
+    }
+    
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Wallet Funding Approvals</CardTitle>
+                <CardDescription>Review and approve pending wallet funding requests.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>User</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead className="text-right">Action</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading ? (
+                             <TableRow>
+                                <TableCell colSpan={4} className="h-24 text-center">Loading requests...</TableCell>
+                            </TableRow>
+                        ) : usersWithRequests && usersWithRequests.length > 0 ? (
+                            usersWithRequests.map(user => (
+                                <TableRow key={user.id}>
+                                    <TableCell>
+                                        <div className="font-medium">{user.name}</div>
+                                        <div className="text-sm text-muted-foreground">{user.email}</div>
+                                    </TableCell>
+                                    <TableCell>₦{user.pendingFundingRequest?.amount.toLocaleString()}</TableCell>
+                                    <TableCell>
+                                        {user.pendingFundingRequest?.createdAt ?
+                                            format(new Date(user.pendingFundingRequest.createdAt.seconds * 1000), "MMM d, yyyy, h:mm a")
+                                            : 'N/A'
+                                        }
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button size="sm" onClick={() => handleApprove(user)}>
+                                            <CheckCircle className="w-4 h-4 mr-2"/>
+                                            Approve
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                             <TableRow>
+                                <TableCell colSpan={4} className="h-24 text-center">No pending funding requests.</TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    );
 }
 
 function AnnouncementManager() {
@@ -656,6 +778,7 @@ export default function AdminPage() {
   return (
     <div className="container mx-auto p-4 py-8 md:p-12 space-y-8">
       <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+      <FundingApprovalManager />
       <AnnouncementManager />
       <NetworkStatusManager />
       <ReviewManager />

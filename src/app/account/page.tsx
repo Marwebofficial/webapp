@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
 import {
   Card,
   CardContent,
@@ -29,6 +29,8 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { FundWalletDialog } from '@/components/fund-wallet-dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
 
 interface Transaction {
   id: string;
@@ -43,6 +45,15 @@ interface Transaction {
     nanoseconds: number;
   } | null;
 }
+
+interface UserProfile {
+    walletBalance?: number;
+    pendingFundingRequest?: {
+        amount: number;
+        createdAt: any;
+    };
+}
+
 
 function AccountInfoSkeleton() {
     return (
@@ -142,6 +153,12 @@ export default function AccountPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  
+  const userDocRef = useMemoFirebase(
+    () => user ? doc(firestore, 'users', user.uid) : null,
+    [user, firestore]
+  );
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
   const allTransactionsQuery = useMemoFirebase(
     () => {
@@ -194,7 +211,7 @@ export default function AccountPage() {
     return format(date, "MMM d, yyyy");
   };
 
-  if (isUserLoading) {
+  if (isUserLoading || isProfileLoading) {
     return (
       <div className="container mx-auto p-4 py-8 md:p-12 space-y-8">
         <AccountInfoSkeleton />
@@ -224,6 +241,16 @@ export default function AccountPage() {
         </CardHeader>
       </Card>
       
+       {userProfile?.pendingFundingRequest && (
+        <Alert variant="default" className="bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-200">
+          <Info className="h-4 w-4 !text-blue-800 dark:!text-blue-200" />
+          <AlertTitle>Pending Funding Request</AlertTitle>
+          <AlertDescription>
+            We are processing your request to fund ₦{userProfile.pendingFundingRequest.amount.toLocaleString()}. Your wallet will be credited shortly after confirmation.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="grid gap-4 md:grid-cols-3">
          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -231,7 +258,7 @@ export default function AccountPage() {
                 <Wallet className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">₦0.00</div>
+                <div className="text-2xl font-bold">₦{(userProfile?.walletBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                 <p className="text-xs text-muted-foreground">Available for purchases</p>
             </CardContent>
             <CardFooter>
