@@ -28,6 +28,7 @@ import { User as UserIcon, Hash, Sigma, Smartphone, Phone, Tv, Repeat, Wallet } 
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { FundWalletDialog } from '@/components/fund-wallet-dialog';
 
 interface Transaction {
   id: string;
@@ -234,9 +235,11 @@ export default function AccountPage() {
                 <p className="text-xs text-muted-foreground">Available for purchases</p>
             </CardContent>
             <CardFooter>
-                <Button className="w-full">
+               <FundWalletDialog>
+                  <Button className="w-full">
                     <Wallet className="mr-2 h-4 w-4" /> Fund Wallet
-                </Button>
+                  </Button>
+               </FundWalletDialog>
             </CardFooter>
         </Card>
         <Card>
