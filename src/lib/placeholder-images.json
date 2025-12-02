@@ -3,8 +3,8 @@
     {
       "id": "hero",
       "description": "Abstract network background for the hero section.",
-      "imageUrl": "https://images.unsplash.com/photo-1593720213428-28a5b9e94613?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxhYnN0cmFjdCUyMHRlY2hub2xvZ3klMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc2NDM2OTg4Mnww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "abstract technology"
+      "imageUrl": "https://images.unsplash.com/photo-1550745165-9bc0b252726a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHx0ZWNobm9sb2d5JTIwYWJzdHJhY3R8ZW58MHx8fHwxNzY0NTIzMDY0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "technology abstract"
     },
     {
       "id": "about",
