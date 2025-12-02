@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { collection, doc, deleteDoc, getDocs, query, where, serverTimestamp, writeBatch, increment } from 'firebase/firestore';
+import { collection, doc, deleteDoc, getDocs, query, where, serverTimestamp, writeBatch, increment, updateDoc } from 'firebase/firestore';
 import { setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { networkProviders } from '@/lib/data-plans';
 import { tvProviders } from '@/lib/tv-plans';
@@ -44,11 +44,12 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { Pencil, Trash2, Megaphone, CheckCircle } from 'lucide-react';
+import { Pencil, Trash2, Megaphone, CheckCircle, WalletCards } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface Plan {
   id: string;
@@ -68,12 +69,114 @@ interface UserProfile {
     id: string;
     name: string;
     email: string;
+    walletBalance?: number;
     pendingFundingRequest?: {
         amount: number;
         bankName: string;
         userName: string;
         createdAt: { seconds: number, nanoseconds: number };
     }
+}
+
+function UserManagement() {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+
+    const usersQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return collection(firestore, 'users');
+    }, [firestore]);
+
+    const { data: users, isLoading, error } = useCollection<UserProfile>(usersQuery);
+
+    const handleClearBalance = async (userId: string) => {
+        if (!firestore) return;
+        const userRef = doc(firestore, 'users', userId);
+        try {
+            await updateDoc(userRef, {
+                walletBalance: 0
+            });
+            toast({
+                title: "Success!",
+                description: "User's wallet balance has been cleared.",
+            });
+        } catch (error: any) {
+            console.error("Clear Balance Error: ", error);
+            toast({
+                title: "Clear Balance Failed",
+                description: `Could not clear balance. Error: ${error.message}`,
+                variant: 'destructive',
+            });
+        }
+    };
+    
+    if (error) {
+        console.error("Firestore Error in UserManagement: ", error);
+    }
+    
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>User Management</CardTitle>
+                <CardDescription>View and manage user wallet balances.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>User</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Wallet Balance</TableHead>
+                            <TableHead className="text-right">Action</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading ? (
+                             <TableRow>
+                                <TableCell colSpan={4} className="h-24 text-center">Loading users...</TableCell>
+                            </TableRow>
+                        ) : users && users.length > 0 ? (
+                            users.map(user => (
+                                <TableRow key={user.id}>
+                                    <TableCell>
+                                        <div className="font-medium">{user.name}</div>
+                                    </TableCell>
+                                    <TableCell>{user.email}</TableCell>
+                                    <TableCell>₦{(user.walletBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                                    <TableCell className="text-right">
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button size="sm" variant="destructive">
+                                                    <WalletCards className="w-4 h-4 mr-2"/>
+                                                    Clear Balance
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        This action will set {user.name}'s wallet balance to ₦0.00. This cannot be undone.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleClearBalance(user.id)}>Continue</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                             <TableRow>
+                                <TableCell colSpan={4} className="h-24 text-center">No users found.</TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    );
 }
 
 function FundingApprovalManager() {
@@ -783,6 +886,7 @@ export default function AdminPage() {
     <div className="container mx-auto p-4 py-8 md:p-12 space-y-8">
       <h1 className="text-3xl font-bold">Admin Dashboard</h1>
       <FundingApprovalManager />
+      <UserManagement />
       <AnnouncementManager />
       <NetworkStatusManager />
       <ReviewManager />
@@ -791,3 +895,5 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
