@@ -6,7 +6,6 @@ import './globals.css';
 import { Nav } from '@/components/nav';
 import { FirebaseClientProvider } from '@/firebase';
 import { cn } from '@/lib/utils';
-import { AnnouncementBanner } from '@/components/announcement-banner';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dataconnect-f35af.web.app';
 
@@ -57,7 +56,6 @@ export default function RootLayout({
       </head>
       <body className={cn('font-body antialiased h-full bg-background', ptSans.variable)}>
         <FirebaseClientProvider>
-          <AnnouncementBanner />
           <Nav />
           {children}
           <Toaster />

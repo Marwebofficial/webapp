@@ -3,7 +3,7 @@
 
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
 import {
   Card,
@@ -24,13 +24,22 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
-import { User as UserIcon, Hash, Sigma, Smartphone, Phone, Tv, Repeat, Wallet } from 'lucide-react';
+import { User as UserIcon, Hash, Sigma, Smartphone, Phone, Tv, Repeat, Wallet, Megaphone } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { FundWalletDialog } from '@/components/fund-wallet-dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
 
 interface Transaction {
   id: string;
@@ -52,6 +61,11 @@ interface UserProfile {
         amount: number;
         createdAt: any;
     };
+}
+
+interface Announcement {
+    text: string;
+    enabled: boolean;
 }
 
 
@@ -153,12 +167,26 @@ export default function AccountPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  const [showAnnouncement, setShowAnnouncement] = useState(false);
   
   const userDocRef = useMemoFirebase(
     () => user ? doc(firestore, 'users', user.uid) : null,
     [user, firestore]
   );
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
+
+  const announcementRef = useMemoFirebase(
+    () => firestore ? doc(firestore, 'announcement', 'current') : null,
+    [firestore]
+  );
+  const { data: announcement, isLoading: isAnnouncementLoading } = useDoc<Announcement>(announcementRef);
+
+  useEffect(() => {
+    if (!isAnnouncementLoading && announcement?.enabled && announcement.text) {
+      setShowAnnouncement(true);
+    }
+  }, [announcement, isAnnouncementLoading]);
+
 
   const allTransactionsQuery = useMemoFirebase(
     () => {
@@ -211,7 +239,7 @@ export default function AccountPage() {
     return format(date, "MMM d, yyyy");
   };
 
-  if (isUserLoading || isProfileLoading) {
+  if (isUserLoading || isProfileLoading || isAnnouncementLoading) {
     return (
       <div className="container mx-auto p-4 py-8 md:p-12 space-y-8">
         <AccountInfoSkeleton />
@@ -227,6 +255,22 @@ export default function AccountPage() {
 
   return (
     <div className="container mx-auto p-4 py-8 md:p-12 space-y-8">
+       <AlertDialog open={showAnnouncement} onOpenChange={setShowAnnouncement}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="bg-primary/10 p-2 rounded-full">
+                 <Megaphone className="h-6 w-6 text-primary" />
+              </div>
+              <AlertDialogTitle className="text-2xl">Announcement</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-base text-foreground">
+              {announcement?.text}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogAction>Got it!</AlertDialogAction>
+        </AlertDialogContent>
+      </AlertDialog>
       <Card>
         <CardHeader className="flex flex-row items-center gap-4">
           <Avatar className="h-16 w-16">
