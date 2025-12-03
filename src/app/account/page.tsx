@@ -38,7 +38,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const Testimonials = lazy(() => import('@/components/testimonials-section'));
 
@@ -335,18 +334,9 @@ export default function AccountPage() {
                         <p className="text-xs text-muted-foreground">Available for purchases</p>
                     </CardContent>
                     <CardFooter>
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button className="w-full" disabled>
-                                        <Wallet className="mr-2 h-4 w-4" /> Fund Wallet
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Coming Soon!</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
+                        <Button className="w-full" disabled>
+                            <Wallet className="mr-2 h-4 w-4" /> Fund Wallet (Coming Soon!)
+                        </Button>
                     </CardFooter>
                 </Card>
                 <Card>
