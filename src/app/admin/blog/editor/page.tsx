@@ -2,11 +2,11 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useFirestore, useDoc, useUser, useMemoFirebase } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,13 +15,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import Image from 'next/image';
+import { Sparkles, Loader2 } from 'lucide-react';
+import { generatePostContent } from '@/ai/flows/generate-post-flow';
 
 const FormSchema = z.object({
     title: z.string().min(5, "Title must be at least 5 characters long."),
     slug: z.string().min(3, "URL Slug must be at least 3 characters long.").regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug can only contain lowercase letters, numbers, and hyphens.'),
     excerpt: z.string().min(20, "Excerpt must be at least 20 characters.").max(200, "Excerpt cannot exceed 200 characters."),
     imageUrl: z.string().url("Please enter a valid image URL."),
-    content: z.string().min(100, "Content must be at least 100 characters long."),
+    content: z.string().min(50, "Content must be at least 50 characters long."),
 });
 
 type FormData = z.infer<typeof FormSchema>;
@@ -34,6 +37,7 @@ function BlogPostEditor() {
     const slug = searchParams.get('slug');
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(!!slug);
+    const [isGenerating, setIsGenerating] = useState(false);
 
     const form = useForm<FormData>({
         resolver: zodResolver(FormSchema),
@@ -45,6 +49,8 @@ function BlogPostEditor() {
             content: '',
         },
     });
+    
+    const imageUrl = form.watch('imageUrl');
 
     useEffect(() => {
         if (slug && firestore) {
@@ -78,6 +84,27 @@ function BlogPostEditor() {
             form.setValue('slug', slugify(e.target.value), { shouldValidate: true });
         }
     };
+    
+    const handleGenerateContent = async () => {
+        const title = form.getValues('title');
+        if (!title) {
+            toast({ title: "Title is required", description: "Please enter a title before generating content.", variant: "destructive" });
+            return;
+        }
+        setIsGenerating(true);
+        try {
+            const result = await generatePostContent({ topic: title });
+            form.setValue('excerpt', result.excerpt, { shouldValidate: true });
+            form.setValue('content', result.content, { shouldValidate: true });
+            toast({ title: "Content Generated!", description: "The excerpt and content fields have been populated." });
+        } catch (error) {
+            console.error("AI Generation Error:", error);
+            toast({ title: "Generation Failed", description: "Could not generate content. Please try again.", variant: "destructive" });
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
 
     const onSubmit = async (data: FormData) => {
         if (!firestore || !user) return;
@@ -89,15 +116,19 @@ function BlogPostEditor() {
                 ...data,
                 author: user.displayName || 'Admin',
                 updatedAt: serverTimestamp(),
-                createdAt: slug ? undefined : serverTimestamp(), // Only set createdAt for new posts
             };
+            
+            // Only set createdAt for new posts, otherwise it gets overwritten on edit
             if (!slug) {
+                // @ts-ignore
                 postData.createdAt = serverTimestamp();
             }
 
             await setDoc(postRef, postData, { merge: true });
             toast({ title: 'Success!', description: `Blog post ${slug ? 'updated' : 'created'}.` });
-            router.push('/admin');
+            router.push('/admin/blog/editor?slug=' + data.slug);
+            router.refresh();
+
         } catch (error: any) {
             console.error("Error saving post:", error);
             toast({ title: "Save Failed", description: error.message, variant: "destructive" });
@@ -135,6 +166,12 @@ function BlogPostEditor() {
             <CardContent>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                         <div className="flex justify-end">
+                            <Button type="button" onClick={handleGenerateContent} disabled={isGenerating}>
+                                {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                                {isGenerating ? 'Generating...' : 'Generate with AI'}
+                            </Button>
+                        </div>
                         <FormField
                             control={form.control}
                             name="title"
@@ -187,6 +224,11 @@ function BlogPostEditor() {
                                 </FormItem>
                             )}
                         />
+                         {imageUrl && (
+                            <div className="relative aspect-video w-full rounded-lg overflow-hidden border">
+                                <Image src={imageUrl} alt="Image Preview" fill className="object-cover" />
+                            </div>
+                         )}
                         <FormField
                             control={form.control}
                             name="content"
@@ -194,7 +236,7 @@ function BlogPostEditor() {
                                 <FormItem>
                                     <FormLabel>Content (Markdown supported)</FormLabel>
                                     <FormControl>
-                                        <Textarea {...field} rows={15} />
+                                        <Textarea {...field} rows={15} className="min-h-[400px]" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -223,6 +265,3 @@ export default function BlogEditorPage() {
         </main>
     );
 }
-
-
-    

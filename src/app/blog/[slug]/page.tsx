@@ -4,29 +4,40 @@
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useParams } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import Image from 'next/image';
-import { Calendar, User } from 'lucide-react';
+import { Calendar, User, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-// A simple markdown-to-HTML renderer. In a real app, you'd use a more robust library like 'marked' or 'react-markdown'.
+
 function SimpleMarkdown({ content }: { content: string }) {
     const htmlContent = content
         .split('\n')
+        .filter(line => line.trim() !== '') // Remove empty lines
         .map(line => {
             if (line.startsWith('### ')) return `<h3 class="text-xl font-bold mt-6 mb-2">${line.substring(4)}</h3>`;
             if (line.startsWith('## ')) return `<h2 class="text-2xl font-bold mt-8 mb-3 border-b pb-2">${line.substring(3)}</h2>`;
             if (line.startsWith('# ')) return `<h1 class="text-3xl font-bold mt-10 mb-4 border-b pb-2">${line.substring(2)}</h1>`;
-            if (line.trim() === '') return '<br />';
-            return `<p class="leading-relaxed mb-4">${line}</p>`;
+             if (line.startsWith('- ')) return `<li class="mb-2">${line.substring(2)}</li>`
+            // Basic check for list items
+            if (/^\d+\.\s/.test(line)) return `<li class="mb-2">${line.substring(line.indexOf(' ') + 1)}</li>`;
+            
+            return `<p class="leading-relaxed mb-4 text-lg">${line}</p>`;
         })
         .join('');
 
-    return <div dangerouslySetInnerHTML={{ __html: htmlContent }} />;
+    // Wrap lists
+    const withLists = htmlContent
+        .replace(/<li>/g, '<ul><li>')
+        .replace(/<\/li>\s*<li>/g, '</li><li>')
+        .replace(/<\/li>(?!<li>)/g, '</li></ul>');
+
+    return <div className="prose prose-lg dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: withLists }} />;
 }
+
 
 interface BlogPost {
     id: string;
@@ -46,7 +57,7 @@ function PostSkeleton() {
                 <Skeleton className="h-5 w-32" />
             </div>
             <Skeleton className="w-full aspect-video rounded-lg mb-8" />
-            <div className="space-y-4">
+            <div className="space-y-4 mt-8">
                 <Skeleton className="h-5 w-full" />
                 <Skeleton className="h-5 w-full" />
                 <Skeleton className="h-5 w-5/6" />
@@ -91,15 +102,23 @@ export default function BlogPostPage() {
     }
 
     return (
-        <main className="container mx-auto p-4 py-8 md:p-12">
+        <main className="container mx-auto p-4 py-8 md:py-12">
             <article className="max-w-4xl mx-auto">
+                <Button asChild variant="ghost" className="mb-8">
+                     <Link href="/blog">
+                        <ChevronLeft className="w-4 h-4 mr-2" />
+                        Back to Blog
+                    </Link>
+                </Button>
                 <header className="mb-8">
-                    <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight mb-4">
+                    <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight mb-4 text-gray-900 dark:text-gray-100">
                         {post.title}
                     </h1>
                     <div className="flex items-center gap-6 text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
-                            <User className="w-4 h-4" />
+                             <Avatar className="h-8 w-8">
+                                <AvatarFallback>{post.author.charAt(0)}</AvatarFallback>
+                            </Avatar>
                             <span>By {post.author}</span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -110,7 +129,7 @@ export default function BlogPostPage() {
                         </div>
                     </div>
                 </header>
-                <div className="relative aspect-video w-full rounded-lg overflow-hidden mb-8">
+                <div className="relative aspect-video w-full rounded-lg overflow-hidden mb-12 shadow-lg">
                     <Image
                         src={post.imageUrl || `https://picsum.photos/seed/${post.id}/1200/675`}
                         alt={post.title}
@@ -119,12 +138,8 @@ export default function BlogPostPage() {
                         priority
                     />
                 </div>
-                <div className="prose prose-lg dark:prose-invert max-w-none">
-                   <SimpleMarkdown content={post.content} />
-                </div>
+                <SimpleMarkdown content={post.content} />
             </article>
         </main>
     );
 }
-
-    

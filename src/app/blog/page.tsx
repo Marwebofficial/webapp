@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
+import { ArrowRight } from 'lucide-react';
 
 interface BlogPost {
     id: string;
@@ -54,7 +55,7 @@ export default function BlogIndexPage() {
             <header className="text-center mb-12">
                 <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">Our Blog</h1>
                 <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-                    News, updates, and insights from the DataConnect team.
+                    News, updates, and insights from the DataConnect team. Stay informed on our latest developments.
                 </p>
             </header>
 
@@ -67,8 +68,8 @@ export default function BlogIndexPage() {
                     </>
                 ) : posts && posts.length > 0 ? (
                     posts.map(post => (
-                        <Card key={post.id} className="flex flex-col overflow-hidden group">
-                            <Link href={`/blog/${post.id}`} className="block aspect-video relative overflow-hidden">
+                        <Card key={post.id} className="flex flex-col overflow-hidden group shadow-sm hover:shadow-xl transition-shadow duration-300">
+                             <Link href={`/blog/${post.id}`} className="block aspect-video relative overflow-hidden">
                                 <Image
                                     src={post.imageUrl || `https://picsum.photos/seed/${post.id}/600/400`}
                                     alt={post.title}
@@ -77,21 +78,21 @@ export default function BlogIndexPage() {
                                 />
                             </Link>
                             <CardHeader>
-                                <CardTitle className="text-xl leading-tight">
-                                     <Link href={`/blog/${post.id}`} className="hover:text-primary transition-colors">{post.title}</Link>
-                                </CardTitle>
                                 <CardDescription>
                                     <span>By {post.author}</span>
                                     <span className="mx-2">•</span>
                                     <span>{post.createdAt ? format(new Date(post.createdAt.seconds * 1000), 'MMM d, yyyy') : ''}</span>
                                 </CardDescription>
+                                <CardTitle className="text-xl leading-tight">
+                                     <Link href={`/blog/${post.id}`} className="hover:text-primary transition-colors stretched-link">{post.title}</Link>
+                                </CardTitle>
                             </CardHeader>
                             <CardContent className="flex-1">
-                                <p className="text-muted-foreground">{post.excerpt}</p>
+                                <p className="text-muted-foreground line-clamp-3">{post.excerpt}</p>
                             </CardContent>
                             <CardFooter>
-                                <Button asChild variant="secondary" className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                                    <Link href={`/blog/${post.id}`}>Read More</Link>
+                                <Button asChild variant="link" className="p-0 h-auto font-semibold">
+                                    <Link href={`/blog/${post.id}`}>Read More <ArrowRight className="ml-2 h-4 w-4" /></Link>
                                 </Button>
                             </CardFooter>
                         </Card>
@@ -106,5 +107,3 @@ export default function BlogIndexPage() {
         </main>
     );
 }
-
-    
