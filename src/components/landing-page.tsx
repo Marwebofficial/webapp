@@ -48,7 +48,7 @@ export function LandingPage() {
             alt={heroImage.description}
             fill
             priority
-            className="object-cover -z-10 opacity-5"
+            className="object-cover -z-10 opacity-10"
             data-ai-hint={heroImage.imageHint}
           />}
           <div className="container px-4 md:px-6 z-10 animate-in fade-in-50 slide-in-from-bottom-10 duration-700">
