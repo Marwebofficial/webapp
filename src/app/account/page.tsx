@@ -337,7 +337,7 @@ export default function AccountPage() {
                     <CardFooter>
                         <TooltipProvider>
                             <Tooltip>
-                                <TooltipTrigger className="w-full">
+                                <TooltipTrigger asChild>
                                     <Button className="w-full" disabled>
                                         <Wallet className="mr-2 h-4 w-4" /> Fund Wallet
                                     </Button>
