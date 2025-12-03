@@ -25,7 +25,7 @@ const WhatsAppIcon = () => (
 
 export default function ContactPage() {
     const phoneNumber = "2349040367103";
-    const emailAddress = "samuelmarvel21@gmail.com";
+    const emailAddress = "dataconnectnigeria@gmail.com";
     const whatsappUrl = `https://wa.me/${phoneNumber}`;
     const phoneUrl = `tel:${phoneNumber}`;
     const emailUrl = `mailto:${emailAddress}`;
