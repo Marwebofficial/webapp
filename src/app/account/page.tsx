@@ -28,7 +28,6 @@ import { User as UserIcon, Hash, Sigma, Smartphone, Phone, Tv, Repeat, Wallet, M
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { FundWalletDialog } from '@/components/fund-wallet-dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
 import {
@@ -39,6 +38,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const Testimonials = lazy(() => import('@/components/testimonials-section'));
 
@@ -335,11 +335,18 @@ export default function AccountPage() {
                         <p className="text-xs text-muted-foreground">Available for purchases</p>
                     </CardContent>
                     <CardFooter>
-                    <FundWalletDialog>
-                        <Button className="w-full">
-                            <Wallet className="mr-2 h-4 w-4" /> Fund Wallet
-                        </Button>
-                    </FundWalletDialog>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger className="w-full">
+                                    <Button className="w-full" disabled>
+                                        <Wallet className="mr-2 h-4 w-4" /> Fund Wallet
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Coming Soon!</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
                     </CardFooter>
                 </Card>
                 <Card>
