@@ -3,36 +3,20 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Zap,
   Smartphone,
   ShieldCheck,
   Clock,
-  Phone,
-  Repeat,
   Tv,
-  Star,
+  Repeat,
 } from 'lucide-react';
 import Image from 'next/image';
-import { ReviewFormDialog } from './review-form-dialog';
-import { useFirestore, useUser } from '@/firebase';
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
-import { Skeleton } from './ui/skeleton';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from '@/components/ui/carousel';
-import { Avatar, AvatarFallback } from './ui/avatar';
-import { formatDistanceToNow } from 'date-fns';
+import { useUser } from '@/firebase';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import React, { Suspense, lazy, useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-const Testimonials = lazy(() => import('./testimonials-section'));
 const AboutSection = lazy(() => import('./about-section'));
 
 
@@ -58,52 +42,32 @@ export function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-1">
-        <section className="relative w-full h-[80vh] flex items-center justify-center text-center bg-gradient-to-r from-primary/10 to-accent/10">
+        <section className="relative w-full h-[80vh] flex items-center justify-center text-center bg-gray-50 dark:bg-gray-900">
           {heroImage && <Image
             src={heroImage.imageUrl}
             alt={heroImage.description}
             fill
             priority
-            className="object-cover -z-10 opacity-20"
+            className="object-cover -z-10 opacity-5"
             data-ai-hint={heroImage.imageHint}
           />}
           <div className="container px-4 md:px-6 z-10 animate-in fade-in-50 slide-in-from-bottom-10 duration-700">
             <div className="max-w-3xl mx-auto">
               <h1 className="text-4xl font-extrabold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
-                Cheap Data, Instant Airtime & TV Subs
+                Instant Digital Services for Nigeria
               </h1>
               <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-                Stay connected with the cheapest mobile data plans, airtime top-ups,
-                TV subscriptions, and easily convert airtime to cash. Delivered in
-                minutes, 24/7.
+                Cheap data, airtime top-ups, TV subscriptions, and more. Fast, reliable, and available 24/7.
               </p>
               <div className="mt-8 flex flex-wrap gap-4 justify-center">
-                <Link href="/buy-data" passHref>
-                  <Button
-                    size="lg"
-                    className="bg-accent text-accent-foreground hover:bg-accent/90 text-lg py-7 px-10 font-bold rounded-full shadow-lg transition-transform hover:scale-105"
-                  >
-                    Buy Data
-                  </Button>
-                </Link>
-                <Link href="/buy-airtime" passHref>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="bg-background/80 text-lg py-7 px-10 font-bold rounded-full shadow-lg transition-transform hover:scale-105"
-                  >
-                    Buy Airtime
-                  </Button>
-                </Link>
-                <Link href="/tv-subscription" passHref>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="bg-primary/10 border-primary/20 text-lg py-7 px-10 font-bold rounded-full shadow-lg transition-transform hover:scale-105"
-                  >
-                    TV Subscription
-                  </Button>
-                </Link>
+                <Button asChild size="lg" className="text-lg py-7 px-10 font-bold rounded-full shadow-lg transition-transform hover:scale-105">
+                  <Link href="/signup">
+                    Get Started
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline" className="bg-background/80 text-lg py-7 px-10 font-bold rounded-full shadow-lg transition-transform hover:scale-105">
+                    <Link href="#features">Our Services</Link>
+                </Button>
               </div>
             </div>
           </div>
@@ -113,10 +77,10 @@ export function LandingPage() {
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
               <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm">
-                Key Features
+                Why Choose Us?
               </div>
               <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
-                Why Choose DataConnect?
+                The Smart Choice for Your Digital Needs
               </h2>
               <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                 We provide a seamless experience for all your mobile
@@ -127,7 +91,7 @@ export function LandingPage() {
               <FeatureCard
                 icon={<Zap className="w-8 h-8 text-primary" />}
                 title="Instant Delivery"
-                description="Your data is delivered to your phone number within minutes of purchase. No delays, no stories."
+                description="Your data and subscriptions are delivered within minutes. No delays, no stories."
               />
               <FeatureCard
                 icon={<Tv className="w-8 h-8 text-primary" />}
@@ -164,25 +128,27 @@ export function LandingPage() {
 
       </main>
 
-      <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
-        <p className="text-xs text-muted-foreground">
-          &copy; {new Date().getFullYear()} DataConnect Nigeria. All rights
-          reserved.
-        </p>
-        <nav className="sm:ml-auto flex gap-4 sm:gap-6">
-            <Link href="/terms-of-service" className="text-xs hover:underline underline-offset-4">
-                Terms of Service
-            </Link>
-             <Link href="/privacy-policy" className="text-xs hover:underline underline-offset-4">
-                Privacy Policy
-            </Link>
-             <Link href="/payment-policy" className="text-xs hover:underline underline-offset-4">
-                Payment Policy
-            </Link>
-            <Link href="/contact" className="text-xs hover:underline underline-offset-4">
-                Contact Us
-            </Link>
-        </nav>
+      <footer className="w-full border-t bg-background">
+        <div className="container mx-auto flex flex-col items-center justify-between gap-4 py-6 px-4 md:flex-row md:px-6">
+            <p className="text-sm text-muted-foreground">
+            &copy; {new Date().getFullYear()} DataConnect Nigeria. All rights
+            reserved.
+            </p>
+            <nav className="flex gap-4 sm:gap-6">
+                <Link href="/terms-of-service" className="text-sm hover:underline underline-offset-4">
+                    Terms
+                </Link>
+                <Link href="/privacy-policy" className="text-sm hover:underline underline-offset-4">
+                    Privacy
+                </Link>
+                <Link href="/payment-policy" className="text-sm hover:underline underline-offset-4">
+                    Payments
+                </Link>
+                <Link href="/contact" className="text-sm hover:underline underline-offset-4">
+                    Contact
+                </Link>
+            </nav>
+        </div>
       </footer>
     </div>
   );
@@ -198,14 +164,14 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <div className="grid gap-1 text-center">
-      <div className="flex justify-center items-center mb-4">
+    <div className="grid gap-2 text-center">
+      <div className="flex justify-center items-center mb-2">
         <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
           {icon}
         </div>
       </div>
-      <h3 className="text-lg font-bold">{title}</h3>
-      <p className="text-sm text-muted-foreground">{description}</p>
+      <h3 className="text-xl font-bold">{title}</h3>
+      <p className="text-muted-foreground">{description}</p>
     </div>
   );
 }
@@ -219,18 +185,14 @@ function AboutSkeleton() {
                 <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm mb-4">
                   About Us
                 </div>
-                <Skeleton className="h-10 w-3/4 mb-4" />
-                <Skeleton className="h-6 w-full mb-2" />
-                <Skeleton className="h-6 w-full mb-2" />
-                <Skeleton className="h-6 w-4/5" />
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+                  Your Trusted Partner in Digital Connectivity
+                </h2>
               </div>
               <div className="relative aspect-video rounded-xl overflow-hidden">
-                <Skeleton className="h-full w-full" />
               </div>
             </div>
           </div>
         </section>
     )
 }
-
-    
