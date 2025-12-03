@@ -15,13 +15,17 @@ const ptSans = PT_Sans({
   variable: '--font-body',
 });
 
+const pageTitle = "DataConnect: Cheap Data, Airtime & TV Subs in Nigeria";
+const pageDescription = "Get the cheapest data plans for MTN, Glo, Airtel, 9mobile. Buy cheap data, airtime, and pay TV subscriptions instantly on DataConnect Nigeria.";
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: 'DataConnect Nigeria',
-  description: 'Buy mobile data plans in Nigeria quickly and easily.',
+  title: pageTitle,
+  description: pageDescription,
+  keywords: ['cheap data', 'mtn cheap data', 'glo data plan', 'airtel data plan', '9mobile data plan', 'buy data nigeria', 'data connect', 'tv subscription', 'airtime to cash', 'cheap mtn data plan'],
   openGraph: {
-    title: 'DataConnect Nigeria',
-    description: 'Instant Data, Airtime & Cash Conversion in Nigeria.',
+    title: pageTitle,
+    description: pageDescription,
     url: siteUrl,
     siteName: 'DataConnect Nigeria',
     images: [
@@ -37,8 +41,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'DataConnect Nigeria',
-    description: 'Instant Data, Airtime & Cash Conversion in Nigeria.',
+    title: pageTitle,
+    description: pageDescription,
     images: [`${siteUrl}/logo.png`],
   },
 };

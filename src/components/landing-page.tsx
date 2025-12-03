@@ -70,11 +70,11 @@ export function LandingPage() {
           <div className="container px-4 md:px-6 z-10 animate-in fade-in-50 slide-in-from-bottom-10 duration-700">
             <div className="max-w-3xl mx-auto">
               <h1 className="text-4xl font-extrabold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
-                Instant Data, Airtime, TV & More
+                Cheap Data, Instant Airtime & TV Subs
               </h1>
               <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-                Stay connected with the cheapest mobile data, airtime, TV
-                subscriptions, and easily convert airtime to cash. Delivered in
+                Stay connected with the cheapest mobile data plans, airtime top-ups,
+                TV subscriptions, and easily convert airtime to cash. Delivered in
                 minutes, 24/7.
               </p>
               <div className="mt-8 flex flex-wrap gap-4 justify-center">
