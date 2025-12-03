@@ -22,13 +22,9 @@ service cloud.firestore {
     function isExistingOwner(userId) {
       return isOwner(userId) && resource != null;
     }
-
-    function userCreateHasValidData(userId) {
-      return request.resource.data.id == userId;
-    }
-
-    function userUpdateIsImmutable() {
-      return request.resource.data.id == resource.data.id;
+    
+    function isUpdatingOwnRequest(userId) {
+      return isOwner(userId) && request.resource.data.keys().hasOnly(['pendingFundingRequest']);
     }
 
     // ----------------------------------------------------------------
@@ -36,14 +32,14 @@ service cloud.firestore {
     // ----------------------------------------------------------------
 
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if false; // Disallow listing all users
-      allow create: if isOwner(userId) && userCreateHasValidData(userId);
-      allow update: if isExistingOwner(userId) && userUpdateIsImmutable();
-      allow delete: if isExistingOwner(userId);
+      allow read: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isUpdatingOwnRequest(userId) || isAdmin();
+      allow delete: if isOwner(userId) || isAdmin();
 
       match /transactions/{transactionId} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if isOwner(userId) || isAdmin();
       }
     }
 
@@ -72,6 +68,12 @@ service cloud.firestore {
     match /announcement/current {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+    match /blogPosts/{postId} {
+        allow get: if true;
+        allow list: if true;
+        allow write: if isAdmin();
     }
   }
 }

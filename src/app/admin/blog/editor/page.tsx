@@ -16,8 +16,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
-import { Sparkles, Loader2 } from 'lucide-react';
-import { generatePostContent } from '@/ai/flows/generate-post-flow';
+import { Sparkles, Loader2, Image as ImageIcon } from 'lucide-react';
+import { generatePostContent, generatePostImage } from '@/ai/flows/generate-post-flow';
 
 const FormSchema = z.object({
     title: z.string().min(5, "Title must be at least 5 characters long."),
@@ -37,7 +37,8 @@ function BlogPostEditor() {
     const slug = searchParams.get('slug');
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(!!slug);
-    const [isGenerating, setIsGenerating] = useState(false);
+    const [isGeneratingContent, setIsGeneratingContent] = useState(false);
+    const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
     const form = useForm<FormData>({
         resolver: zodResolver(FormSchema),
@@ -91,17 +92,36 @@ function BlogPostEditor() {
             toast({ title: "Title is required", description: "Please enter a title before generating content.", variant: "destructive" });
             return;
         }
-        setIsGenerating(true);
+        setIsGeneratingContent(true);
         try {
             const result = await generatePostContent({ topic: title });
             form.setValue('excerpt', result.excerpt, { shouldValidate: true });
             form.setValue('content', result.content, { shouldValidate: true });
             toast({ title: "Content Generated!", description: "The excerpt and content fields have been populated." });
         } catch (error) {
-            console.error("AI Generation Error:", error);
-            toast({ title: "Generation Failed", description: "Could not generate content. Please try again.", variant: "destructive" });
+            console.error("AI Content Generation Error:", error);
+            toast({ title: "Content Generation Failed", description: "Could not generate content. Please try again.", variant: "destructive" });
         } finally {
-            setIsGenerating(false);
+            setIsGeneratingContent(false);
+        }
+    };
+    
+    const handleGenerateImage = async () => {
+        const title = form.getValues('title');
+        if (!title) {
+            toast({ title: "Title is required", description: "Please enter a title before generating an image.", variant: "destructive" });
+            return;
+        }
+        setIsGeneratingImage(true);
+        try {
+            const result = await generatePostImage({ topic: title });
+            form.setValue('imageUrl', result.imageUrl, { shouldValidate: true });
+            toast({ title: "Image Generated!", description: "The cover image URL has been populated." });
+        } catch (error) {
+            console.error("AI Image Generation Error:", error);
+            toast({ title: "Image Generation Failed", description: "Could not generate image. Please try again.", variant: "destructive" });
+        } finally {
+            setIsGeneratingImage(false);
         }
     };
 
@@ -118,7 +138,6 @@ function BlogPostEditor() {
                 updatedAt: serverTimestamp(),
             };
             
-            // Only set createdAt for new posts, otherwise it gets overwritten on edit
             if (!slug) {
                 // @ts-ignore
                 postData.createdAt = serverTimestamp();
@@ -167,9 +186,9 @@ function BlogPostEditor() {
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                          <div className="flex justify-end">
-                            <Button type="button" onClick={handleGenerateContent} disabled={isGenerating}>
-                                {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                                {isGenerating ? 'Generating...' : 'Generate with AI'}
+                            <Button type="button" onClick={handleGenerateContent} disabled={isGeneratingContent || isGeneratingImage}>
+                                {isGeneratingContent ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                                {isGeneratingContent ? 'Generating...' : 'Generate Content'}
                             </Button>
                         </div>
                         <FormField
@@ -217,9 +236,15 @@ function BlogPostEditor() {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Cover Image URL</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
+                                    <div className="flex gap-2">
+                                        <FormControl>
+                                            <Input {...field} />
+                                        </FormControl>
+                                        <Button type="button" variant="outline" onClick={handleGenerateImage} disabled={isGeneratingImage || isGeneratingContent}>
+                                            {isGeneratingImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ImageIcon className="mr-2 h-4 w-4" />}
+                                            {isGeneratingImage ? 'Generating...' : 'Generate Image'}
+                                        </Button>
+                                    </div>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -244,7 +269,7 @@ function BlogPostEditor() {
                         />
                         <div className="flex justify-end gap-2">
                              <Button type="button" variant="ghost" onClick={() => router.back()}>Cancel</Button>
-                             <Button type="submit" disabled={form.formState.isSubmitting}>
+                             <Button type="submit" disabled={form.formState.isSubmitting || isGeneratingContent || isGeneratingImage}>
                                 {form.formState.isSubmitting ? 'Saving...' : 'Save Post'}
                             </Button>
                         </div>

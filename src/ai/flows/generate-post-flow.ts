@@ -15,6 +15,11 @@ const GeneratePostOutputSchema = z.object({
 });
 export type GeneratePostOutput = z.infer<typeof GeneratePostOutputSchema>;
 
+const GenerateImageOutputSchema = z.object({
+    imageUrl: z.string().describe("A URL for a generated image that is visually appealing and relevant to the blog post topic. The image should be in a 16:9 aspect ratio.")
+});
+export type GenerateImageOutput = z.infer<typeof GenerateImageOutputSchema>;
+
 
 const generatePostPrompt = ai.definePrompt({
     name: 'generatePostPrompt',
@@ -34,6 +39,20 @@ const generatePostPrompt = ai.definePrompt({
     `,
 });
 
+const generateImagePrompt = ai.definePrompt({
+    name: 'generateImagePrompt',
+    input: { schema: GeneratePostInputSchema },
+    prompt: `
+        Generate a visually stunning and professional image for a blog post with the topic: '{{{topic}}}'.
+
+        The image should be:
+        - Relevant to the topic.
+        - High quality and suitable for a professional blog.
+        - In a 16:9 aspect ratio.
+        - Photorealistic or a high-quality digital illustration.
+    `
+});
+
 const generatePostFlow = ai.defineFlow(
   {
     name: 'generatePostFlow',
@@ -49,6 +68,31 @@ const generatePostFlow = ai.defineFlow(
   }
 );
 
+const generateImageFlow = ai.defineFlow(
+    {
+      name: 'generateImageFlow',
+      inputSchema: GeneratePostInputSchema,
+      outputSchema: GenerateImageOutputSchema,
+    },
+    async (input) => {
+      const { media } = await ai.generate({
+        model: 'googleai/imagen-4.0-fast-generate-001',
+        prompt: input.topic,
+        config: {
+            aspectRatio: '16:9',
+        }
+      });
+      if (!media.url) {
+        throw new Error('Failed to generate image');
+      }
+      return { imageUrl: media.url };
+    }
+  );
+
 export async function generatePostContent(input: GeneratePostInput): Promise<GeneratePostOutput> {
     return generatePostFlow(input);
+}
+
+export async function generatePostImage(input: GeneratePostInput): Promise<GenerateImageOutput> {
+    return generateImageFlow(input);
 }

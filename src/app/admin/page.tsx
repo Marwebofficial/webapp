@@ -31,8 +31,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { collection, doc, deleteDoc, getDocs, query, where, serverTimestamp, writeBatch, increment, updateDoc, orderBy } from 'firebase/firestore';
-import { setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection, doc, deleteDoc, query, serverTimestamp, writeBatch, increment, updateDoc, orderBy } from 'firebase/firestore';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { networkProviders } from '@/lib/data-plans';
 import { tvProviders } from '@/lib/tv-plans';
 import {
@@ -450,31 +450,26 @@ function AnnouncementManager() {
     );
 }
 
+interface Review {
+    id: string;
+    name: string;
+    reviewText: string;
+    rating: number;
+    createdAt: {
+        seconds: number;
+        nanoseconds: number;
+    } | null;
+}
+
 function ReviewManager() {
     const firestore = useFirestore();
     const { toast } = useToast();
-    const [reviews, setReviews] = useState<Review[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    const fetchReviews = useCallback(async () => {
-        if (!firestore) return;
-        setIsLoading(true);
-        try {
-            const reviewsCol = collection(firestore, 'reviews');
-            const reviewSnapshot = await getDocs(reviewsCol);
-            const reviewList = reviewSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review));
-            setReviews(reviewList.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
-        } catch (error) {
-            console.error("Error fetching reviews:", error);
-            toast({ title: 'Error', description: 'Could not fetch reviews.', variant: 'destructive' });
-        } finally {
-            setIsLoading(false);
-        }
-    }, [firestore, toast]);
     
-    useEffect(() => {
-        fetchReviews();
-    }, [fetchReviews]);
+    const reviewsQuery = useMemoFirebase(
+        () => firestore ? query(collection(firestore, 'reviews'), orderBy('createdAt', 'desc')) : null,
+        [firestore]
+    );
+    const { data: reviews, isLoading } = useCollection<Review>(reviewsQuery);
 
 
     const handleDelete = async (reviewId: string) => {
@@ -484,7 +479,6 @@ function ReviewManager() {
             try {
                 await deleteDoc(reviewRef);
                 toast({ title: 'Success', description: 'Review deleted successfully.' });
-                fetchReviews(); // Refresh the list
             } catch (error: any) {
                 console.error("Error deleting review:", error);
                 toast({ 
@@ -656,31 +650,15 @@ function PlansManager({
   const [selectedProvider, setSelectedProvider] = useState(providers[0].id);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<Plan | undefined>(undefined);
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const fetchPlans = useCallback(async (providerId: string) => {
-    if (!firestore) return;
-    setIsLoading(true);
-    setPlans([]);
-    try {
-        const plansCollection = collection(firestore, collectionName, providerId, 'plans');
-        const planSnapshot = await getDocs(plansCollection);
-        const planList = planSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Plan));
-        setPlans(planList);
-    } catch (error) {
-        console.error(`Error fetching plans for ${providerId}:`, error);
-        toast({ title: 'Error', description: 'Could not fetch plans.', variant: 'destructive' });
-    } finally {
-        setIsLoading(false);
-    }
-  }, [firestore, collectionName, toast]);
+  const plansQuery = useMemoFirebase(
+    () => firestore ? collection(firestore, collectionName, selectedProvider, 'plans') : null,
+    [firestore, collectionName, selectedProvider]
+  );
+  const { data: plans, isLoading } = useCollection<Plan>(plansQuery);
 
-  useEffect(() => {
-    fetchPlans(selectedProvider);
-  }, [selectedProvider, fetchPlans]);
 
   const handleDelete = async (planId: string) => {
     if (!firestore) return;
@@ -688,7 +666,6 @@ function PlansManager({
       const planRef = doc(firestore, collectionName, selectedProvider, 'plans', planId);
       await deleteDoc(planRef);
       toast({ title: 'Success', description: 'Plan deleted successfully.' });
-      fetchPlans(selectedProvider);
     }
   };
   
@@ -700,7 +677,6 @@ function PlansManager({
   const closeForm = () => {
     setIsFormOpen(false);
     setEditingPlan(undefined);
-    fetchPlans(selectedProvider); // Refresh plans after saving
   }
 
   const colSpan = isTvPlan ? 3 : 4;
@@ -730,7 +706,10 @@ function PlansManager({
               ))}
             </SelectContent>
           </Select>
-          <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+          <Dialog open={isFormOpen} onOpenChange={(isOpen) => {
+              if (!isOpen) closeForm();
+              else setIsFormOpen(true);
+          }}>
             <DialogTrigger asChild>
                 <Button onClick={() => openForm()}>Add New Plan</Button>
             </DialogTrigger>
@@ -805,68 +784,41 @@ interface NetworkStatus {
     status: NetworkStatusType;
 }
 
-interface Review {
-    id: string;
-    name: string;
-    reviewText: string;
-    rating: number;
-    createdAt: {
-        seconds: number;
-        nanoseconds: number;
-    } | null;
-}
-
 function NetworkStatusManager() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const statuses: NetworkStatusType[] = ['Online', 'Degraded', 'Offline'];
-    const [networkStatuses, setNetworkStatuses] = useState<NetworkStatus[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    const fetchStatuses = useCallback(async () => {
-        if (!firestore) return;
-        setIsLoading(true);
-        try {
-            const statusCol = collection(firestore, 'networkStatus');
-            const statusSnapshot = await getDocs(statusCol);
-            let statuses = statusSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NetworkStatus));
-            
-            // Initialize statuses if they don't exist
-            const existingIds = statuses.map(s => s.id);
-            let updated = false;
-            for (const provider of networkProviders) {
-                if (!existingIds.includes(provider.id)) {
-                    const newStatus = {
-                        id: provider.id,
-                        name: provider.name,
-                        status: 'Online' as NetworkStatusType,
-                    };
-                    const statusRef = doc(firestore, 'networkStatus', provider.id);
-                    await setDocumentNonBlocking(statusRef, newStatus, { merge: true });
-                    statuses.push(newStatus);
-                    updated = true;
-                }
-            }
-            if(updated) statuses.sort((a,b) => a.name.localeCompare(b.name));
-            setNetworkStatuses(statuses);
-        } catch(error) {
-            console.error("Error fetching network statuses:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [firestore]);
     
-    useEffect(() => {
-        fetchStatuses();
-    }, [fetchStatuses]);
+    const networkStatusQuery = useMemoFirebase(
+        () => firestore ? collection(firestore, 'networkStatus') : null,
+        [firestore]
+    );
+    const { data: networkStatuses, isLoading } = useCollection<NetworkStatus>(networkStatusQuery);
 
+    useEffect(() => {
+        if (isLoading || !firestore) return;
+        
+        const existingIds = networkStatuses?.map(s => s.id) || [];
+        networkProviders.forEach(provider => {
+            if (!existingIds.includes(provider.id)) {
+                 const newStatus = {
+                    id: provider.id,
+                    name: provider.name,
+                    status: 'Online' as NetworkStatusType,
+                    lastChecked: serverTimestamp()
+                };
+                const statusRef = doc(firestore, 'networkStatus', provider.id);
+                setDocumentNonBlocking(statusRef, newStatus, { merge: true });
+            }
+        });
+
+    }, [networkStatuses, isLoading, firestore]);
 
     const handleStatusChange = (networkId: string, status: NetworkStatusType) => {
         if (!firestore) return;
         const statusRef = doc(firestore, 'networkStatus', networkId);
-        setDocumentNonBlocking(statusRef, { status }, { merge: true });
+        setDocumentNonBlocking(statusRef, { status, lastChecked: serverTimestamp() }, { merge: true });
         toast({ title: 'Success', description: 'Network status updated.' });
-        fetchStatuses();
     };
 
     const getStatusVariant = (status: string) => {
@@ -981,9 +933,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
-    
-
-    
-
-    
