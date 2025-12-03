@@ -180,6 +180,9 @@ export function LandingPage() {
              <Link href="/privacy-policy" className="text-xs hover:underline underline-offset-4">
                 Privacy Policy
             </Link>
+             <Link href="/payment-policy" className="text-xs hover:underline underline-offset-4">
+                Payment Policy
+            </Link>
             <Link href="/contact" className="text-xs hover:underline underline-offset-4">
                 Contact Us
             </Link>
