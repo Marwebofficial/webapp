@@ -13,12 +13,14 @@ import {
   Wallet,
   UserPlus,
   Smile,
-  ChevronDown,
+  Heart,
+  Clock,
+  ThumbsUp,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useUser } from '@/firebase';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import React, { Suspense, lazy, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import AboutSection from './about-section';
 import Testimonials from './testimonials-section';
@@ -26,6 +28,37 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './
 import { NetworkIcon } from './network-icons';
 import { TvProviderIcon } from './tv-provider-icons';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/card';
+
+
+const useTypingEffect = (words: string[], typeSpeed = 100, deleteSpeed = 50, delay = 2000) => {
+  const [text, setText] = useState('');
+  const [wordIndex, setWordIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    const handleTyping = () => {
+      const currentWord = words[wordIndex];
+      if (isDeleting) {
+        setText(currentWord.substring(0, text.length - 1));
+      } else {
+        setText(currentWord.substring(0, text.length + 1));
+      }
+
+      if (!isDeleting && text === currentWord) {
+        setTimeout(() => setIsDeleting(true), delay);
+      } else if (isDeleting && text === '') {
+        setIsDeleting(false);
+        setWordIndex((prev) => (prev + 1) % words.length);
+      }
+    };
+
+    const typingTimeout = setTimeout(handleTyping, isDeleting ? deleteSpeed : typeSpeed);
+    return () => clearTimeout(typingTimeout);
+  }, [text, isDeleting, wordIndex, words, typeSpeed, deleteSpeed, delay]);
+
+  return text;
+};
 
 
 function AboutSkeleton() {
@@ -81,6 +114,9 @@ export function LandingPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
+  const dynamicWords = useMemo(() => ["Cheap Data", "Instant Airtime", "TV Subscriptions", "Bill Payments"], []);
+  const typedText = useTypingEffect(dynamicWords);
+
   useEffect(() => {
     // If the user is authenticated, redirect them to the account page.
     if (!isUserLoading && user) {
@@ -108,7 +144,7 @@ export function LandingPage() {
             alt={heroImage.description}
             fill
             priority
-            className="object-cover -z-10 opacity-20"
+            className="object-cover -z-10 opacity-10"
             data-ai-hint={heroImage.imageHint}
           />}
            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent"></div>
@@ -118,10 +154,10 @@ export function LandingPage() {
                     Fast, Reliable, and Affordable
                 </div>
               <h1 className="text-4xl font-extrabold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
-                Nigeria's One-Stop Digital Marketplace
+                Get <span className="text-primary inline-block min-h-[50px] md:min-h-[80px]">{typedText}</span><span className="animate-ping">|</span>
               </h1>
               <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
-                Get the cheapest data bundles, instant airtime, TV subscriptions, and more. Join thousands of Nigerians enjoying seamless digital services.
+                Join thousands of Nigerians enjoying seamless digital services. Your one-stop shop for all online transactions.
               </p>
               <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button asChild size="lg" className="text-lg py-7 px-10 font-bold rounded-full shadow-lg transition-transform hover:scale-105 w-full sm:w-auto">
@@ -157,7 +193,7 @@ export function LandingPage() {
         </section>
 
         <section id="how-it-works" className="w-full py-12 md:py-24 lg:py-32">
-            <div className="container px-4 md:px-6">
+            <div className="container px-4 md:px-6 animate-in fade-in-50 slide-in-from-bottom-10 duration-700 delay-200">
                  <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
                     <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm">
                         How It Works
@@ -193,7 +229,7 @@ export function LandingPage() {
         </section>
 
         <section id="services" className="w-full py-12 md:py-24 lg:py-32 bg-secondary">
-          <div className="container px-4 md:px-6">
+          <div className="container px-4 md:px-6 animate-in fade-in-50 slide-in-from-bottom-10 duration-700 delay-300">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
               <div className="inline-block rounded-lg bg-background px-3 py-1 text-sm">
                 Our Services
@@ -236,7 +272,7 @@ export function LandingPage() {
         </section>
 
          <section className="w-full py-12 md:py-24 lg:py-32">
-          <div className="container px-4 md:px-6">
+          <div className="container px-4 md:px-6 animate-in fade-in-50 slide-in-from-bottom-10 duration-700 delay-400">
             <h2 className="text-2xl font-semibold text-center text-muted-foreground tracking-wider mb-8">
               SUPPORTING ALL MAJOR PROVIDERS
             </h2>
@@ -253,6 +289,44 @@ export function LandingPage() {
             </div>
           </div>
         </section>
+        
+        <section id="why-us" className="w-full py-12 md:py-24 lg:py-32">
+            <div className="container px-4 md:px-6 animate-in fade-in-50 slide-in-from-bottom-10 duration-700 delay-500">
+                 <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
+                    <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm">
+                        Why Choose Us?
+                    </div>
+                    <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
+                        The DataConnect Advantage
+                    </h2>
+                    <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed">
+                        We are committed to providing you with the best possible service and value.
+                    </p>
+                </div>
+                <div className="mx-auto grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+                    <FeatureCard
+                        icon={<Clock className="w-8 h-8 text-primary" />}
+                        title="Automated & Instant"
+                        description="Our services are fully automated, ensuring your data, airtime, and subscriptions are delivered instantly, any time of day."
+                    />
+                    <FeatureCard
+                        icon={<ShieldCheck className="w-8 h-8 text-primary" />}
+                        title="Secure Wallet System"
+                        description="Your funds are safe with us. Our secure wallet system uses top-notch encryption to protect your money and transactions."
+                    />
+                     <FeatureCard
+                        icon={<ThumbsUp className="w-8 h-8 text-primary" />}
+                        title="Unbeatable Prices"
+                        description="We work hard to offer the most competitive prices on data and airtime in Nigeria, giving you more value for your money."
+                    />
+                    <FeatureCard
+                        icon={<Heart className="w-8 h-8 text-primary" />}
+                        title="Customer Focused"
+                        description="Your satisfaction is our priority. Our dedicated support team is always ready to assist you with any questions or issues."
+                    />
+                </div>
+            </div>
+        </section>
 
         <Suspense fallback={<AboutSkeleton />}>
             <AboutSection />
@@ -263,7 +337,7 @@ export function LandingPage() {
         </Suspense>
 
         <section id="faq" className="w-full py-12 md:py-24 lg:py-32">
-           <div className="container px-4 md:px-6">
+           <div className="container px-4 md:px-6 animate-in fade-in-50 slide-in-from-bottom-10 duration-700 delay-600">
                <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
                     <div className="inline-block rounded-lg bg-secondary px-3 py-1 text-sm">
                         FAQ
@@ -387,15 +461,27 @@ function HowItWorksCard({
   );
 }
 
+function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
+    return (
+        <Card className="text-center p-6 border-0 shadow-lg bg-card/50 hover:bg-card/100 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
+            <CardHeader className="items-center p-0">
+                 <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                    {icon}
+                </div>
+                <CardTitle>{title}</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 pt-4">
+                <p className="text-muted-foreground">{description}</p>
+            </CardContent>
+        </Card>
+    );
+}
+
 // 9mobile Icon needs to be included here as it's not in the main icons file
 const NineMobileIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
       <path fillRule="evenodd" clipRule="evenodd" d="M11.64 18.23C13.88 18.23 16.03 17.65 17.93 16.59C17.16 14.61 15.7 12.98 13.79 11.93C15.7 10.88 17.16 9.25 17.93 7.27C16.03 6.21 13.88 5.63 11.64 5.63C9.4 5.63 7.25 6.21 5.35 7.27C6.12 9.25 7.58 10.88 9.49 11.93C7.58 12.98 6.12 14.61 5.35 16.59C7.25 17.65 9.4 18.23 11.64 18.23ZM11.64 21.84C5.21 21.84 0 16.63 0 10.2C0 3.77 5.21 -1.44 11.64 -1.44C18.07 -1.44 23.28 3.77 23.28 10.2C23.28 16.63 18.07 21.84 11.64 21.84Z" transform="translate(0 2.6)" fill="currentColor"/>
     </svg>
 );
-
-    
-
-    
 
     
