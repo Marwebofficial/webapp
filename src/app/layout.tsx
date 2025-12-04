@@ -55,6 +55,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <head>
+        <meta name="google-site-verification" content="1T_nRhGns7iADI6RuRUEPO5cHXYxC6iAw-7sSAa2bHI" />
         <link rel="preload" href="/fonts/pt-sans-v17-latin-regular.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="preload" href="/fonts/pt-sans-v17-latin-700.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
       </head>
