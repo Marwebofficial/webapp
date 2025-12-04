@@ -87,7 +87,7 @@ export default function BlogIndexPage() {
         if (!string) return false;
         try {
             const url = new URL(string);
-            return url.protocol === 'http:' || url.protocol === 'https:';
+            return url.protocol === 'http:' || url.protocol === 'https:' || url.protocol === 'data:';
         } catch (_) {
             return false;
         }

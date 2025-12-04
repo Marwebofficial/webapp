@@ -131,11 +131,22 @@ export function LandingPage() {
 
   // While loading, if the user is already determined to be logged in,
   // show a loading screen to prevent a flicker of the landing page.
-  if (isUserLoading || user) {
+  if (isUserLoading && user) {
     return (
         <div className="flex h-screen items-center justify-center">
             <p>Loading...</p>
         </div>
+    );
+  }
+
+  // Render the full landing page for new visitors or when auth state is clear.
+  if (user) {
+    // This case will be hit briefly for logged-in users before redirect,
+    // a loading screen avoids showing the landing page unnecessarily.
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p>Redirecting...</p>
+      </div>
     );
   }
 
