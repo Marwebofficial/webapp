@@ -50,6 +50,15 @@ export default function BlogIndexPage() {
     );
     const { data: posts, isLoading } = useCollection<BlogPost>(postsQuery);
 
+    const isValidHttpUrl = (string: string) => {
+        try {
+            const url = new URL(string);
+            return url.protocol === 'http:' || url.protocol === 'https:';
+        } catch (_) {
+            return false;
+        }
+    }
+
     return (
         <main className="container mx-auto p-4 py-8 md:p-12">
             <header className="text-center mb-12">
@@ -67,36 +76,42 @@ export default function BlogIndexPage() {
                         <PostCardSkeleton />
                     </>
                 ) : posts && posts.length > 0 ? (
-                    posts.map(post => (
-                        <Card key={post.id} className="flex flex-col overflow-hidden group shadow-sm hover:shadow-xl transition-shadow duration-300">
-                             <Link href={`/blog/${post.id}`} className="block aspect-video relative overflow-hidden">
-                                <Image
-                                    src={post.imageUrl || `https://picsum.photos/seed/${post.id}/600/400`}
-                                    alt={post.title}
-                                    fill
-                                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                />
-                            </Link>
-                            <CardHeader>
-                                <CardDescription>
-                                    <span>By {post.author}</span>
-                                    <span className="mx-2">•</span>
-                                    <span>{post.createdAt ? format(new Date(post.createdAt.seconds * 1000), 'MMM d, yyyy') : ''}</span>
-                                </CardDescription>
-                                <CardTitle className="text-xl leading-tight">
-                                     <Link href={`/blog/${post.id}`} className="hover:text-primary transition-colors stretched-link">{post.title}</Link>
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="flex-1">
-                                <p className="text-muted-foreground line-clamp-3">{post.excerpt}</p>
-                            </CardContent>
-                            <CardFooter>
-                                <Button asChild variant="link" className="p-0 h-auto font-semibold">
-                                    <Link href={`/blog/${post.id}`}>Read More <ArrowRight className="ml-2 h-4 w-4" /></Link>
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    ))
+                    posts.map(post => {
+                        const imageUrl = post.imageUrl && isValidHttpUrl(post.imageUrl)
+                            ? post.imageUrl
+                            : `https://picsum.photos/seed/${post.id}/600/400`;
+
+                        return (
+                            <Card key={post.id} className="flex flex-col overflow-hidden group shadow-sm hover:shadow-xl transition-shadow duration-300">
+                                <Link href={`/blog/${post.id}`} className="block aspect-video relative overflow-hidden">
+                                    <Image
+                                        src={imageUrl}
+                                        alt={post.title}
+                                        fill
+                                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                    />
+                                </Link>
+                                <CardHeader>
+                                    <CardDescription>
+                                        <span>By {post.author}</span>
+                                        <span className="mx-2">•</span>
+                                        <span>{post.createdAt ? format(new Date(post.createdAt.seconds * 1000), 'MMM d, yyyy') : ''}</span>
+                                    </CardDescription>
+                                    <CardTitle className="text-xl leading-tight">
+                                        <Link href={`/blog/${post.id}`} className="hover:text-primary transition-colors stretched-link">{post.title}</Link>
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="flex-1">
+                                    <p className="text-muted-foreground line-clamp-3">{post.excerpt}</p>
+                                </CardContent>
+                                <CardFooter>
+                                    <Button asChild variant="link" className="p-0 h-auto font-semibold">
+                                        <Link href={`/blog/${post.id}`}>Read More <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                                    </Button>
+                                </CardFooter>
+                            </Card>
+                        )
+                    })
                 ) : (
                     <div className="md:col-span-2 lg:col-span-3 text-center py-16">
                         <h2 className="text-2xl font-semibold">No posts yet!</h2>
