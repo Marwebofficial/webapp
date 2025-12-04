@@ -135,7 +135,7 @@ export function LandingPage() {
               <div className="mt-8 flex flex-wrap gap-4 justify-center">
                 <Button asChild size="lg" className="text-lg py-7 px-10 font-bold rounded-full shadow-lg transition-transform hover:scale-105">
                   <Link href="/signup">
-                    Create Free Account
+                    Get Started
                   </Link>
                 </Button>
                  <Button asChild size="lg" variant="outline" className="text-lg py-7 px-10 font-bold rounded-full transition-transform hover:scale-105 bg-background/50 backdrop-blur-sm">
@@ -385,5 +385,7 @@ const NineMobileIcon = (props: React.SVGProps<SVGSVGElement>) => (
       <path fillRule="evenodd" clipRule="evenodd" d="M11.64 18.23C13.88 18.23 16.03 17.65 17.93 16.59C17.16 14.61 15.7 12.98 13.79 11.93C15.7 10.88 17.16 9.25 17.93 7.27C16.03 6.21 13.88 5.63 11.64 5.63C9.4 5.63 7.25 6.21 5.35 7.27C6.12 9.25 7.58 10.88 9.49 11.93C7.58 12.98 6.12 14.61 5.35 16.59C7.25 17.65 9.4 18.23 11.64 18.23ZM11.64 21.84C5.21 21.84 0 16.63 0 10.2C0 3.77 5.21 -1.44 11.64 -1.44C18.07 -1.44 23.28 3.77 23.28 10.2C23.28 16.63 18.07 21.84 11.64 21.84Z" transform="translate(0 2.6)" fill="currentColor"/>
     </svg>
 );
+
+    
 
     
