@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -16,14 +16,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
-import { Sparkles, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Sparkles, Loader2, Image as ImageIcon, Upload } from 'lucide-react';
 import { generatePostContent, generatePostImage } from '@/ai/flows/generate-post-flow';
 
 const FormSchema = z.object({
     title: z.string().min(5, "Title must be at least 5 characters long."),
     slug: z.string().min(3, "URL Slug must be at least 3 characters long.").regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug can only contain lowercase letters, numbers, and hyphens.'),
     excerpt: z.string().min(20, "Excerpt must be at least 20 characters.").max(200, "Excerpt cannot exceed 200 characters."),
-    imageUrl: z.string().url("Please enter a valid image URL."),
+    imageUrl: z.string().url("Please enter a valid image URL.").or(z.string().startsWith("data:image/")),
     content: z.string().min(50, "Content must be at least 50 characters long."),
 });
 
@@ -39,6 +39,7 @@ function BlogPostEditor() {
     const [isLoading, setIsLoading] = useState(!!slug);
     const [isGeneratingContent, setIsGeneratingContent] = useState(false);
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const form = useForm<FormData>({
         resolver: zodResolver(FormSchema),
@@ -125,6 +126,30 @@ function BlogPostEditor() {
         }
     };
 
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            toast({
+                title: "Invalid File Type",
+                description: "Please select an image file (e.g., JPG, PNG, GIF).",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const dataUrl = e.target?.result as string;
+            form.setValue('imageUrl', dataUrl, { shouldValidate: true });
+            toast({
+                title: "Image Uploaded",
+                description: "The image has been loaded and is ready to be saved with the post."
+            });
+        };
+        reader.readAsDataURL(file);
+    };
 
     const onSubmit = async (data: FormData) => {
         if (!firestore || !user) return;
@@ -238,11 +263,22 @@ function BlogPostEditor() {
                                     <FormLabel>Cover Image URL</FormLabel>
                                     <div className="flex gap-2">
                                         <FormControl>
-                                            <Input {...field} />
+                                            <Input {...field} placeholder="Paste image URL or upload/generate one" />
                                         </FormControl>
+                                        <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            onChange={handleFileChange}
+                                            className="hidden"
+                                            accept="image/*"
+                                        />
+                                        <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isGeneratingImage || isGeneratingContent}>
+                                             <Upload className="mr-2 h-4 w-4" />
+                                             Upload
+                                        </Button>
                                         <Button type="button" variant="outline" onClick={handleGenerateImage} disabled={isGeneratingImage || isGeneratingContent}>
                                             {isGeneratingImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ImageIcon className="mr-2 h-4 w-4" />}
-                                            {isGeneratingImage ? 'Generating...' : 'Generate Image'}
+                                            {isGeneratingImage ? 'Generating...' : 'Generate'}
                                         </Button>
                                     </div>
                                     <FormMessage />
@@ -290,3 +326,5 @@ export default function BlogEditorPage() {
         </main>
     );
 }
+
+    
