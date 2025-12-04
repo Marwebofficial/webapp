@@ -81,18 +81,32 @@ export function LandingPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // If the user is authenticated, redirect them to the account page.
     if (!isUserLoading && user) {
       router.replace('/account');
     }
   }, [user, isUserLoading, router]);
 
-  if (isUserLoading || user) {
+  // While loading, if the user is already determined to be logged in,
+  // show a loading screen to prevent a flicker of the landing page.
+  if (isUserLoading && user) {
     return (
         <div className="flex h-screen items-center justify-center">
             <p>Loading...</p>
         </div>
     );
   }
+  
+  // If the user is logged in (but not loading), they will be redirected by the effect.
+  // We can show a loading indicator here as well.
+  if (user) {
+    return (
+        <div className="flex h-screen items-center justify-center">
+            <p>Redirecting...</p>
+        </div>
+    );
+  }
+
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
