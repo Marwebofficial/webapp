@@ -6,6 +6,7 @@ import './globals.css';
 import { Nav } from '@/components/nav';
 import { FirebaseClientProvider } from '@/firebase';
 import { cn } from '@/lib/utils';
+import Script from 'next/script';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dataconnect-f35af.web.app';
 
@@ -65,6 +66,16 @@ export default function RootLayout({
           {children}
           <Toaster />
         </FirebaseClientProvider>
+        <Script async src="https://www.googletagmanager.com/gtag/js?id=G-YW766Q51T3" />
+        <Script id="google-analytics">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'G-YW766Q51T3');
+          `}
+        </Script>
       </body>
     </html>
   );
