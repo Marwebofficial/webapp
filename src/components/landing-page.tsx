@@ -10,6 +10,7 @@ import {
   Clock,
   Tv,
   Repeat,
+  ArrowRight,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useUser } from '@/firebase';
@@ -18,6 +19,7 @@ import React, { Suspense, lazy, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 const AboutSection = lazy(() => import('./about-section'));
+const Testimonials = lazy(() => import('./testimonials-section'));
 
 
 export function LandingPage() {
@@ -42,8 +44,8 @@ export function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-1">
-        <section className="relative w-full h-[80vh] flex items-center justify-center text-center bg-gray-50 dark:bg-gray-900">
-          {heroImage && <Image
+        <section className="relative w-full h-[90vh] flex items-center justify-center text-center">
+           {heroImage && <Image
             src={heroImage.imageUrl}
             alt={heroImage.description}
             fill
@@ -51,22 +53,28 @@ export function LandingPage() {
             className="object-cover -z-10 opacity-20"
             data-ai-hint={heroImage.imageHint}
           />}
+           <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent"></div>
           <div className="container px-4 md:px-6 z-10 animate-in fade-in-50 slide-in-from-bottom-10 duration-700">
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-4xl mx-auto">
+                <div className="inline-block rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary mb-4">
+                    Fast, Reliable, and Affordable
+                </div>
               <h1 className="text-4xl font-extrabold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
                 Instant Digital Services for Nigeria
               </h1>
-              <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-                Cheap data, airtime top-ups, TV subscriptions, and more. Fast, reliable, and available 24/7.
+              <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+                Join thousands of satisfied customers. Get the cheapest data, airtime top-ups, TV subscriptions, and more. 24/7 service you can trust.
               </p>
               <div className="mt-8 flex flex-wrap gap-4 justify-center">
                 <Button asChild size="lg" className="text-lg py-7 px-10 font-bold rounded-full shadow-lg transition-transform hover:scale-105">
                   <Link href="/signup">
-                    Get Started
+                    Get Started Now
                   </Link>
                 </Button>
-                <Button asChild size="lg" variant="outline" className="bg-background/80 text-lg py-7 px-10 font-bold rounded-full shadow-lg transition-transform hover:scale-105">
-                    <Link href="#features">Our Services</Link>
+                <Button asChild size="lg" variant="ghost" className="text-lg py-7 px-10 font-bold rounded-full transition-transform hover:scale-105">
+                    <Link href="#features">
+                        Our Services <ArrowRight className="ml-2 h-5 w-5" />
+                    </Link>
                 </Button>
               </div>
             </div>
@@ -91,7 +99,12 @@ export function LandingPage() {
               <FeatureCard
                 icon={<Zap className="w-8 h-8 text-primary" />}
                 title="Instant Delivery"
-                description="Your data and subscriptions are delivered within minutes. No delays, no stories."
+                description="Your data, airtime and subscriptions are delivered within minutes. No delays, no stories."
+              />
+              <FeatureCard
+                icon={<Smartphone className="w-8 h-8 text-primary" />}
+                title="Data & Airtime"
+                description="Get the best rates for data bundles and airtime top-up on all major Nigerian networks."
               />
               <FeatureCard
                 icon={<Tv className="w-8 h-8 text-primary" />}
@@ -101,22 +114,17 @@ export function LandingPage() {
               <FeatureCard
                 icon={<Repeat className="w-8 h-8 text-primary" />}
                 title="Airtime to Cash"
-                description="Convert your unused airtime back to cash quickly and at the best rates."
-              />
-              <FeatureCard
-                icon={<Smartphone className="w-8 h-8 text-primary" />}
-                title="All Networks"
-                description="We support all major Nigerian mobile networks: MTN, Glo, Airtel, and 9mobile."
+                description="Convert your unused airtime back to cash quickly and at competitive rates."
               />
               <FeatureCard
                 icon={<ShieldCheck className="w-8 h-8 text-primary" />}
                 title="Secure & Reliable"
-                description="Your transactions are safe with us. We provide a reliable service you can trust."
+                description="Your transactions are protected with industry-standard security. A reliable service you can trust."
               />
               <FeatureCard
                 icon={<Clock className="w-8 h-8 text-primary" />}
                 title="24/7 Availability"
-                description="Our service is available round the clock, any day of the week. Transact whenever you need to."
+                description="Our automated service is available round the clock. Transact anytime you need to."
               />
             </div>
           </div>
@@ -124,6 +132,10 @@ export function LandingPage() {
 
         <Suspense fallback={<AboutSkeleton />}>
             <AboutSection />
+        </Suspense>
+
+        <Suspense fallback={<TestimonialsSkeleton />}>
+          <Testimonials />
         </Suspense>
 
       </main>
@@ -164,13 +176,13 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <div className="grid gap-2 text-center">
-      <div className="flex justify-center items-center mb-2">
-        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+    <div className="grid gap-4 p-6 rounded-lg hover:bg-card transition-colors border border-transparent hover:border-border">
+      <div className="flex items-center gap-4">
+        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
           {icon}
         </div>
+        <h3 className="text-xl font-bold">{title}</h3>
       </div>
-      <h3 className="text-xl font-bold">{title}</h3>
       <p className="text-muted-foreground">{description}</p>
     </div>
   );
@@ -192,6 +204,32 @@ function AboutSkeleton() {
               <div className="relative aspect-video rounded-xl overflow-hidden">
               </div>
             </div>
+          </div>
+        </section>
+    )
+}
+
+function TestimonialsSkeleton() {
+    return (
+        <section id="testimonials" className="w-full py-12 md:py-24 lg:py-32 bg-secondary">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
+                <div className="inline-block rounded-lg bg-background px-3 py-1 text-sm">
+                    Testimonials
+                </div>
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
+                    What Our Customers Say
+                </h2>
+                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                    Hear from our satisfied customers who trust DataConnect for their digital needs.
+                </p>
+            </div>
+            
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="h-60 w-full" />
+                <div className="h-60 w-full" />
+                <div className="h-60 w-full" />
+              </div>
           </div>
         </section>
     )
