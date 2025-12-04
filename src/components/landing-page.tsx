@@ -16,6 +16,10 @@ import {
   Heart,
   Clock,
   ThumbsUp,
+  Facebook,
+  Twitter,
+  Instagram,
+  Linkedin,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useUser } from '@/firebase';
@@ -29,6 +33,7 @@ import { NetworkIcon } from './network-icons';
 import { TvProviderIcon } from './tv-provider-icons';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/card';
+import { Input } from './ui/input';
 
 
 const useTypingEffect = (words: string[], typeSpeed = 100, deleteSpeed = 50, delay = 2000) => {
@@ -144,7 +149,7 @@ export function LandingPage() {
             alt={heroImage.description}
             fill
             priority
-            className="object-cover -z-10 opacity-10"
+            className="object-cover -z-10 opacity-30"
             data-ai-hint={heroImage.imageHint}
           />}
            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent"></div>
@@ -382,26 +387,63 @@ export function LandingPage() {
 
       </main>
 
-      <footer className="w-full border-t bg-background">
-        <div className="container mx-auto flex flex-col items-center justify-between gap-4 py-6 px-4 md:flex-row md:px-6">
-            <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} DataConnect Nigeria. All rights
-            reserved.
+      <footer className="w-full border-t bg-secondary/50 text-foreground">
+        <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 py-12 px-4 md:px-6">
+          <div className="md:col-span-1 space-y-4">
+            <Link href="/" className="flex items-center space-x-2">
+              <Zap className="h-6 w-6 text-primary" />
+              <span className="text-lg font-bold">DataConnect</span>
+            </Link>
+            <p className="text-muted-foreground text-sm">
+              Your one-stop shop for cheap data, airtime, and bill payments in Nigeria.
             </p>
-            <nav className="flex gap-4 sm:gap-6">
-                <Link href="/terms-of-service" className="text-sm hover:underline underline-offset-4">
-                    Terms
-                </Link>
-                <Link href="/privacy-policy" className="text-sm hover:underline underline-offset-4">
-                    Privacy
-                </Link>
-                <Link href="/payment-policy" className="text-sm hover:underline underline-offset-4">
-                    Payments
-                </Link>
-                <Link href="/contact" className="text-sm hover:underline underline-offset-4">
-                    Contact
-                </Link>
-            </nav>
+            <div className="flex items-center space-x-2">
+                <Input type="email" placeholder="Enter your email" className="max-w-xs flex-1" />
+                <Button type="submit">Subscribe</Button>
+            </div>
+            <p className="text-xs text-muted-foreground">Stay updated with our latest deals and offers.</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-8 md:col-span-3">
+            <div className="space-y-3">
+              <h4 className="font-semibold tracking-wide">Services</h4>
+              <nav className="flex flex-col space-y-2">
+                <Link href="/buy-data" className="text-sm text-muted-foreground hover:text-primary">Buy Data</Link>
+                <Link href="/buy-airtime" className="text-sm text-muted-foreground hover:text-primary">Buy Airtime</Link>
+                <Link href="/tv-subscription" className="text-sm text-muted-foreground hover:text-primary">TV Subscription</Link>
+                <Link href="/airtime-to-cash" className="text-sm text-muted-foreground hover:text-primary">Airtime to Cash</Link>
+              </nav>
+            </div>
+            <div className="space-y-3">
+              <h4 className="font-semibold tracking-wide">Company</h4>
+              <nav className="flex flex-col space-y-2">
+                <Link href="/#about" className="text-sm text-muted-foreground hover:text-primary">About Us</Link>
+                <Link href="/blog" className="text-sm text-muted-foreground hover:text-primary">Blog</Link>
+                <Link href="/#faq" className="text-sm text-muted-foreground hover:text-primary">FAQ</Link>
+                <Link href="/contact" className="text-sm text-muted-foreground hover:text-primary">Contact Us</Link>
+              </nav>
+            </div>
+            <div className="space-y-3">
+              <h4 className="font-semibold tracking-wide">Legal</h4>
+              <nav className="flex flex-col space-y-2">
+                <Link href="/terms-of-service" className="text-sm text-muted-foreground hover:text-primary">Terms of Service</Link>
+                <Link href="/privacy-policy" className="text-sm text-muted-foreground hover:text-primary">Privacy Policy</Link>
+                <Link href="/payment-policy" className="text-sm text-muted-foreground hover:text-primary">Payment Policy</Link>
+              </nav>
+            </div>
+          </div>
+        </div>
+        <div className="border-t">
+            <div className="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4 py-4 px-4 md:px-6">
+                 <p className="text-sm text-muted-foreground">
+                    &copy; {new Date().getFullYear()} DataConnect Nigeria. All rights reserved.
+                </p>
+                <div className="flex items-center space-x-4">
+                    <Link href="#" className="text-muted-foreground hover:text-primary"><Facebook className="h-5 w-5"/></Link>
+                    <Link href="#" className="text-muted-foreground hover:text-primary"><Twitter className="h-5 w-5"/></Link>
+                    <Link href="#" className="text-muted-foreground hover:text-primary"><Instagram className="h-5 w-5"/></Link>
+                    <Link href="#" className="text-muted-foreground hover:text-primary"><Linkedin className="h-5 w-5"/></Link>
+                </div>
+            </div>
         </div>
       </footer>
     </div>
