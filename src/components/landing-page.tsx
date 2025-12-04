@@ -149,7 +149,7 @@ export function LandingPage() {
             alt={heroImage.description}
             fill
             priority
-            className="object-cover -z-10 opacity-30"
+            className="object-cover -z-10 opacity-10"
             data-ai-hint={heroImage.imageHint}
           />}
            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent"></div>
