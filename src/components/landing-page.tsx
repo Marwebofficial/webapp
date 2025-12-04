@@ -191,15 +191,15 @@ export function LandingPage() {
                   <div className="flex -space-x-2 overflow-hidden">
                       <Avatar className="inline-block h-8 w-8 rounded-full ring-2 ring-background">
                           <AvatarImage src="https://picsum.photos/seed/user1/40/40" />
-                          <AvatarFallback>U1</AvatarFallback>
+                          <AvatarFallback></AvatarFallback>
                       </Avatar>
                        <Avatar className="inline-block h-8 w-8 rounded-full ring-2 ring-background">
                           <AvatarImage src="https://picsum.photos/seed/user2/40/40" />
-                          <AvatarFallback>U2</AvatarFallback>
+                          <AvatarFallback></AvatarFallback>
                       </Avatar>
                        <Avatar className="inline-block h-8 w-8 rounded-full ring-2 ring-background">
                           <AvatarImage src="https://picsum.photos/seed/user3/40/40" />
-                          <AvatarFallback>U3</AvatarFallback>
+                          <AvatarFallback></AvatarFallback>
                       </Avatar>
                   </div>
                   <p className="text-sm text-muted-foreground font-medium">Join thousands of satisfied users</p>
