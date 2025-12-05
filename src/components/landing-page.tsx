@@ -118,7 +118,7 @@ export function LandingPage() {
                     <p className="text-sm text-muted-foreground font-medium">Join 5,000+ happy users</p>
                 </div>
               </div>
-              <div className="relative group">
+              <div className="relative group hidden lg:block">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-accent rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
                 <div className="relative aspect-video mx-auto overflow-hidden rounded-xl sm:w-full shadow-2xl">
                      {heroImage && <Image

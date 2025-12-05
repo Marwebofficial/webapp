@@ -101,20 +101,22 @@ export function HistoryPage() {
                     <Skeleton className="h-4 w-3/4" />
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead><Skeleton className="h-6 w-24" /></TableHead>
-                                <TableHead><Skeleton className="h-6 w-32" /></TableHead>
-                                <TableHead><Skeleton className="h-6 w-20" /></TableHead>
-                                <TableHead><Skeleton className="h-6 w-24" /></TableHead>
-                                <TableHead><Skeleton className="h-6 w-24" /></TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {renderSkeleton()}
-                        </TableBody>
-                    </Table>
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead><Skeleton className="h-6 w-24" /></TableHead>
+                                    <TableHead><Skeleton className="h-6 w-32" /></TableHead>
+                                    <TableHead><Skeleton className="h-6 w-20" /></TableHead>
+                                    <TableHead><Skeleton className="h-6 w-24" /></TableHead>
+                                    <TableHead><Skeleton className="h-6 w-24" /></TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {renderSkeleton()}
+                            </TableBody>
+                        </Table>
+                    </div>
                 </CardContent>
             </Card>
         </div>
@@ -129,43 +131,45 @@ export function HistoryPage() {
           <CardDescription>A record of your recent transactions.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Details</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Recipient</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                renderSkeleton()
-              ) : transactions && transactions.length > 0 ? (
-                transactions.map((tx) => (
-                  <TableRow key={tx.id}>
-                    <TableCell className="font-medium">{formatDate(tx.createdAt)}</TableCell>
-                    <TableCell>
-                        <div className="font-medium">{tx.type}</div>
-                        <div className="text-sm text-muted-foreground">{tx.details} on {tx.network.toUpperCase()}</div>
-                    </TableCell>
-                    <TableCell>₦{tx.amount.toLocaleString()}</TableCell>
-                    <TableCell>{tx.recipientPhone}</TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusVariant(tx.status)}>{tx.status}</Badge>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Details</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Recipient</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  renderSkeleton()
+                ) : transactions && transactions.length > 0 ? (
+                  transactions.map((tx) => (
+                    <TableRow key={tx.id}>
+                      <TableCell className="font-medium whitespace-nowrap">{formatDate(tx.createdAt)}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                          <div className="font-medium">{tx.type}</div>
+                          <div className="text-sm text-muted-foreground">{tx.details} on {tx.network.toUpperCase()}</div>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">₦{tx.amount.toLocaleString()}</TableCell>
+                      <TableCell className="whitespace-nowrap">{tx.recipientPhone}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <Badge variant={getStatusVariant(tx.status)}>{tx.status}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center">
+                      You have no transactions yet.
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
-                    You have no transactions yet.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

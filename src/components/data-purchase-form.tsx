@@ -374,7 +374,7 @@ Please proceed with the transaction. Thank you.`;
                         2. Choose Data Plan
                       </FormLabel>
                       <FormControl>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-4">
                           {isLoadingPlans && (
                             <>
                               <Skeleton className="h-24 w-full" />
@@ -393,15 +393,15 @@ Please proceed with the transaction. Thank you.`;
                                   : 'border-border'
                               )}
                             >
-                              <CardContent className="p-4 text-center flex flex-col items-center justify-center h-full">
-                                <p className="font-bold text-lg text-primary">
+                              <CardContent className="p-3 md:p-4 text-center flex flex-col items-center justify-center h-full">
+                                <p className="font-bold text-base md:text-lg text-primary">
                                   {plan.label}
                                 </p>
                                 <p className="text-muted-foreground font-semibold">
                                   ₦{plan.price.toLocaleString()}
                                 </p>
                                 {plan.validity && (
-                                  <p className="text-xs text-muted-foreground">
+                                  <p className="text-xs text-muted-foreground mt-1">
                                     {plan.validity}
                                   </p>
                                 )}

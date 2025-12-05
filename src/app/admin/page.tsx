@@ -122,7 +122,7 @@ function BlogManager() {
                     </Link>
                 </Button>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-x-auto">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -137,11 +137,11 @@ function BlogManager() {
                         ) : posts && posts.length > 0 ? (
                             posts.map(post => (
                                 <TableRow key={post.id}>
-                                    <TableCell className="font-medium">{post.title}</TableCell>
-                                    <TableCell>
+                                    <TableCell className="font-medium whitespace-nowrap">{post.title}</TableCell>
+                                    <TableCell className="whitespace-nowrap">
                                         {post.createdAt ? format(new Date(post.createdAt.seconds * 1000), 'MMM d, yyyy') : 'N/A'}
                                     </TableCell>
-                                    <TableCell className="text-right space-x-2">
+                                    <TableCell className="text-right space-x-2 whitespace-nowrap">
                                         <Button asChild variant="outline" size="sm">
                                             <Link href={`/admin/blog/editor?slug=${post.id}`}>
                                                 <Pencil className="w-4 h-4 mr-2" /> Edit
@@ -205,7 +205,7 @@ function UserManagement() {
                 <CardTitle>User Management</CardTitle>
                 <CardDescription>View and manage user wallet balances.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-x-auto">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -223,12 +223,12 @@ function UserManagement() {
                         ) : users && users.length > 0 ? (
                             users.map(user => (
                                 <TableRow key={user.id}>
-                                    <TableCell>
+                                    <TableCell className="whitespace-nowrap">
                                         <div className="font-medium">{user.name}</div>
                                     </TableCell>
-                                    <TableCell>{user.email}</TableCell>
-                                    <TableCell>₦{(user.walletBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                                    <TableCell className="text-right">
+                                    <TableCell className="whitespace-nowrap">{user.email}</TableCell>
+                                    <TableCell className="whitespace-nowrap">₦{(user.walletBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                                    <TableCell className="text-right whitespace-nowrap">
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                                 <Button size="sm" variant="destructive">
@@ -327,7 +327,7 @@ function FundingApprovalManager() {
                 <CardTitle>Wallet Funding Approvals</CardTitle>
                 <CardDescription>Review and approve pending wallet funding requests.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-x-auto">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -346,19 +346,19 @@ function FundingApprovalManager() {
                         ) : usersWithRequests && usersWithRequests.length > 0 ? (
                             usersWithRequests.map(user => (
                                 <TableRow key={user.id}>
-                                    <TableCell>
+                                    <TableCell className="whitespace-nowrap">
                                         <div className="font-medium">{user.pendingFundingRequest?.userName || user.name}</div>
                                         <div className="text-sm text-muted-foreground">{user.email}</div>
                                     </TableCell>
-                                    <TableCell>₦{user.pendingFundingRequest?.amount.toLocaleString()}</TableCell>
-                                    <TableCell>{user.pendingFundingRequest?.bankName}</TableCell>
-                                    <TableCell>
+                                    <TableCell className="whitespace-nowrap">₦{user.pendingFundingRequest?.amount.toLocaleString()}</TableCell>
+                                    <TableCell className="whitespace-nowrap">{user.pendingFundingRequest?.bankName}</TableCell>
+                                    <TableCell className="whitespace-nowrap">
                                         {user.pendingFundingRequest?.createdAt ?
                                             format(new Date(user.pendingFundingRequest.createdAt.seconds * 1000), "MMM d, yyyy, h:mm a")
                                             : 'N/A'
                                         }
                                     </TableCell>
-                                    <TableCell className="text-right">
+                                    <TableCell className="text-right whitespace-nowrap">
                                         <Button size="sm" onClick={() => handleApprove(user)}>
                                             <CheckCircle className="w-4 h-4 mr-2"/>
                                             Approve
@@ -502,7 +502,7 @@ function ReviewManager() {
                 <CardTitle>Review Management</CardTitle>
                 <CardDescription>View and delete customer reviews.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-x-auto">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -521,11 +521,11 @@ function ReviewManager() {
                         ) : reviews && reviews.length > 0 ? (
                             reviews.map(review => (
                                 <TableRow key={review.id}>
-                                    <TableCell>{formatDateShort(review.createdAt)}</TableCell>
-                                    <TableCell>{review.name}</TableCell>
-                                    <TableCell>{review.rating}/5</TableCell>
+                                    <TableCell className="whitespace-nowrap">{formatDateShort(review.createdAt)}</TableCell>
+                                    <TableCell className="whitespace-nowrap">{review.name}</TableCell>
+                                    <TableCell className="whitespace-nowrap">{review.rating}/5</TableCell>
                                     <TableCell className="max-w-xs truncate">{review.reviewText}</TableCell>
-                                    <TableCell className="text-right">
+                                    <TableCell className="text-right whitespace-nowrap">
                                         <Button variant="destructive" size="sm" onClick={() => handleDelete(review.id)}>
                                             <Trash2 className="w-4 h-4" />
                                         </Button>
@@ -690,12 +690,12 @@ function PlansManager({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <Select
             value={selectedProvider}
             onValueChange={setSelectedProvider}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full md:w-[180px]">
               <SelectValue placeholder="Select provider" />
             </SelectTrigger>
             <SelectContent>
@@ -711,7 +711,7 @@ function PlansManager({
               else setIsFormOpen(true);
           }}>
             <DialogTrigger asChild>
-                <Button onClick={() => openForm()}>Add New Plan</Button>
+                <Button onClick={() => openForm()} className="w-full md:w-auto">Add New Plan</Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
@@ -727,51 +727,53 @@ function PlansManager({
             </DialogContent>
           </Dialog>
         </div>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Label</TableHead>
-              <TableHead>Price</TableHead>
-              {!isTvPlan && <TableHead>Validity</TableHead>}
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={colSpan} className="h-24 text-center">
-                  Loading...
-                </TableCell>
-              </TableRow>
-            ) : plans && plans.length > 0 ? (
-              plans.map((plan) => (
-                <TableRow key={plan.id}>
-                  <TableCell>{plan.label}</TableCell>
-                  <TableCell>₦{plan.price.toLocaleString()}</TableCell>
-                  {!isTvPlan && <TableCell>{plan.validity}</TableCell>}
-                  <TableCell className="text-right space-x-2">
-                    <Button variant="outline" size="sm" onClick={() => openForm(plan)}>
-                        <Pencil className="w-4 h-4 mr-2" /> Edit
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(plan.id)}
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" /> Delete
-                    </Button>
-                  </TableCell>
+        <div className="overflow-x-auto">
+            <Table>
+            <TableHeader>
+                <TableRow>
+                <TableHead>Label</TableHead>
+                <TableHead>Price</TableHead>
+                {!isTvPlan && <TableHead>Validity</TableHead>}
+                <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={colSpan} className="h-24 text-center">
-                  No plans found for this provider.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+                {isLoading ? (
+                <TableRow>
+                    <TableCell colSpan={colSpan} className="h-24 text-center">
+                    Loading...
+                    </TableCell>
+                </TableRow>
+                ) : plans && plans.length > 0 ? (
+                plans.map((plan) => (
+                    <TableRow key={plan.id}>
+                    <TableCell className="whitespace-nowrap">{plan.label}</TableCell>
+                    <TableCell className="whitespace-nowrap">₦{plan.price.toLocaleString()}</TableCell>
+                    {!isTvPlan && <TableCell className="whitespace-nowrap">{plan.validity}</TableCell>}
+                    <TableCell className="text-right space-x-2 whitespace-nowrap">
+                        <Button variant="outline" size="sm" onClick={() => openForm(plan)}>
+                            <Pencil className="w-4 h-4 mr-2" /> Edit
+                        </Button>
+                        <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(plan.id)}
+                        >
+                        <Trash2 className="w-4 h-4 mr-2" /> Delete
+                        </Button>
+                    </TableCell>
+                    </TableRow>
+                ))
+                ) : (
+                <TableRow>
+                    <TableCell colSpan={colSpan} className="h-24 text-center">
+                    No plans found for this provider.
+                    </TableCell>
+                </TableRow>
+                )}
+            </TableBody>
+            </Table>
+        </div>
       </CardContent>
     </Card>
   );
@@ -844,7 +846,7 @@ function NetworkStatusManager() {
                     Update the operational status of all service providers.
                 </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-x-auto">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -861,11 +863,11 @@ function NetworkStatusManager() {
                         ) : networkStatuses && networkStatuses.length > 0 ? (
                             networkStatuses.map(network => (
                                 <TableRow key={network.id}>
-                                    <TableCell className="font-medium">{network.name}</TableCell>
+                                    <TableCell className="font-medium whitespace-nowrap">{network.name}</TableCell>
                                     <TableCell>
                                         <Badge variant={getStatusVariant(network.status)}>{network.status}</Badge>
                                     </TableCell>
-                                    <TableCell className="text-right">
+                                    <TableCell className="text-right whitespace-nowrap">
                                         <Dialog>
                                             <DialogTrigger asChild>
                                                 <Button variant="outline" size="sm"><Pencil className="w-4 h-4 mr-2" /> Edit</Button>
