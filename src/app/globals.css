@@ -82,19 +82,3 @@
     @apply bg-background text-foreground;
   }
 }
-
-@font-face {
-  font-family: 'PT Sans';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url(/fonts/pt-sans-v17-latin-regular.woff2) format('woff2');
-}
-
-@font-face {
-  font-family: 'PT Sans';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url(/fonts/pt-sans-v17-latin-700.woff2) format('woff2');
-}

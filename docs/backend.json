@@ -234,117 +234,56 @@
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Stores user information. 'userId' is equal to `request.auth.uid`. This ensures path-based ownership. It is created upon user registration.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user. It is equal to the Firebase Authentication UID."
-            }
-          ]
-        }
+    "structure": {
+      "/users/{userId}": {
+        "schema": {
+          "$ref": "#/backend/entities/User"
+        },
+        "description": "Stores user information. 'userId' is equal to `request.auth.uid`. This ensures path-based ownership. It is created upon user registration."
       },
-      {
-        "path": "/users/{userId}/transactions",
-        "definition": {
-          "entityName": "Transaction",
-          "schema": {
-            "$ref": "#/backend/entities/Transaction"
-          },
-          "description": "Stores a user's transaction history. Each document is a single purchase or conversion.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The UID of the user who owns these transactions."
-            }
-          ]
-        }
+      "/users/{userId}/transactions/{transactionId}": {
+        "schema": {
+          "$ref": "#/backend/entities/Transaction"
+        },
+        "description": "Stores a user's transaction history. Each document is a single purchase or conversion."
       },
-      {
-        "path": "/reviews",
-        "definition": {
-          "entityName": "Review",
-          "schema": {
-            "$ref": "#/backend/entities/Review"
-          },
-          "description": "A collection of user-submitted reviews. Anyone can read, but only authenticated users can create.",
-          "params": []
-        }
+      "/reviews/{reviewId}": {
+        "schema": {
+          "$ref": "#/backend/entities/Review"
+        },
+        "description": "A collection of user-submitted reviews. Anyone can read, but only authenticated users can create."
       },
-       {
-        "path": "/blogPosts/{postId}",
-        "definition": {
-          "entityName": "BlogPost",
-          "schema": {
-            "$ref": "#/backend/entities/BlogPost"
-          },
-          "description": "A collection of blog posts for the website.",
-          "params": [
-             {
-              "name": "postId",
-              "description": "The unique ID (slug) of the blog post."
-            }
-          ]
-        }
+       "/blogPosts/{postId}": {
+        "schema": {
+          "$ref": "#/backend/entities/BlogPost"
+        },
+        "description": "A collection of blog posts for the website."
       },
-      {
-        "path": "/dataPlans/{network}",
-        "definition": {
-          "entityName": "DataPlan",
-          "schema": {
-            "$ref": "#/backend/entities/DataPlan"
-          },
-          "description": "A collection containing data plans for a specific network provider.",
-          "params": [
-            {
-              "name": "network",
-              "description": "The network provider ID (e.g., 'mtn', 'airtel')."
-            }
-          ]
-        }
+      "/dataPlans/{network}/plans/{planId}": {
+        "schema": {
+          "$ref": "#/backend/entities/DataPlan"
+        },
+        "description": "A collection containing data plans for a specific network provider."
       },
-      {
-        "path": "/tvPlans/{provider}",
-        "definition": {
-          "entityName": "TvPlan",
-          "schema": {
-            "$ref": "#/backend/entities/TvPlan"
-          },
-          "description": "A collection containing TV subscription plans for a specific provider.",
-          "params": [
-            {
-              "name": "provider",
-              "description": "The TV provider ID (e.g., 'dstv', 'gotv')."
-            }
-          ]
-        }
+      "/tvPlans/{provider}/plans/{planId}": {
+        "schema": {
+          "$ref": "#/backend/entities/TvPlan"
+        },
+        "description": "A collection containing TV subscription plans for a specific provider."
       },
-      {
-        "path": "/networkStatus/{networkId}",
-        "definition": {
-          "entityName": "NetworkStatus",
+      "/networkStatus/{networkId}": {
+        "schema": {
+          "$ref": "#/backend/entities/NetworkStatus"
+        },
+        "description": "A collection containing the operational status of network providers."
+      },
+       "/announcement/current": {
           "schema": {
-            "$ref": "#/backend/entities/NetworkStatus"
+            "$ref": "#/backend/entities/Announcement"
           },
-          "description": "A collection containing the operational status of network providers.",
-          "params": [
-            {
-              "name": "networkId",
-              "description": "The network provider ID (e.g., 'mtn')."
-            }
-          ]
-        }
-      }
-    ],
+          "description": "A singleton document that stores the current site-wide announcement."
+       }
+    },
     "reasoning": "The Firestore structure now includes a 'transactions' subcollection for each user to store their purchase history. This allows for easy retrieval of a user's transactions while maintaining the strict ownership security model. The User entity is updated with a `createdAt` field, a `walletBalance`, and a `pendingFundingRequest` object to support the new wallet feature. A top-level 'reviews' collection is added to store user testimonials. A 'blogPosts' collection has been added to store blog articles. Collections for 'dataPlans', 'tvPlans' are added to allow for dynamic management of service offerings from an admin panel. A 'networkStatus' collection is added for admins to manually update and users to view the status of service providers. The ExamPins feature has been removed."
   }
 }
-
-    
