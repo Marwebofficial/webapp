@@ -35,37 +35,6 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/card';
 import { Input } from './ui/input';
 
-
-const useTypingEffect = (words: string[], typeSpeed = 100, deleteSpeed = 50, delay = 2000) => {
-  const [text, setText] = useState('');
-  const [wordIndex, setWordIndex] = useState(0);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  useEffect(() => {
-    const handleTyping = () => {
-      const currentWord = words[wordIndex];
-      if (isDeleting) {
-        setText(currentWord.substring(0, text.length - 1));
-      } else {
-        setText(currentWord.substring(0, text.length + 1));
-      }
-
-      if (!isDeleting && text === currentWord) {
-        setTimeout(() => setIsDeleting(true), delay);
-      } else if (isDeleting && text === '') {
-        setIsDeleting(false);
-        setWordIndex((prev) => (prev + 1) % words.length);
-      }
-    };
-
-    const typingTimeout = setTimeout(handleTyping, isDeleting ? deleteSpeed : typeSpeed);
-    return () => clearTimeout(typingTimeout);
-  }, [text, isDeleting, wordIndex, words, typeSpeed, deleteSpeed, delay]);
-
-  return text;
-};
-
-
 function AboutSkeleton() {
     return (
          <section id="about" className="w-full py-12 md:py-24 lg:py-32 bg-background">
@@ -119,9 +88,6 @@ export function LandingPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
-  const dynamicWords = useMemo(() => ["Cheap Data", "Instant Airtime", "TV Subscriptions", "Bill Payments"], []);
-  const typedText = useTypingEffect(dynamicWords);
-
   useEffect(() => {
     // If the user is authenticated, redirect them to the account page.
     if (!isUserLoading && user) {
@@ -143,55 +109,36 @@ export function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <main className="flex-1">
-        <section className="relative w-full pt-24 pb-12 md:pt-32 md:pb-20 lg:pt-40 lg:pb-28">
-           {heroImage && <Image
-            src={heroImage.imageUrl}
-            alt={heroImage.description}
-            fill
-            priority
-            className="object-cover -z-10 opacity-10"
-            data-ai-hint={heroImage.imageHint}
-          />}
-           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent"></div>
-          <div className="container px-4 md:px-6 z-10 animate-in fade-in-50 slide-in-from-bottom-10 duration-700">
-            <div className="max-w-4xl mx-auto text-center">
-                <div className="inline-block rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary mb-4">
-                    Fast, Reliable, and Affordable
+        <section className="w-full py-12 md:py-24 lg:py-32">
+          <div className="container px-4 md:px-6">
+            <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
+              <div className="flex flex-col justify-center space-y-4">
+                <div className="space-y-2">
+                  <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
+                    Fast, Reliable, and Affordable Digital Services
+                  </h1>
+                  <p className="max-w-[600px] text-muted-foreground md:text-xl">
+                    Your one-stop shop for cheap data, airtime top-ups, TV
+                    subscriptions, and more.
+                  </p>
                 </div>
-              <h1 className="text-4xl font-extrabold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
-                Get <span className="text-primary inline-block min-h-[50px] md:min-h-[80px]">{typedText}</span><span className="animate-ping">|</span>
-              </h1>
-              <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
-                Join thousands of Nigerians enjoying seamless digital services. Your one-stop shop for all online transactions.
-              </p>
-              <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Button asChild size="lg" className="text-lg py-7 px-10 font-bold rounded-full shadow-lg transition-transform hover:scale-105 w-full sm:w-auto">
-                  <Link href="/signup">
-                    Get Started <ArrowRight className="ml-2 h-5 w-5" />
-                  </Link>
-                </Button>
-                 <Button asChild size="lg" variant="outline" className="text-lg py-7 px-10 font-bold rounded-full transition-transform hover:scale-105 w-full sm:w-auto">
-                    <Link href="/contact">
-                        Contact Sales
+                <div className="flex flex-col gap-2 min-[400px]:flex-row">
+                  <Button asChild size="lg">
+                    <Link href="/signup">
+                      Get Started <ArrowRight className="ml-2 h-5 w-5" />
                     </Link>
-                </Button>
+                  </Button>
+                </div>
               </div>
-              <div className="mt-8 flex items-center justify-center gap-4">
-                  <div className="flex -space-x-2 overflow-hidden">
-                      <Avatar className="inline-block h-8 w-8 rounded-full ring-2 ring-background">
-                          <AvatarImage src="https://picsum.photos/seed/user1/40/40" />
-                          <AvatarFallback></AvatarFallback>
-                      </Avatar>
-                       <Avatar className="inline-block h-8 w-8 rounded-full ring-2 ring-background">
-                          <AvatarImage src="https://picsum.photos/seed/user2/40/40" />
-                          <AvatarFallback></AvatarFallback>
-                      </Avatar>
-                       <Avatar className="inline-block h-8 w-8 rounded-full ring-2 ring-background">
-                          <AvatarImage src="https://picsum.photos/seed/user3/40/40" />
-                          <AvatarFallback></AvatarFallback>
-                      </Avatar>
-                  </div>
-                  <p className="text-sm text-muted-foreground font-medium">Join thousands of satisfied users</p>
+              <div className="relative aspect-video mx-auto overflow-hidden rounded-xl sm:w-full lg:order-last">
+                 {heroImage && <Image
+                    src={heroImage.imageUrl}
+                    alt={heroImage.description}
+                    fill
+                    priority
+                    className="object-cover"
+                    data-ai-hint={heroImage.imageHint}
+                />}
               </div>
             </div>
           </div>
@@ -525,5 +472,3 @@ const NineMobileIcon = (props: React.SVGProps<SVGSVGElement>) => (
       <path fillRule="evenodd" clipRule="evenodd" d="M11.64 18.23C13.88 18.23 16.03 17.65 17.93 16.59C17.16 14.61 15.7 12.98 13.79 11.93C15.7 10.88 17.16 9.25 17.93 7.27C16.03 6.21 13.88 5.63 11.64 5.63C9.4 5.63 7.25 6.21 5.35 7.27C6.12 9.25 7.58 10.88 9.49 11.93C7.58 12.98 6.12 14.61 5.35 16.59C7.25 17.65 9.4 18.23 11.64 18.23ZM11.64 21.84C5.21 21.84 0 16.63 0 10.2C0 3.77 5.21 -1.44 11.64 -1.44C18.07 -1.44 23.28 3.77 23.28 10.2C23.28 16.63 18.07 21.84 11.64 21.84Z" transform="translate(0 2.6)" fill="currentColor"/>
     </svg>
 );
-
-    
