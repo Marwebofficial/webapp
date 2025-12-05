@@ -9,8 +9,8 @@
     {
       "id": "about",
       "description": "Image for the 'About Us' section, depicting team collaboration.",
-      "imageUrl": "https://images.unsplash.com/photo-1622675363311-3e1904dc1885?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHx0ZWFtJTIwY29sbGFib3JhdGlvbnxlbnwwfHx8fDE3NjQyOTk4MDh8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "team collaboration"
+      "imageUrl": "https://images.unsplash.com/photo-1552664730-d307ca884978?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHx0ZWFtJTIwbWVldGluZ3xlbnwwfHx8fDE3NjgyNTg3NTd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "people learning"
     }
   ]
 }
