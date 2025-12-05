@@ -8,7 +8,7 @@ import { FirebaseClientProvider } from '@/firebase';
 import { cn } from '@/lib/utils';
 import Script from 'next/script';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dataconnect-f35af.web.app';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dataconnectnigeria.vercel.app';
 
 const ptSans = PT_Sans({
   subsets: ['latin'],
