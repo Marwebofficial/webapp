@@ -134,7 +134,7 @@ export function LandingPage() {
   if (isUserLoading || user) {
     return (
         <div className="flex h-screen items-center justify-center">
-            <p>Loading your dashboard...</p>
+            <p>Redirecting to your dashboard...</p>
         </div>
     );
   }
@@ -170,7 +170,7 @@ export function LandingPage() {
                     Get Started <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
-                 <Button asChild size="lg" variant="ghost" className="text-lg py-7 px-10 font-bold rounded-full transition-transform hover:scale-105 w-full sm:w-auto">
+                 <Button asChild size="lg" variant="outline" className="text-lg py-7 px-10 font-bold rounded-full transition-transform hover:scale-105 w-full sm:w-auto">
                     <Link href="/contact">
                         Contact Sales
                     </Link>
