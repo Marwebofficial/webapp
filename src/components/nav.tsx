@@ -41,44 +41,36 @@ export function Nav() {
   const navLinks = (
     <>
       <Link
-        href="/buy-data"
+        href="/#features"
         className="text-sm font-medium hover:underline underline-offset-4"
         prefetch={false}
         onClick={closeSheet}
       >
-        Buy Data
+        Features
       </Link>
       <Link
-        href="/buy-airtime"
+        href="/#about"
         className="text-sm font-medium hover:underline underline-offset-4"
         prefetch={false}
         onClick={closeSheet}
       >
-        Buy Airtime
+        About Us
       </Link>
       <Link
-        href="/airtime-to-cash"
+        href="/#ai-tools"
         className="text-sm font-medium hover:underline underline-offset-4"
         prefetch={false}
         onClick={closeSheet}
       >
-        Airtime to Cash
+        AI Tools
       </Link>
       <Link
-        href="/tv-subscription"
-        className="text-sm font-medium hover:underline underline-offset-4"
-        prefetch={false}
-        onClick={closeSheet}
-      >
-        TV Subscription
-      </Link>
-       <Link
         href="/blog"
         className="text-sm font-medium hover:underline underline-offset-4"
         prefetch={false}
         onClick={closeSheet}
       >
-        Blog
+        Educational Resources
       </Link>
       <Link
         href="/contact"
@@ -86,7 +78,7 @@ export function Nav() {
         prefetch={false}
         onClick={closeSheet}
       >
-        Contact Us
+        Contact
       </Link>
     </>
   );
