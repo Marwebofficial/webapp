@@ -38,7 +38,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { FundWalletDialog } from '@/components/fund-wallet-dialog';
 
 const Testimonials = lazy(() => import('@/components/testimonials-section'));
 
@@ -336,12 +335,11 @@ export default function AccountPage() {
                         <div className="text-2xl font-bold">₦{(userProfile?.walletBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                         <p className="text-xs text-muted-foreground">Available for purchases</p>
                     </CardContent>
-                    <CardFooter>
-                         <FundWalletDialog>
-                            <Button className="w-full">
-                                <Wallet className="mr-2 h-4 w-4" /> Fund Wallet
-                            </Button>
-                        </FundWalletDialog>
+                    <CardFooter className="flex-col items-start">
+                        <Button className="w-full" disabled>
+                            <Wallet className="mr-2 h-4 w-4" /> Fund Wallet
+                        </Button>
+                        <p className="text-xs text-muted-foreground text-center w-full pt-2">Coming soon</p>
                     </CardFooter>
                 </Card>
                 <Card>
