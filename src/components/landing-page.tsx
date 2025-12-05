@@ -23,6 +23,8 @@ import AboutSection from './about-section';
 import Testimonials from './testimonials-section';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { cn } from '@/lib/utils';
 
 function TestimonialsSkeleton() {
     return (
@@ -73,35 +75,61 @@ export function LandingPage() {
     <div className="flex flex-col min-h-screen bg-background">
       <main className="flex-1">
         {/* Main Banner */}
-        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48">
+        <section className="relative w-full py-20 md:py-32 lg:py-40 overflow-hidden">
+             <div className="absolute top-0 left-0 -z-10 h-full w-full bg-background">
+                <div className="absolute bottom-0 left-[-20%] right-0 top-[-10%] h-[500px] w-[500px] rounded-full bg-[radial-gradient(circle_farthest-side,rgba(var(--primary-rgb),0.15),rgba(255,255,255,0))]"></div>
+                <div className="absolute bottom-0 right-[-20%] top-[-10%] h-[500px] w-[500px] rounded-full bg-[radial-gradient(circle_farthest-side,rgba(var(--primary-rgb),0.15),rgba(255,255,255,0))]"></div>
+             </div>
+
           <div className="container px-4 md:px-6">
-            <div className="grid gap-6 lg:grid-cols-[1fr_550px] lg:gap-12 xl:grid-cols-[1fr_650px]">
-              <div className="flex flex-col justify-center space-y-4">
+            <div className="grid gap-10 lg:grid-cols-2 lg:gap-16 items-center">
+              <div className="flex flex-col justify-center space-y-6">
                 <div className="space-y-4">
-                  <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
-                    Empowering Your Digital & Educational Journey
+                  <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl text-gray-900 dark:text-gray-100">
+                    Your Digital Life, Connected & Empowered.
                   </h1>
-                  <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                    DataConnect provides seamless data solutions and innovative AI-powered educational tools to help you stay connected and achieve your learning goals. Trust, security, and empowerment are at the core of everything we do.
+                  <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed">
+                    Instantly buy cheap data, pay bills, and access AI-powered educational tools. DataConnect is your all-in-one platform for seamless digital living in Nigeria.
                   </p>
                 </div>
-                <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                  <Button asChild size="lg">
+                <div className="flex flex-col gap-4 min-[400px]:flex-row">
+                  <Button asChild size="lg" className="group shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-shadow">
                     <Link href="/signup">
-                      Get Started <ArrowRight className="ml-2 h-5 w-5" />
+                      Get Started Free
+                      <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                     </Link>
                   </Button>
                 </div>
+                 <div className="flex items-center gap-4 pt-2">
+                    <div className="flex -space-x-2 overflow-hidden">
+                        <Avatar className="inline-block h-8 w-8 rounded-full ring-2 ring-background">
+                            <AvatarImage src="https://i.pravatar.cc/150?img=1" alt="User 1" />
+                            <AvatarFallback>U1</AvatarFallback>
+                        </Avatar>
+                        <Avatar className="inline-block h-8 w-8 rounded-full ring-2 ring-background">
+                            <AvatarImage src="https://i.pravatar.cc/150?img=2" alt="User 2" />
+                            <AvatarFallback>U2</AvatarFallback>
+                        </Avatar>
+                         <Avatar className="inline-block h-8 w-8 rounded-full ring-2 ring-background">
+                            <AvatarImage src="https://i.pravatar.cc/150?img=3" alt="User 3" />
+                            <AvatarFallback>U3</AvatarFallback>
+                        </Avatar>
+                    </div>
+                    <p className="text-sm text-muted-foreground font-medium">Join 5,000+ happy users</p>
+                </div>
               </div>
-              <div className="relative aspect-video mx-auto overflow-hidden rounded-xl sm:w-full lg:order-last">
-                 {heroImage && <Image
-                    src={heroImage.imageUrl}
-                    alt={heroImage.description}
-                    fill
-                    priority
-                    className="object-cover"
-                    data-ai-hint={heroImage.imageHint}
-                />}
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-accent rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
+                <div className="relative aspect-video mx-auto overflow-hidden rounded-xl sm:w-full shadow-2xl">
+                     {heroImage && <Image
+                        src={heroImage.imageUrl}
+                        alt={heroImage.description}
+                        fill
+                        priority
+                        className="object-cover"
+                        data-ai-hint={heroImage.imageHint}
+                    />}
+                </div>
               </div>
             </div>
           </div>
