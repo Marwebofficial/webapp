@@ -242,12 +242,6 @@ export default function AccountPage() {
     }, { totalSpent: 0, totalCount: 0 });
   }, [allTransactions]);
 
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, isUserLoading, router]);
-
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'Completed':
@@ -278,7 +272,9 @@ export default function AccountPage() {
   }
 
   if (!user) {
-    return null; // Redirecting
+    // This part should ideally not be reached if middleware is working correctly,
+    // but it's a good fallback.
+    return null;
   }
 
   return (

@@ -12,32 +12,29 @@ export function middleware(request: NextRequest) {
   const sessionCookie = request.cookies.get(FIREBASE_SESSION_COOKIE);
   const isAuthenticated = !!sessionCookie;
 
-  // Define public pages (accessible to everyone)
-  const publicPages = ['/login', '/signup', '/'];
+  // Pages that should redirect to '/account' if the user is authenticated
+  const publicOnlyPages = ['/login', '/signup', '/'];
   
-  // Define pages that unauthenticated users should be redirected from
-  const authenticatedPages = ['/account', '/history', '/admin', '/buy-data', '/buy-airtime', '/tv-subscription', '/airtime-to-cash'];
+  // Pages that require authentication
+  const protectedPages = ['/account', '/history', '/admin', '/buy-data', '/buy-airtime', '/tv-subscription', '/airtime-to-cash'];
 
-  // If user is authenticated
   if (isAuthenticated) {
-    // If user is trying to access login, signup, or landing page, redirect to account
-    if (publicPages.includes(pathname)) {
+    // If the user is authenticated and tries to access a public-only page, redirect to their account.
+    if (publicOnlyPages.includes(pathname)) {
        return NextResponse.redirect(new URL('/account', request.url));
     }
-  } 
-  // If user is not authenticated
-  else {
-    // If user is trying to access a page that requires authentication, redirect to login
-    if (authenticatedPages.some(page => pathname.startsWith(page))) {
+  } else {
+    // If the user is not authenticated and tries to access a protected page, redirect to the login page.
+    if (protectedPages.some(page => pathname.startsWith(page))) {
         return NextResponse.redirect(new URL('/login', request.url));
     }
   }
 
-  // Allow the request to proceed
+  // Allow the request to proceed if no redirect is needed
   return NextResponse.next();
 }
 
-// See "Matching Paths" below to learn more
+// Config to specify which paths the middleware should run on.
 export const config = {
   matcher: [
     /*
@@ -46,9 +43,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - blog (allow public access to blog posts)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|blog|contact|payment-policy|privacy-policy|terms-of-service|sitemap.xml).*)',
   ],
 }
-
-    

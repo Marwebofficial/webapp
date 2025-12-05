@@ -55,6 +55,8 @@ function TestimonialsSkeleton() {
 export function LandingPage() {
   const heroImage = PlaceHolderImages.find(img => img.id === 'hero-connect');
   const { user, isUserLoading } = useUser();
+  const router = useRouter();
+
 
   if (isUserLoading) {
     return (
@@ -92,6 +94,11 @@ export function LandingPage() {
                       <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                     </Link>
                   </Button>
+                   <Button asChild size="lg" variant="outline" className="group">
+                        <Link href="/contact">
+                            Contact Sales
+                        </Link>
+                    </Button>
                 </div>
                  <div className="flex items-center gap-4 pt-2">
                     <div className="flex -space-x-2 overflow-hidden">
