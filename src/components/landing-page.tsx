@@ -55,18 +55,11 @@ function TestimonialsSkeleton() {
 export function LandingPage() {
   const heroImage = PlaceHolderImages.find(img => img.id === 'hero-connect');
   const { user, isUserLoading } = useUser();
-  const router = useRouter();
 
-  useEffect(() => {
-    if (!isUserLoading && user) {
-      router.replace('/account');
-    }
-  }, [user, isUserLoading, router]);
-
-  if (isUserLoading || user) {
+  if (isUserLoading) {
     return (
         <div className="flex h-screen items-center justify-center">
-            <p>Redirecting to your dashboard...</p>
+            <p>Loading...</p>
         </div>
     );
   }
@@ -361,5 +354,7 @@ function FutureFeatureCard({
         </Card>
     );
 }
+
+    
 
     
