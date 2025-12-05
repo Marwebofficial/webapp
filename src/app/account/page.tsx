@@ -24,7 +24,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
-import { User as UserIcon, Hash, Sigma, Smartphone, Phone, Tv, Repeat, Wallet, Megaphone, Bookmark } from 'lucide-react';
+import { User as UserIcon, Hash, Sigma, Smartphone, Phone, Tv, Repeat, Wallet, Megaphone } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -38,6 +38,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { FundWalletDialog } from '@/components/fund-wallet-dialog';
 
 const Testimonials = lazy(() => import('@/components/testimonials-section'));
 
@@ -61,7 +62,6 @@ interface UserProfile {
         amount: number;
         createdAt: any;
     };
-    savedPosts?: string[];
 }
 
 interface Announcement {
@@ -210,6 +210,12 @@ export default function AccountPage() {
   const { data: announcement, isLoading: isAnnouncementLoading } = useDoc<Announcement>(announcementRef);
 
   useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
+
+  useEffect(() => {
     if (!isAnnouncementLoading && announcement?.enabled && announcement.text) {
       setShowAnnouncement(true);
     }
@@ -331,9 +337,11 @@ export default function AccountPage() {
                         <p className="text-xs text-muted-foreground">Available for purchases</p>
                     </CardContent>
                     <CardFooter>
-                        <Button className="w-full" disabled>
-                            <Wallet className="mr-2 h-4 w-4" /> Fund Wallet (Coming Soon!)
-                        </Button>
+                         <FundWalletDialog>
+                            <Button className="w-full">
+                                <Wallet className="mr-2 h-4 w-4" /> Fund Wallet
+                            </Button>
+                        </FundWalletDialog>
                     </CardFooter>
                 </Card>
                 <Card>
@@ -368,12 +376,11 @@ export default function AccountPage() {
                 <CardDescription>Access our services quickly.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <ActionCard href="/buy-data" title="Buy Data" icon={<Smartphone className="w-8 h-8 text-primary" />} />
                     <ActionCard href="/buy-airtime" title="Buy Airtime" icon={<Phone className="w-8 h-8 text-primary" />} />
                     <ActionCard href="/tv-subscription" title="TV Subscription" icon={<Tv className="w-8 h-8 text-primary" />} />
                     <ActionCard href="/airtime-to-cash" title="Airtime to Cash" icon={<Repeat className="w-8 h-8 text-primary" />} />
-                    <ActionCard href="/account/saved-posts" title="Saved Posts" icon={<Bookmark className="w-8 h-8 text-primary" />} />
                 </div>
                 </CardContent>
             </Card>

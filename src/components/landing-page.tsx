@@ -58,7 +58,13 @@ export function LandingPage() {
   const router = useRouter();
 
 
-  if (isUserLoading) {
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      router.push('/account');
+    }
+  }, [user, isUserLoading, router]);
+
+  if (isUserLoading || user) {
     return (
         <div className="flex h-screen items-center justify-center">
             <p>Loading...</p>
@@ -70,12 +76,7 @@ export function LandingPage() {
     <div className="flex flex-col min-h-screen bg-background">
       <main className="flex-1">
         {/* Main Banner */}
-        <section className="relative w-full py-20 md:py-32 lg:py-40 overflow-hidden">
-             <div className="absolute top-0 left-0 -z-10 h-full w-full bg-background">
-                <div className="absolute bottom-0 left-[-20%] right-0 top-[-10%] h-[500px] w-[500px] rounded-full bg-[radial-gradient(circle_farthest-side,rgba(var(--primary-rgb),0.15),rgba(255,255,255,0))]"></div>
-                <div className="absolute bottom-0 right-[-20%] top-[-10%] h-[500px] w-[500px] rounded-full bg-[radial-gradient(circle_farthest-side,rgba(var(--primary-rgb),0.15),rgba(255,255,255,0))]"></div>
-             </div>
-
+        <section className="w-full py-20 md:py-32 lg:py-40">
           <div className="container px-4 md:px-6">
             <div className="grid gap-10 lg:grid-cols-2 lg:gap-16 items-center">
               <div className="flex flex-col justify-center space-y-6">
@@ -88,48 +89,27 @@ export function LandingPage() {
                   </p>
                 </div>
                 <div className="flex flex-col gap-4 min-[400px]:flex-row">
-                  <Button asChild size="lg" className="group shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-shadow">
+                  <Button asChild size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
                     <Link href="/signup">
-                      Get Started Free
-                      <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                      Get Started
                     </Link>
                   </Button>
-                   <Button asChild size="lg" variant="outline" className="group">
+                   <Button asChild size="lg" variant="outline">
                         <Link href="/contact">
                             Contact Sales
                         </Link>
                     </Button>
                 </div>
-                 <div className="flex items-center gap-4 pt-2">
-                    <div className="flex -space-x-2 overflow-hidden">
-                        <Avatar className="inline-block h-8 w-8 rounded-full ring-2 ring-background">
-                            <AvatarImage src="https://i.pravatar.cc/150?img=1" alt="User 1" />
-                            <AvatarFallback>U1</AvatarFallback>
-                        </Avatar>
-                        <Avatar className="inline-block h-8 w-8 rounded-full ring-2 ring-background">
-                            <AvatarImage src="https://i.pravatar.cc/150?img=2" alt="User 2" />
-                            <AvatarFallback>U2</AvatarFallback>
-                        </Avatar>
-                         <Avatar className="inline-block h-8 w-8 rounded-full ring-2 ring-background">
-                            <AvatarImage src="https://i.pravatar.cc/150?img=3" alt="User 3" />
-                            <AvatarFallback>U3</AvatarFallback>
-                        </Avatar>
-                    </div>
-                    <p className="text-sm text-muted-foreground font-medium">Join 5,000+ happy users</p>
-                </div>
               </div>
-              <div className="relative group hidden lg:block">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-accent rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
-                <div className="relative aspect-video mx-auto overflow-hidden rounded-xl sm:w-full shadow-2xl">
-                     {heroImage && <Image
-                        src={heroImage.imageUrl}
-                        alt={heroImage.description}
-                        fill
-                        priority
-                        className="object-cover"
-                        data-ai-hint={heroImage.imageHint}
-                    />}
-                </div>
+              <div className="relative aspect-video mx-auto overflow-hidden rounded-xl sm:w-full shadow-2xl">
+                 {heroImage && <Image
+                    src={heroImage.imageUrl}
+                    alt={heroImage.description}
+                    fill
+                    priority
+                    className="object-cover"
+                    data-ai-hint={heroImage.imageHint}
+                />}
               </div>
             </div>
           </div>
@@ -365,3 +345,4 @@ function FutureFeatureCard({
     
 
     
+

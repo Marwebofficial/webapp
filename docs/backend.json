@@ -32,27 +32,6 @@
           "type": "string",
           "format": "date-time",
           "description": "Timestamp when the user account was created."
-        },
-        "walletBalance": {
-            "type": "number",
-            "description": "The user's current wallet balance in NGN."
-        },
-        "pendingFundingRequest": {
-            "type": "object",
-            "description": "Details of a pending wallet funding request.",
-            "properties": {
-                "amount": { "type": "number" },
-                "bankName": { "type": "string" },
-                "userName": { "type": "string" },
-                "createdAt": { "type": "string", "format": "date-time" }
-            }
-        },
-        "savedPosts": {
-          "type": "array",
-          "description": "An array of blog post IDs that the user has bookmarked.",
-          "items": {
-            "type": "string"
-          }
         }
       },
       "required": [
@@ -76,8 +55,7 @@
             "Data Purchase",
             "Airtime Purchase",
             "Airtime to Cash",
-            "TV Subscription",
-            "Wallet Funding"
+            "TV Subscription"
           ],
           "description": "The type of transaction."
         },
@@ -90,8 +68,7 @@
             "9mobile",
             "dstv",
             "gotv",
-            "startimes",
-            "system"
+            "startimes"
           ],
           "description": "The mobile network or service provider."
         },
@@ -217,21 +194,21 @@
       },
       "required": ["id", "name", "status", "lastChecked"]
     },
-    "BlogPost": {
-        "title": "Blog Post",
-        "type": "object",
-        "description": "Represents a single blog post.",
-        "properties": {
-            "id": { "type": "string", "description": "The unique slug for the blog post URL." },
-            "title": { "type": "string" },
-            "content": { "type": "string", "description": "The full content of the blog post, can be Markdown." },
-            "excerpt": { "type": "string", "description": "A short summary of the blog post." },
-            "imageUrl": { "type": "string", "description": "URL for the post's cover image." },
-            "author": { "type": "string", "description": "Name of the post's author." },
-            "createdAt": { "type": "string", "format": "date-time" },
-            "updatedAt": { "type": "string", "format": "date-time" }
+    "Announcement": {
+      "title": "Announcement",
+      "type": "object",
+      "description": "Represents a site-wide announcement banner.",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "The content of the announcement."
         },
-        "required": ["id", "title", "content", "author", "createdAt"]
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether the announcement banner is currently active."
+        }
+      },
+      "required": ["text", "enabled"]
     }
   },
   "auth": {
