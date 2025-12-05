@@ -910,7 +910,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (!isUserLoading) {
       if (!user || user.email !== ADMIN_EMAIL) {
-        router.push('/');
+        router.push('/login');
       }
     }
   }, [user, isUserLoading, router]);
