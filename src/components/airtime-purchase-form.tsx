@@ -130,8 +130,18 @@ export function AirtimePurchaseForm() {
       if (firestore) {
         const statusCol = collection(firestore, 'networkStatus');
         const statusSnapshot = await getDocs(statusCol);
-        const statuses = statusSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NetworkStatus));
-        setNetworkStatuses(statuses);
+         if (statusSnapshot.empty) {
+            // If firestore is empty, use local data
+            const localStatuses = networkProviders.map(p => ({
+                id: p.id,
+                name: p.name,
+                status: 'Online' as const
+            }));
+            setNetworkStatuses(localStatuses);
+        } else {
+            const statuses = statusSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NetworkStatus));
+            setNetworkStatuses(statuses);
+        }
       }
     }
     fetchNetworkStatuses();

@@ -797,9 +797,11 @@ function NetworkStatusManager() {
 
     useEffect(() => {
         if (isLoading || !firestore) return;
-        
+
+        const allProviders = [...networkProviders, ...tvProviders];
         const existingIds = networkStatuses?.map(s => s.id) || [];
-        networkProviders.forEach(provider => {
+        
+        allProviders.forEach(provider => {
             if (!existingIds.includes(provider.id)) {
                  const newStatus = {
                     id: provider.id,
@@ -837,16 +839,16 @@ function NetworkStatusManager() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Network Status</CardTitle>
+                <CardTitle>Service Status</CardTitle>
                 <CardDescription>
-                    Update the operational status of the mobile networks.
+                    Update the operational status of all service providers.
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Network</TableHead>
+                            <TableHead>Provider</TableHead>
                             <TableHead>Current Status</TableHead>
                             <TableHead className="text-right">Change Status</TableHead>
                         </TableRow>
