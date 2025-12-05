@@ -10,7 +10,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { Menu, Wifi, UserCircle, History, Shield } from 'lucide-react';
+import { Menu, Wifi, UserCircle, History, Shield, Bookmark } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useState } from 'react';
 import { useAuth, useUser } from '@/firebase';
@@ -125,6 +125,12 @@ export function Nav() {
               <Link href="/account">My Account</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
+              <Link href="/account/saved-posts">
+                <Bookmark className="mr-2 h-4 w-4" />
+                <span>Saved Posts</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
               <Link href="/history">
                 <History className="mr-2 h-4 w-4" />
                 <span>Purchase History</span>
@@ -164,6 +170,9 @@ export function Nav() {
           <Button asChild variant="outline" onClick={closeSheet}>
             <Link href="/account">My Account</Link>
           </Button>
+           <Button asChild variant="outline" onClick={closeSheet}>
+              <Link href="/account/saved-posts">Saved Posts</Link>
+            </Button>
           <Button asChild variant="outline" onClick={closeSheet}>
             <Link href="/history">Purchase History</Link>
           </Button>
@@ -239,3 +248,5 @@ export function Nav() {
     </header>
   );
 }
+
+    
