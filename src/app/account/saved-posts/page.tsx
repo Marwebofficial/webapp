@@ -2,7 +2,7 @@
 'use client';
 
 import { useFirestore, useDoc, useMemoFirebase, useCollection, useUser } from '@/firebase';
-import { collection, query, where, documentId } from 'firebase/firestore';
+import { collection, query, where, documentId, doc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
@@ -64,7 +64,7 @@ export default function SavedPostsPage() {
     const router = useRouter();
 
     const userDocRef = useMemoFirebase(
-        () => (user ? collection(firestore, 'users').doc(user.uid) : null),
+        () => (user ? doc(firestore, 'users', user.uid) : null),
         [user, firestore]
     );
 
