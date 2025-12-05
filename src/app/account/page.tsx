@@ -24,7 +24,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
-import { User as UserIcon, Hash, Sigma, Smartphone, Phone, Tv, Repeat, Wallet, Megaphone } from 'lucide-react';
+import { User as UserIcon, Hash, Sigma, Smartphone, Phone, Tv, Repeat, Wallet, Megaphone, Bookmark } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -61,6 +61,7 @@ interface UserProfile {
         amount: number;
         createdAt: any;
     };
+    savedPosts?: string[];
 }
 
 interface Announcement {
@@ -371,11 +372,12 @@ export default function AccountPage() {
                 <CardDescription>Access our services quickly.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <ActionCard href="/buy-data" title="Buy Data" icon={<Smartphone className="w-8 h-8 text-primary" />} />
                     <ActionCard href="/buy-airtime" title="Buy Airtime" icon={<Phone className="w-8 h-8 text-primary" />} />
                     <ActionCard href="/tv-subscription" title="TV Subscription" icon={<Tv className="w-8 h-8 text-primary" />} />
                     <ActionCard href="/airtime-to-cash" title="Airtime to Cash" icon={<Repeat className="w-8 h-8 text-primary" />} />
+                    <ActionCard href="/account/saved-posts" title="Saved Posts" icon={<Bookmark className="w-8 h-8 text-primary" />} />
                 </div>
                 </CardContent>
             </Card>

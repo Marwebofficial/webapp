@@ -1,16 +1,19 @@
 
 'use client';
 
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, useDoc, useUser, updateDocumentNonBlocking } from '@/firebase';
+import { collection, query, orderBy, doc, arrayRemove, arrayUnion } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Calendar } from 'lucide-react';
+import { ArrowRight, Calendar, Bookmark } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface BlogPost {
     id: string;
@@ -20,6 +23,11 @@ interface BlogPost {
     createdAt: { seconds: number };
     author: string;
 }
+
+interface UserProfile {
+    savedPosts?: string[];
+}
+
 
 function PostCardSkeleton() {
     return (
@@ -77,11 +85,49 @@ function FeaturedPostSkeleton() {
 
 export default function BlogIndexPage() {
     const firestore = useFirestore();
+    const { user } = useUser();
+    const router = useRouter();
+    const { toast } = useToast();
+
     const postsQuery = useMemoFirebase(
         () => firestore ? query(collection(firestore, 'blogPosts'), orderBy('createdAt', 'desc')) : null,
         [firestore]
     );
-    const { data: posts, isLoading } = useCollection<BlogPost>(postsQuery);
+
+    const userRef = useMemoFirebase(
+        () => (firestore && user) ? doc(firestore, 'users', user.uid) : null,
+        [firestore, user]
+    );
+
+    const { data: posts, isLoading: isLoadingPosts } = useCollection<BlogPost>(postsQuery);
+    const { data: userProfile, isLoading: isLoadingUser } = useDoc<UserProfile>(userRef);
+
+    const isLoading = isLoadingPosts || isLoadingUser;
+
+    const handleBookmark = (e: React.MouseEvent, post: BlogPost) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!user || !userRef) {
+            router.push('/login');
+            return;
+        }
+
+        const isBookmarked = userProfile?.savedPosts?.includes(post.id) ?? false;
+
+        const updateData = {
+            savedPosts: isBookmarked ? arrayRemove(post.id) : arrayUnion(post.id),
+        };
+
+        updateDocumentNonBlocking(userRef, updateData);
+
+        toast({
+            title: isBookmarked ? 'Bookmark Removed' : 'Post Bookmarked!',
+            description: isBookmarked
+                ? `"${post.title}" removed from your saved posts.`
+                : `"${post.title}" has been added to your saved posts.`,
+        });
+    };
 
     const isValidHttpUrl = (string: string) => {
         if (!string) return false;
@@ -137,14 +183,19 @@ export default function BlogIndexPage() {
                                 <Link href={`/blog/${featuredPost.id}`} className="hover:text-primary transition-colors stretched-link">{featuredPost.title}</Link>
                             </CardTitle>
                             <p className="text-muted-foreground line-clamp-3 mb-6">{featuredPost.excerpt}</p>
-                            <div className="flex items-center gap-3">
-                                <Avatar>
-                                    <AvatarFallback>{featuredPost.author.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <p className="font-semibold">{featuredPost.author}</p>
-                                    <p className="text-sm text-muted-foreground">Author</p>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <Avatar>
+                                        <AvatarFallback>{featuredPost.author.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <p className="font-semibold">{featuredPost.author}</p>
+                                        <p className="text-sm text-muted-foreground">Author</p>
+                                    </div>
                                 </div>
+                                <Button variant="ghost" size="icon" onClick={(e) => handleBookmark(e, featuredPost)}>
+                                    <Bookmark className={cn("w-5 h-5", userProfile?.savedPosts?.includes(featuredPost.id) && "fill-primary text-primary")} />
+                                </Button>
                             </div>
                         </div>
                      </Card>
@@ -160,6 +211,8 @@ export default function BlogIndexPage() {
                             const imageUrl = isValidHttpUrl(post.imageUrl)
                                 ? post.imageUrl
                                 : `https://picsum.photos/seed/${post.id}/600/400`;
+                            
+                            const isBookmarked = userProfile?.savedPosts?.includes(post.id) ?? false;
 
                             return (
                                 <Card key={post.id} className="flex flex-col overflow-hidden group shadow-sm hover:shadow-lg transition-all duration-300 border rounded-xl">
@@ -172,10 +225,15 @@ export default function BlogIndexPage() {
                                         />
                                     </Link>
                                     <CardHeader>
-                                        <CardDescription>
-                                            {post.createdAt ? format(new Date(post.createdAt.seconds * 1000), 'MMM d, yyyy') : ''}
-                                        </CardDescription>
-                                        <CardTitle className="text-xl leading-tight">
+                                        <div className="flex justify-between items-start">
+                                            <CardDescription>
+                                                {post.createdAt ? format(new Date(post.createdAt.seconds * 1000), 'MMM d, yyyy') : ''}
+                                            </CardDescription>
+                                            <Button variant="ghost" size="icon" className="-mt-2 -mr-2" onClick={(e) => handleBookmark(e, post)}>
+                                                <Bookmark className={cn("w-5 h-5", isBookmarked && "fill-primary text-primary")} />
+                                            </Button>
+                                        </div>
+                                        <CardTitle className="text-xl leading-tight pt-2">
                                             <Link href={`/blog/${post.id}`} className="hover:text-primary transition-colors stretched-link">{post.title}</Link>
                                         </CardTitle>
                                     </CardHeader>

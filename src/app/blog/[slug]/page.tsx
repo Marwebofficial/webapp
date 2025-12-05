@@ -1,16 +1,18 @@
 
 'use client';
 
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import { useParams } from 'next/navigation';
+import { useFirestore, useDoc, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
+import { doc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { useParams, useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import Image from 'next/image';
-import { Calendar, User, ChevronLeft } from 'lucide-react';
+import { Calendar, User, ChevronLeft, Bookmark } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 
 function SimpleMarkdown({ content }: { content: string }) {
@@ -54,6 +56,10 @@ interface BlogPost {
     author: string;
 }
 
+interface UserProfile {
+    savedPosts?: string[];
+}
+
 function PostSkeleton() {
     return (
         <div className="max-w-4xl mx-auto">
@@ -78,6 +84,9 @@ function PostSkeleton() {
 export default function BlogPostPage() {
     const firestore = useFirestore();
     const params = useParams();
+    const router = useRouter();
+    const { user } = useUser();
+    const { toast } = useToast();
     const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
 
     const postRef = useMemoFirebase(
@@ -85,7 +94,37 @@ export default function BlogPostPage() {
         [firestore, slug]
     );
 
-    const { data: post, isLoading } = useDoc<BlogPost>(postRef);
+    const userRef = useMemoFirebase(
+        () => (firestore && user) ? doc(firestore, 'users', user.uid) : null,
+        [firestore, user]
+    );
+
+    const { data: post, isLoading: isPostLoading } = useDoc<BlogPost>(postRef);
+    const { data: userProfile, isLoading: isUserLoading } = useDoc<UserProfile>(userRef);
+
+    const isBookmarked = userProfile?.savedPosts?.includes(slug) ?? false;
+
+    const handleBookmark = () => {
+        if (!user || !userRef) {
+            router.push('/login');
+            return;
+        }
+
+        const updateData = {
+            savedPosts: isBookmarked ? arrayRemove(slug) : arrayUnion(slug),
+        };
+
+        updateDocumentNonBlocking(userRef, updateData);
+
+        toast({
+            title: isBookmarked ? 'Bookmark Removed' : 'Post Bookmarked!',
+            description: isBookmarked
+                ? `"${post?.title}" removed from your saved posts.`
+                : `"${post?.title}" has been added to your saved posts.`,
+        });
+    };
+
+    const isLoading = isPostLoading || isUserLoading;
 
     if (isLoading) {
         return (
@@ -110,12 +149,18 @@ export default function BlogPostPage() {
     return (
         <main className="container mx-auto p-4 py-8 md:py-12">
             <article className="max-w-4xl mx-auto">
-                <Button asChild variant="ghost" className="mb-8">
-                     <Link href="/blog">
-                        <ChevronLeft className="w-4 h-4 mr-2" />
-                        Back to Blog
-                    </Link>
-                </Button>
+                <div className="flex justify-between items-center mb-8">
+                    <Button asChild variant="ghost">
+                        <Link href="/blog">
+                            <ChevronLeft className="w-4 h-4 mr-2" />
+                            Back to Blog
+                        </Link>
+                    </Button>
+                    <Button variant="outline" onClick={handleBookmark}>
+                        <Bookmark className={cn("w-4 h-4 mr-2", isBookmarked && "fill-primary text-primary")} />
+                        {isBookmarked ? 'Bookmarked' : 'Bookmark'}
+                    </Button>
+                </div>
                 <header className="mb-8">
                     <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight mb-4 text-gray-900 dark:text-gray-100">
                         {post.title}

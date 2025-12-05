@@ -23,6 +23,10 @@ service cloud.firestore {
       return isOwner(userId) && request.resource.data.keys().hasOnly(['pendingFundingRequest']);
     }
 
+    function isUpdatingSavedPosts(userId) {
+      return isOwner(userId) && request.resource.data.keys().hasOnly(['savedPosts']);
+    }
+
     // ----------------------------------------------------------------
     // Collection Rules
     // ----------------------------------------------------------------
@@ -31,7 +35,7 @@ service cloud.firestore {
       allow read: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
       allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isUpdatingOwnRequest(userId) || isAdmin();
+      allow update: if isUpdatingOwnRequest(userId) || isUpdatingSavedPosts(userId) || isAdmin();
       allow delete: if isOwner(userId) || isAdmin();
 
       match /transactions/{transactionId} {
