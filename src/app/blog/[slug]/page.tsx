@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useFirestore, useDoc, useMemoFirebase, useUser, updateDocumentNonBlocking, useCollection, addDocumentNonBlocking } from '@/firebase';
@@ -328,6 +329,11 @@ export default function BlogPostPage() {
                                             <AvatarFallback>{user?.displayName?.charAt(0) || 'U'}</AvatarFallback>
                                         </Avatar>
                                         <div className="flex-grow space-y-2">
+                                           {user ? (
+                                                <p className="text-sm text-muted-foreground">
+                                                    Commenting as <span className="font-semibold text-foreground">{user.displayName}</span>.
+                                                </p>
+                                            ) : null}
                                             <FormField
                                                 control={commentForm.control}
                                                 name="text"
@@ -335,7 +341,7 @@ export default function BlogPostPage() {
                                                     <FormItem>
                                                         <FormControl>
                                                             <Textarea
-                                                                placeholder="Write a comment..."
+                                                                placeholder={user ? "Write a comment..." : "Please log in to comment."}
                                                                 {...field}
                                                                 rows={3}
                                                                 disabled={!user}
