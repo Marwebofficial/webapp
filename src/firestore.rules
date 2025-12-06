@@ -28,7 +28,7 @@ service cloud.firestore {
     }
     
     function isLikingPost() {
-      return isSignedIn() && request.resource.data.keys().hasOnly(['likes']);
+      return isSignedIn() && request.resource.data.diff(request.resource.data).affectedKeys().hasOnly(['likes']);
     }
 
     // ----------------------------------------------------------------
@@ -76,8 +76,8 @@ service cloud.firestore {
 
     match /blogPosts/{postId} {
         allow read: if true;
-        allow create, delete: if isAdmin();
-        allow update: if isAdmin() || isLikingPost();
+        allow write: if isAdmin();
+        allow update: if isLikingPost();
     }
   }
 }
