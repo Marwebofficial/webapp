@@ -164,9 +164,28 @@
         "imageUrl": { "type": "string" },
         "author": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "likes": {
+          "type": "array",
+          "description": "An array of user IDs who have liked the post.",
+          "items": { "type": "string" }
+        }
       },
       "required": ["id", "title", "excerpt", "content", "author", "createdAt"]
+    },
+    "Comment": {
+        "title": "Comment",
+        "type": "object",
+        "description": "Represents a comment on a blog post.",
+        "properties": {
+            "id": { "type": "string" },
+            "userId": { "type": "string" },
+            "authorName": { "type": "string" },
+            "authorImage": { "type": "string" },
+            "text": { "type": "string" },
+            "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "userId", "authorName", "text", "createdAt"]
     },
     "DataPlan": {
       "title": "Data Plan",
@@ -264,7 +283,15 @@
         "schema": {
           "$ref": "#/backend/entities/BlogPost"
         },
-        "description": "A collection of blog posts for the website."
+        "description": "A collection of blog posts for the website.",
+        "subcollections": {
+            "/comments/{commentId}": {
+                "schema": {
+                    "$ref": "#/backend/entities/Comment"
+                },
+                "description": "A subcollection containing all comments for a specific blog post."
+            }
+        }
       },
       "/dataPlans/{network}/plans/{planId}": {
         "schema": {
@@ -291,6 +318,9 @@
           "description": "A singleton document that stores the current site-wide announcement."
        }
     },
-    "reasoning": "The Firestore structure now includes a 'transactions' subcollection for each user to store their purchase history. This allows for easy retrieval of a user's transactions while maintaining the strict ownership security model. The User entity is updated with a `createdAt` field, a `walletBalance`, a `pendingFundingRequest` object to support the new wallet feature, and a `savedPosts` array to store bookmarked post IDs. A top-level 'reviews' collection is added to store user testimonials. A 'blogPosts' collection has been added to store blog articles. Collections for 'dataPlans', 'tvPlans' are added to allow for dynamic management of service offerings from an admin panel. A 'networkStatus' collection is added for admins to manually update and users to view the status of service providers. The ExamPins feature has been removed."
+    "reasoning": "The Firestore structure now includes a 'transactions' subcollection for each user to store their purchase history. A 'savedPosts' array is added to the User entity. A 'likes' array and a 'comments' subcollection are added to the 'blogPosts' entity to support engagement features. A 'Comment' entity is also added. A top-level 'reviews' collection is added to store user testimonials. Collections for 'dataPlans', 'tvPlans' are added to allow for dynamic management of service offerings from an admin panel. A 'networkStatus' collection is added for admins to manually update and users to view the status of service providers."
   }
 }
+
+    
+    
