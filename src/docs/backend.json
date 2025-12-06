@@ -32,6 +32,13 @@
           "type": "string",
           "format": "date-time",
           "description": "Timestamp when the user account was created."
+        },
+        "savedPosts": {
+            "type": "array",
+            "description": "An array of blog post IDs that the user has saved.",
+            "items": {
+                "type": "string"
+            }
         }
       },
       "required": [
@@ -145,6 +152,41 @@
         "createdAt"
       ]
     },
+     "BlogPost": {
+      "title": "Blog Post",
+      "type": "object",
+      "description": "Represents a single blog post.",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "excerpt": { "type": "string" },
+        "content": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "author": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "likes": {
+          "type": "array",
+          "description": "An array of user IDs who have liked the post.",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["id", "title", "excerpt", "content", "author", "createdAt"]
+    },
+    "Comment": {
+        "title": "Comment",
+        "type": "object",
+        "description": "Represents a comment on a blog post.",
+        "properties": {
+            "id": { "type": "string" },
+            "userId": { "type": "string" },
+            "authorName": { "type": "string" },
+            "authorImage": { "type": "string" },
+            "text": { "type": "string" },
+            "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "userId", "authorName", "text", "createdAt"]
+    },
     "DataPlan": {
       "title": "Data Plan",
       "type": "object",
@@ -218,110 +260,66 @@
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Stores user information. 'userId' is equal to `request.auth.uid`. This ensures path-based ownership. It is created upon user registration.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user. It is equal to the Firebase Authentication UID."
+    "structure": {
+      "/users/{userId}": {
+        "schema": {
+          "$ref": "#/backend/entities/User"
+        },
+        "description": "Stores user information. 'userId' is equal to `request.auth.uid`. This ensures path-based ownership. It is created upon user registration."
+      },
+      "/users/{userId}/transactions/{transactionId}": {
+        "schema": {
+          "$ref": "#/backend/entities/Transaction"
+        },
+        "description": "Stores a user's transaction history. Each document is a single purchase or conversion."
+      },
+      "/reviews/{reviewId}": {
+        "schema": {
+          "$ref": "#/backend/entities/Review"
+        },
+        "description": "A collection of user-submitted reviews. Anyone can read, but only authenticated users can create."
+      },
+       "/blogPosts/{postId}": {
+        "schema": {
+          "$ref": "#/backend/entities/BlogPost"
+        },
+        "description": "A collection of blog posts for the website.",
+        "subcollections": {
+            "/comments/{commentId}": {
+                "schema": {
+                    "$ref": "#/backend/entities/Comment"
+                },
+                "description": "A subcollection containing all comments for a specific blog post."
             }
-          ]
         }
       },
-      {
-        "path": "/users/{userId}/transactions",
-        "definition": {
-          "entityName": "Transaction",
-          "schema": {
-            "$ref": "#/backend/entities/Transaction"
-          },
-          "description": "Stores a user's transaction history. Each document is a single purchase or conversion.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The UID of the user who owns these transactions."
-            }
-          ]
-        }
+      "/dataPlans/{network}/plans/{planId}": {
+        "schema": {
+          "$ref": "#/backend/entities/DataPlan"
+        },
+        "description": "A collection containing data plans for a specific network provider."
       },
-      {
-        "path": "/reviews",
-        "definition": {
-          "entityName": "Review",
-          "schema": {
-            "$ref": "#/backend/entities/Review"
-          },
-          "description": "A collection of user-submitted reviews. Anyone can read, but only authenticated users can create.",
-          "params": []
-        }
+      "/tvPlans/{provider}/plans/{planId}": {
+        "schema": {
+          "$ref": "#/backend/entities/TvPlan"
+        },
+        "description": "A collection containing TV subscription plans for a specific provider."
       },
-      {
-        "path": "/dataPlans/{network}",
-        "definition": {
-          "entityName": "DataPlan",
-          "schema": {
-            "$ref": "#/backend/entities/DataPlan"
-          },
-          "description": "A collection containing data plans for a specific network provider.",
-          "params": [
-            {
-              "name": "network",
-              "description": "The network provider ID (e.g., 'mtn', 'airtel')."
-            }
-          ]
-        }
+      "/networkStatus/{networkId}": {
+        "schema": {
+          "$ref": "#/backend/entities/NetworkStatus"
+        },
+        "description": "A collection containing the operational status of network providers."
       },
-      {
-        "path": "/tvPlans/{provider}",
-        "definition": {
-          "entityName": "TvPlan",
-          "schema": {
-            "$ref": "#/backend/entities/TvPlan"
-          },
-          "description": "A collection containing TV subscription plans for a specific provider.",
-          "params": [
-            {
-              "name": "provider",
-              "description": "The TV provider ID (e.g., 'dstv', 'gotv')."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/networkStatus/{networkId}",
-        "definition": {
-          "entityName": "NetworkStatus",
-          "schema": {
-            "$ref": "#/backend/entities/NetworkStatus"
-          },
-          "description": "A collection containing the operational status of network providers.",
-          "params": [
-            {
-              "name": "networkId",
-              "description": "The network provider ID (e.g., 'mtn')."
-            }
-          ]
-        }
-      },
-       {
-        "path": "/announcement/current",
-        "definition": {
-          "entityName": "Announcement",
+       "/announcement/current": {
           "schema": {
             "$ref": "#/backend/entities/Announcement"
           },
-          "description": "A singleton document that stores the current site-wide announcement.",
-          "params": []
-        }
-      }
-    ],
-    "reasoning": "The Firestore structure now includes a 'transactions' subcollection for each user to store their purchase history. This allows for easy retrieval of a user's transactions while maintaining the strict ownership security model. The User entity is updated with a `createdAt` field. A top-level 'reviews' collection is added to store user testimonials. Collections for 'dataPlans', 'tvPlans' are added to allow for dynamic management of service offerings from an admin panel. A 'networkStatus' collection is added for admins to manually update and users to view the status of service providers. The ExamPins feature has been removed. An `announcement` singleton document is added to store the site-wide banner content."
+          "description": "A singleton document that stores the current site-wide announcement."
+       }
+    },
+    "reasoning": "The Firestore structure now includes a 'transactions' subcollection for each user to store their purchase history. A 'savedPosts' array is added to the User entity. A 'likes' array and a 'comments' subcollection are added to the 'blogPosts' entity to support engagement features. A 'Comment' entity is also added. A top-level 'reviews' collection is added to store user testimonials. Collections for 'dataPlans', 'tvPlans' are added to allow for dynamic management of service offerings from an admin panel. A 'networkStatus' collection is added for admins to manually update and users to view the status of service providers."
   }
 }
+
+    
