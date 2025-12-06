@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState, Suspense, useRef } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -16,8 +16,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
-import { Sparkles, Loader2, Image as ImageIcon, Upload } from 'lucide-react';
+import { Sparkles, Loader2, Image as ImageIcon, Upload, File, X } from 'lucide-react';
 import { generatePostContent, generatePostImage } from '@/ai/flows/generate-post-flow';
+
+const attachmentSchema = z.object({
+    name: z.string(),
+    url: z.string().url().or(z.string().startsWith("data:")),
+});
 
 const FormSchema = z.object({
     title: z.string().min(5, "Title must be at least 5 characters long."),
@@ -25,6 +30,7 @@ const FormSchema = z.object({
     excerpt: z.string().min(20, "Excerpt must be at least 20 characters.").max(200, "Excerpt cannot exceed 200 characters."),
     imageUrl: z.string().url("Please enter a valid image URL.").or(z.string().startsWith("data:image/")),
     content: z.string().min(50, "Content must be at least 50 characters long."),
+    attachments: z.array(attachmentSchema).optional(),
 });
 
 type FormData = z.infer<typeof FormSchema>;
@@ -40,6 +46,7 @@ function BlogPostEditor() {
     const [isGeneratingContent, setIsGeneratingContent] = useState(false);
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const attachmentInputRef = useRef<HTMLInputElement>(null);
 
     const form = useForm<FormData>({
         resolver: zodResolver(FormSchema),
@@ -49,7 +56,13 @@ function BlogPostEditor() {
             excerpt: '',
             imageUrl: '',
             content: '',
+            attachments: [],
         },
+    });
+
+    const { fields, append, remove } = useFieldArray({
+      control: form.control,
+      name: "attachments",
     });
     
     const imageUrl = form.watch('imageUrl');
@@ -126,7 +139,7 @@ function BlogPostEditor() {
         }
     };
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
 
@@ -146,6 +159,22 @@ function BlogPostEditor() {
             toast({
                 title: "Image Uploaded",
                 description: "The image has been loaded and is ready to be saved with the post."
+            });
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleAttachmentFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const dataUrl = e.target?.result as string;
+            append({ name: file.name, url: dataUrl });
+            toast({
+                title: "Attachment Added",
+                description: `File "${file.name}" has been attached.`
             });
         };
         reader.readAsDataURL(file);
@@ -260,7 +289,7 @@ function BlogPostEditor() {
                             name="imageUrl"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Cover Image URL</FormLabel>
+                                    <FormLabel>Cover Image</FormLabel>
                                     <div className="flex gap-2">
                                         <FormControl>
                                             <Input {...field} placeholder="Paste image URL or upload/generate one" />
@@ -268,7 +297,7 @@ function BlogPostEditor() {
                                         <input
                                             type="file"
                                             ref={fileInputRef}
-                                            onChange={handleFileChange}
+                                            onChange={handleImageFileChange}
                                             className="hidden"
                                             accept="image/*"
                                         />
@@ -303,7 +332,47 @@ function BlogPostEditor() {
                                 </FormItem>
                             )}
                         />
-                        <div className="flex justify-end gap-2">
+                        <div className="space-y-4">
+                            <FormLabel>Attachments (e.g., PDFs, Docs)</FormLabel>
+                            <div className="rounded-lg border bg-background/50 p-4">
+                                {fields.map((field, index) => (
+                                    <div key={field.id} className="flex items-center justify-between gap-4 py-2 border-b last:border-b-0">
+                                        <div className="flex items-center gap-2 overflow-hidden">
+                                            <File className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
+                                            <span className="truncate text-sm">{field.name}</span>
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => remove(index)}
+                                            className="h-7 w-7"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ))}
+                                {fields.length === 0 && (
+                                    <p className="text-sm text-center text-muted-foreground py-4">No files attached yet.</p>
+                                )}
+                            </div>
+                            <input
+                                type="file"
+                                ref={attachmentInputRef}
+                                onChange={handleAttachmentFileChange}
+                                className="hidden"
+                            />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => attachmentInputRef.current?.click()}
+                                disabled={isGeneratingImage || isGeneratingContent}
+                            >
+                                <Upload className="mr-2 h-4 w-4" />
+                                Add Attachment
+                            </Button>
+                        </div>
+                        <div className="flex justify-end gap-2 pt-4">
                              <Button type="button" variant="ghost" onClick={() => router.back()}>Cancel</Button>
                              <Button type="submit" disabled={form.formState.isSubmitting || isGeneratingContent || isGeneratingImage}>
                                 {form.formState.isSubmitting ? 'Saving...' : 'Save Post'}
@@ -326,7 +395,4 @@ export default function BlogEditorPage() {
         </main>
     );
 }
-
-    
-
     

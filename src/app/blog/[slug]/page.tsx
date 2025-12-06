@@ -7,13 +7,13 @@ import { useParams, useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
-import { Calendar, ChevronLeft, Bookmark, Heart, Send } from 'lucide-react';
+import { Calendar, ChevronLeft, Bookmark, Heart, Send, Download } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -57,6 +57,11 @@ function SimpleMarkdown({ content }: { content: string }) {
     return <div className="prose prose-lg dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
 }
 
+interface Attachment {
+    name: string;
+    url: string;
+}
+
 interface BlogPost {
     id: string;
     title: string;
@@ -65,6 +70,7 @@ interface BlogPost {
     createdAt: { seconds: number };
     author: string;
     likes?: string[];
+    attachments?: Attachment[];
 }
 
 interface UserProfile {
@@ -269,6 +275,31 @@ export default function BlogPostPage() {
                 
                 <SimpleMarkdown content={post.content} />
 
+                {post.attachments && post.attachments.length > 0 && (
+                    <section className="mt-12">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-xl">Downloads</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ul className="space-y-3">
+                                    {post.attachments.map((file, index) => (
+                                        <li key={index} className="flex items-center justify-between">
+                                            <span className="font-medium">{file.name}</span>
+                                            <Button asChild variant="outline" size="sm">
+                                                <a href={file.url} download={file.name}>
+                                                    <Download className="mr-2 h-4 w-4" />
+                                                    Download
+                                                </a>
+                                            </Button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </CardContent>
+                        </Card>
+                    </section>
+                )}
+
                 <div className="mt-12 flex items-center gap-4 border-t pt-6">
                     <Button variant="outline" onClick={() => handleInteraction('like')}>
                         <Heart className={cn("w-4 h-4 mr-2", isLiked && "fill-red-500 text-red-500")} />
@@ -354,5 +385,4 @@ export default function BlogPostPage() {
         </main>
     );
 }
-
     
