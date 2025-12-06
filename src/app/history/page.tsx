@@ -38,7 +38,7 @@ interface Transaction {
   } | null;
 }
 
-export function HistoryPage() {
+export default function HistoryPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
