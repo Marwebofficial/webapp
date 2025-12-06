@@ -169,23 +169,21 @@
           "type": "array",
           "description": "An array of user IDs who have liked the post.",
           "items": { "type": "string" }
+        },
+        "attachments": {
+            "type": "array",
+            "description": "An array of downloadable file attachments for the post.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": { "type": "string" },
+                    "url": { "type": "string" }
+                },
+                "required": ["name", "url"]
+            }
         }
       },
       "required": ["id", "title", "excerpt", "content", "author", "createdAt"]
-    },
-    "Comment": {
-        "title": "Comment",
-        "type": "object",
-        "description": "Represents a comment on a blog post.",
-        "properties": {
-            "id": { "type": "string" },
-            "userId": { "type": "string" },
-            "authorName": { "type": "string" },
-            "authorImage": { "type": "string" },
-            "text": { "type": "string" },
-            "createdAt": { "type": "string", "format": "date-time" }
-        },
-        "required": ["id", "userId", "authorName", "text", "createdAt"]
     },
     "DataPlan": {
       "title": "Data Plan",
@@ -283,15 +281,7 @@
         "schema": {
           "$ref": "#/backend/entities/BlogPost"
         },
-        "description": "A collection of blog posts for the website.",
-        "subcollections": {
-            "/comments/{commentId}": {
-                "schema": {
-                    "$ref": "#/backend/entities/Comment"
-                },
-                "description": "A subcollection containing all comments for a specific blog post."
-            }
-        }
+        "description": "A collection of blog posts for the website."
       },
       "/dataPlans/{network}/plans/{planId}": {
         "schema": {
@@ -318,7 +308,7 @@
           "description": "A singleton document that stores the current site-wide announcement."
        }
     },
-    "reasoning": "The Firestore structure now includes a 'transactions' subcollection for each user to store their purchase history. A 'savedPosts' array is added to the User entity. A 'likes' array and a 'comments' subcollection are added to the 'blogPosts' entity to support engagement features. A 'Comment' entity is also added. A top-level 'reviews' collection is added to store user testimonials. Collections for 'dataPlans', 'tvPlans' are added to allow for dynamic management of service offerings from an admin panel. A 'networkStatus' collection is added for admins to manually update and users to view the status of service providers."
+    "reasoning": "The Firestore structure now includes a 'transactions' subcollection for each user to store their purchase history. A 'savedPosts' array is added to the User entity. A 'likes' array, 'attachments' array and a 'comments' subcollection are added to the 'blogPosts' entity to support engagement features. A 'Comment' entity is also added. A top-level 'reviews' collection is added to store user testimonials. Collections for 'dataPlans', 'tvPlans' are added to allow for dynamic management of service offerings from an admin panel. A 'networkStatus' collection is added for admins to manually update and users to view the status of service providers."
   }
 }
 
