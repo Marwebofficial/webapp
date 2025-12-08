@@ -14,6 +14,7 @@ const ptSans = PT_Sans({
   subsets: ['latin'],
   weight: ['400', '700'],
   variable: '--font-body',
+  display: 'swap',
 });
 
 const pageTitle = "DataConnect: Cheap Data, Airtime & TV Subs in Nigeria";
