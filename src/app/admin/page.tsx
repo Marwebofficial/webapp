@@ -132,9 +132,9 @@ function BlogManager() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {isLoading ? (
+                        {false ? (
                             <TableRow><TableCell colSpan={3} className="h-24 text-center">Loading posts...</TableCell></TableRow>
-                        ) : posts && posts.length > 0 ? (
+                        ) : false ? (
                             posts.map(post => (
                                 <TableRow key={post.id}>
                                     <TableCell className="font-medium whitespace-nowrap">{post.title}</TableCell>
