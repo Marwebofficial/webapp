@@ -17,7 +17,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 import { Sparkles, Loader2, Image as ImageIcon, Upload, File, X } from 'lucide-react';
-import { generatePostContent, generatePostImage } from '@/ai/flows/generate-post-flow';
 
 const attachmentSchema = z.object({
     name: z.string(),
@@ -43,8 +42,6 @@ function BlogPostEditor() {
     const slug = searchParams.get('slug');
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(!!slug);
-    const [isGeneratingContent, setIsGeneratingContent] = useState(false);
-    const [isGeneratingImage, setIsGeneratingImage] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const attachmentInputRef = useRef<HTMLInputElement>(null);
 
@@ -100,45 +97,6 @@ function BlogPostEditor() {
         }
     };
     
-    const handleGenerateContent = async () => {
-        const title = form.getValues('title');
-        if (!title) {
-            toast({ title: "Title is required", description: "Please enter a title before generating content.", variant: "destructive" });
-            return;
-        }
-        setIsGeneratingContent(true);
-        try {
-            const result = await generatePostContent({ topic: title });
-            form.setValue('excerpt', result.excerpt, { shouldValidate: true });
-            form.setValue('content', result.content, { shouldValidate: true });
-            toast({ title: "Content Generated!", description: "The excerpt and content fields have been populated." });
-        } catch (error) {
-            console.error("AI Content Generation Error:", error);
-            toast({ title: "Content Generation Failed", description: "Could not generate content. Please try again.", variant: "destructive" });
-        } finally {
-            setIsGeneratingContent(false);
-        }
-    };
-    
-    const handleGenerateImage = async () => {
-        const title = form.getValues('title');
-        if (!title) {
-            toast({ title: "Title is required", description: "Please enter a title before generating an image.", variant: "destructive" });
-            return;
-        }
-        setIsGeneratingImage(true);
-        try {
-            const result = await generatePostImage({ topic: title });
-            form.setValue('imageUrl', result.imageUrl, { shouldValidate: true });
-            toast({ title: "Image Generated!", description: "The cover image URL has been populated." });
-        } catch (error) {
-            console.error("AI Image Generation Error:", error);
-            toast({ title: "Image Generation Failed", description: "Could not generate image. Please try again.", variant: "destructive" });
-        } finally {
-            setIsGeneratingImage(false);
-        }
-    };
-
     const handleImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
@@ -239,12 +197,6 @@ function BlogPostEditor() {
             <CardContent>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                         <div className="flex justify-end">
-                            <Button type="button" onClick={handleGenerateContent} disabled={isGeneratingContent || isGeneratingImage}>
-                                {isGeneratingContent ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                                {isGeneratingContent ? 'Generating...' : 'Generate Content'}
-                            </Button>
-                        </div>
                         <FormField
                             control={form.control}
                             name="title"
@@ -292,7 +244,7 @@ function BlogPostEditor() {
                                     <FormLabel>Cover Image</FormLabel>
                                     <div className="flex gap-2">
                                         <FormControl>
-                                            <Input {...field} placeholder="Paste image URL or upload/generate one" />
+                                            <Input {...field} placeholder="Paste image URL or upload one" />
                                         </FormControl>
                                         <input
                                             type="file"
@@ -301,13 +253,9 @@ function BlogPostEditor() {
                                             className="hidden"
                                             accept="image/*"
                                         />
-                                        <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isGeneratingImage || isGeneratingContent}>
+                                        <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
                                              <Upload className="mr-2 h-4 w-4" />
                                              Upload
-                                        </Button>
-                                        <Button type="button" variant="outline" onClick={handleGenerateImage} disabled={isGeneratingImage || isGeneratingContent}>
-                                            {isGeneratingImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ImageIcon className="mr-2 h-4 w-4" />}
-                                            {isGeneratingImage ? 'Generating...' : 'Generate'}
                                         </Button>
                                     </div>
                                     <FormMessage />
@@ -366,7 +314,6 @@ function BlogPostEditor() {
                                 type="button"
                                 variant="outline"
                                 onClick={() => attachmentInputRef.current?.click()}
-                                disabled={isGeneratingImage || isGeneratingContent}
                             >
                                 <Upload className="mr-2 h-4 w-4" />
                                 Add Attachment
@@ -374,7 +321,7 @@ function BlogPostEditor() {
                         </div>
                         <div className="flex justify-end gap-2 pt-4">
                              <Button type="button" variant="ghost" onClick={() => router.back()}>Cancel</Button>
-                             <Button type="submit" disabled={form.formState.isSubmitting || isGeneratingContent || isGeneratingImage}>
+                             <Button type="submit" disabled={form.formState.isSubmitting}>
                                 {form.formState.isSubmitting ? 'Saving...' : 'Save Post'}
                             </Button>
                         </div>
@@ -395,4 +342,3 @@ export default function BlogEditorPage() {
         </main>
     );
 }
-    
