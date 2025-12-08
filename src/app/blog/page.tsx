@@ -103,7 +103,7 @@ export default function BlogIndexPage() {
     const { data: posts, isLoading: isLoadingPosts } = useCollection<BlogPost>(postsQuery);
     const { data: userProfile, isLoading: isLoadingUser } = useDoc<UserProfile>(userRef);
 
-    const isLoading = false; // isLoadingPosts || isLoadingUser;
+    const isLoading = isLoadingPosts || isLoadingUser;
 
     const handleInteraction = (e: React.MouseEvent, post: BlogPost, type: 'bookmark' | 'like') => {
         e.preventDefault();
@@ -153,8 +153,8 @@ export default function BlogIndexPage() {
         }
     }
 
-    const featuredPost = undefined; // posts?.[0];
-    const otherPosts = undefined; // posts?.slice(1);
+    const featuredPost = posts?.[0];
+    const otherPosts = posts?.slice(1);
 
     return (
         <main className="container mx-auto p-4 py-8 md:p-12">

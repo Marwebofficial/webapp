@@ -98,7 +98,32 @@ function BlogManager() {
 
     const handleDelete = async (postId: string) => {
         if (!firestore) return;
-        if (window.confirm('Are you sure you want to delete this blog post?')) {
+        const confirmed = await new Promise((resolve) => {
+            const Dialog = () => (
+                <AlertDialog open onOpenChange={() => resolve(false)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete the blog post.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel onClick={() => resolve(false)}>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => resolve(true)}>Continue</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            );
+            // This is a bit of a hack to render a dialog confirmation
+            // In a real app, you'd use a state management solution for dialogs
+            const root = document.createElement('div');
+            document.body.appendChild(root);
+            const { createRoot } = require('react-dom/client');
+            createRoot(root).render(<Dialog />);
+        });
+
+        if (confirmed) {
             try {
                 await deleteDoc(doc(firestore, 'blogPosts', postId));
                 toast({ title: 'Success', description: 'Blog post deleted.' });
@@ -132,9 +157,9 @@ function BlogManager() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {false ? (
+                        {isLoading ? (
                             <TableRow><TableCell colSpan={3} className="h-24 text-center">Loading posts...</TableCell></TableRow>
-                        ) : false ? (
+                        ) : posts && posts.length > 0 ? (
                             posts.map(post => (
                                 <TableRow key={post.id}>
                                     <TableCell className="font-medium whitespace-nowrap">{post.title}</TableCell>
