@@ -15,37 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-function SimpleMarkdown({ content }: { content: string }) {
-    // A simple markdown to HTML converter that handles headings, paragraphs, and lists.
-    const htmlContent = content
-        .split('\n')
-        .filter(line => line.trim() !== '') // Remove empty lines
-        .map(line => {
-            if (line.startsWith('### ')) return `<h3 class="text-xl font-bold mt-6 mb-2">${line.substring(4)}</h3>`;
-            if (line.startsWith('## ')) return `<h2 class="text-2xl font-bold mt-8 mb-3 border-b pb-2">${line.substring(3)}</h2>`;
-            if (line.startsWith('# ')) return `<h1 class="text-3xl font-bold mt-10 mb-4 border-b pb-2">${line.substring(2)}</h1>`;
-            
-            // Handle unordered lists
-            if (line.startsWith('- ') || line.startsWith('* ')) {
-                return `<li class="mb-2 ml-4">${line.substring(2)}</li>`;
-            }
-            
-            // Handle ordered lists
-            const olMatch = line.match(/^(\d+)\.\s(.+)/);
-            if (olMatch) {
-                return `<li class="mb-2 ml-4">${olMatch[2]}</li>`;
-            }
-            
-            return `<p class="leading-relaxed mb-4 text-lg">${line}</p>`;
-        })
-        .join('')
-        .replace(/<\/li>\s*<li>/g, '</li><li>') // Join list items
-        .replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>') // Wrap in <ul>
-        .replace(/<\/ul>\s*<ul>/g, ''); // Merge adjacent lists
-
-    return <div className="prose prose-lg dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
-}
+import ReactMarkdown from 'react-markdown';
 
 interface Attachment {
     name: string;
@@ -200,7 +170,9 @@ export default function BlogPostPage() {
                     />
                 </div>
                 
-                <SimpleMarkdown content={post.content} />
+                <div className="prose prose-lg dark:prose-invert max-w-none">
+                  <ReactMarkdown>{post.content}</ReactMarkdown>
+                </div>
 
                 {post.attachments && post.attachments.length > 0 && (
                     <section className="mt-12">

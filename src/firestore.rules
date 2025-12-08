@@ -17,7 +17,7 @@ service cloud.firestore {
     
     function isAdmin() {
         // Only allow a specific admin email
-        return request.auth != null && request.auth.token.email == 'samuelmarvel21@gmail.com';
+        return isSignedIn() && request.auth.token.email == 'samuelmarvel21@gmail.com';
     }
 
     function isUpdatingOwnRequest(userId) {
@@ -29,8 +29,8 @@ service cloud.firestore {
     }
     
     function isUpdatingOwnProfile(userId) {
-      // Allow user to update only their own name
-      return isOwner(userId) && request.resource.data.keys().hasOnly(['name']);
+      // Allow user to update only their own name and photoURL
+      return isOwner(userId) && request.resource.data.keys().hasOnly(['name', 'photoURL']);
     }
 
     function isLikingPost() {
