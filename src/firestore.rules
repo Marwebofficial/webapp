@@ -28,15 +28,11 @@ service cloud.firestore {
     }
 
     function isUpdatingOwnProfile(userId) {
-      // Allow user to update their own name
-      return isOwner(userId) && request.resource.data.keys().hasOnly(['name']);
+      // Allow user to update their own name and photoURL
+      return isOwner(userId) && request.resource.data.keys().hasOnly(['name', 'photoURL']);
     }
     
     function isLikingPost() {
-      // Check if the user is signed in and is only modifying the 'likes' field.
-      // `request.resource` refers to the document *after* the change.
-      // `resource` refers to the document *before* the change.
-      // The `diff()` method on the map shows what fields are being changed.
       return isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
     }
 
@@ -89,5 +85,3 @@ service cloud.firestore {
     }
   }
 }
-
-    

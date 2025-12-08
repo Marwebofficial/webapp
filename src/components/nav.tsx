@@ -12,8 +12,10 @@ import {
 } from '@/components/ui/sheet';
 import { Menu, Wifi, UserCircle, History, Shield, Bookmark } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useState } from 'react';
-import { useAuth, useUser } from '@/firebase';
+import { useState, useMemo } from 'react';
+import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,21 +24,35 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from './ui/skeleton';
+
+
+interface UserProfile {
+    photoURL?: string;
+}
 
 export function Nav() {
   const isMobile = useIsMobile();
   const [isSheetOpen, setSheetOpen] = useState(false);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
   const isAdmin = user?.email === 'samuelmarvel21@gmail.com';
+
+  const userDocRef = useMemoFirebase(
+    () => user ? doc(firestore, 'users', user.uid) : null,
+    [user, firestore]
+  );
+  const { data: userProfile } = useDoc<UserProfile>(userDocRef);
 
   const handleSignOut = () => {
     auth.signOut();
   };
 
   const closeSheet = () => setSheetOpen(false);
+
+  const photoURL = useMemo(() => userProfile?.photoURL || user?.photoURL, [userProfile, user]);
 
   const navLinks = (
     <>
@@ -86,17 +102,15 @@ export function Nav() {
   const authLinks = (
     <div className="flex items-center gap-2">
       {isUserLoading ? (
-        <>
-          <Skeleton className="h-9 w-20" />
-          <Skeleton className="h-9 w-20" />
-        </>
+         <Skeleton className="h-8 w-8 rounded-full" />
       ) : user ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
               <Avatar className="h-8 w-8">
-                <AvatarFallback>
-                  <UserCircle />
+                 <AvatarImage src={photoURL || undefined} alt={user.displayName || 'User'} />
+                 <AvatarFallback>
+                  {user.displayName ? user.displayName.charAt(0) : <UserCircle />}
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -123,6 +137,12 @@ export function Nav() {
             )}
             <DropdownMenuItem asChild>
               <Link href="/account">My Account</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/account/profile">
+                <UserCircle className="mr-2 h-4 w-4" />
+                <span>Manage Profile</span>
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/account/saved-posts">
@@ -248,5 +268,3 @@ export function Nav() {
     </header>
   );
 }
-
-    

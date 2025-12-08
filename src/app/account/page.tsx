@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { User as UserIcon, Hash, Sigma, Smartphone, Phone, Tv, Repeat, Wallet, Megaphone, Edit } from 'lucide-react';
@@ -61,6 +61,7 @@ interface UserProfile {
         amount: number;
         createdAt: any;
     };
+    photoURL?: string;
 }
 
 interface Announcement {
@@ -286,6 +287,8 @@ export default function AccountPage() {
     // but it's a good fallback.
     return null;
   }
+  
+  const photoURL = userProfile?.photoURL || user.photoURL;
 
   return (
     <div className="space-y-8">
@@ -310,8 +313,9 @@ export default function AccountPage() {
                 <CardHeader className="flex flex-row items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16">
+                        <AvatarImage src={photoURL || undefined} alt={user.displayName || 'User'} />
                         <AvatarFallback className="text-2xl">
-                        <UserIcon />
+                            {user.displayName ? user.displayName.charAt(0) : <UserIcon />}
                         </AvatarFallback>
                     </Avatar>
                     <div>
