@@ -24,6 +24,10 @@
           "description": "User's email address (optional).",
           "format": "email"
         },
+        "photoURL": {
+            "type": "string",
+            "description": "URL to the user's profile picture."
+        },
         "referralCode": {
           "type": "string",
           "description": "Referral code used by the user (optional)."
@@ -311,5 +315,3 @@
     "reasoning": "The Firestore structure now includes a 'transactions' subcollection for each user to store their purchase history. A 'savedPosts' array is added to the User entity. A 'likes' array, 'attachments' array and a 'comments' subcollection are added to the 'blogPosts' entity to support engagement features. A 'Comment' entity is also added. A top-level 'reviews' collection is added to store user testimonials. Collections for 'dataPlans', 'tvPlans' are added to allow for dynamic management of service offerings from an admin panel. A 'networkStatus' collection is added for admins to manually update and users to view the status of service providers."
   }
 }
-
-    

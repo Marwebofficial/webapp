@@ -15,13 +15,12 @@ import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, Phone, User as UserIcon, ChevronLeft, Camera } from 'lucide-react';
+import { Mail, Phone, User as UserIcon, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const profileSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters long.'),
-  photoURL: z.string().url().or(z.string().startsWith("data:")).optional(),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -33,42 +32,6 @@ interface UserProfile {
   photoURL?: string;
 }
 
-const resizeImage = (file: File, maxWidth: number, maxHeight: number): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.src = URL.createObjectURL(file);
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            let { width, height } = img;
-
-            if (width > height) {
-                if (width > maxWidth) {
-                    height = Math.round((height * maxWidth) / width);
-                    width = maxWidth;
-                }
-            } else {
-                if (height > maxHeight) {
-                    width = Math.round((width * maxHeight) / height);
-                    height = maxHeight;
-                }
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) {
-                return reject(new Error('Could not get canvas context'));
-            }
-            ctx.drawImage(img, 0, 0, width, height);
-
-            resolve(canvas.toDataURL(file.type || 'image/jpeg'));
-        };
-        img.onerror = (error) => {
-            reject(error);
-        };
-    });
-};
-
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
@@ -76,8 +39,6 @@ export default function ProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const userDocRef = useMemoFirebase(
     () => (user ? doc(firestore, 'users', user.uid) : null),
@@ -95,54 +56,24 @@ export default function ProfilePage() {
     }
     if (user) {
       form.setValue('name', user.displayName || '');
-      const photo = userProfile?.photoURL || user.photoURL;
-      form.setValue('photoURL', photo || '');
-      if (photo) {
-        setPreviewImage(photo);
-      }
     }
-  }, [user, isUserLoading, router, form, userProfile]);
-
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      try {
-        const resizedDataUrl = await resizeImage(file, 512, 512);
-        setPreviewImage(resizedDataUrl);
-        form.setValue('photoURL', resizedDataUrl, { shouldValidate: true, shouldDirty: true });
-      } catch (error) {
-        console.error("Image resizing failed:", error);
-        toast({
-          title: "Image Error",
-          description: "Could not process the selected image. Please try another one.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
+  }, [user, isUserLoading, router, form]);
 
   const onSubmit = async (data: ProfileFormData) => {
     if (!user || !userDocRef) return;
 
     setIsSubmitting(true);
     try {
-      // Prepare updates
-      const authUpdates: { displayName?: string; photoURL?: string } = {};
-      const firestoreUpdates: { name?: string; photoURL?: string } = {};
+      const authUpdates: { displayName?: string } = {};
+      const firestoreUpdates: { name?: string } = {};
 
       if (form.formState.dirtyFields.name) {
         authUpdates.displayName = data.name;
         firestoreUpdates.name = data.name;
       }
       
-      // Check if photoURL is dirty and is a data URL
-      if (form.formState.dirtyFields.photoURL && data.photoURL && data.photoURL.startsWith('data:')) {
-        authUpdates.photoURL = data.photoURL;
-        firestoreUpdates.photoURL = data.photoURL;
-      }
-
-      if (Object.keys(authUpdates).length > 0) {
-        await updateProfile(user, authUpdates);
+      if (Object.keys(authUpdates).length > 0 && auth.currentUser) {
+        await updateProfile(auth.currentUser, authUpdates);
       }
       
       if (Object.keys(firestoreUpdates).length > 0) {
@@ -151,9 +82,9 @@ export default function ProfilePage() {
 
       toast({
         title: 'Profile updated!',
-        description: 'Your changes have been successfully saved.',
+        description: 'Your name has been successfully saved.',
       });
-       form.reset({}, { keepValues: true }); // Reset dirty state
+      form.reset({}, { keepValues: true }); // Reset dirty state
     } catch (error: any) {
       console.error('Error updating profile:', error);
       toast({
@@ -167,8 +98,7 @@ export default function ProfilePage() {
   };
 
   const isLoading = isUserLoading || isProfileLoading;
-  const photoURL = previewImage || userProfile?.photoURL || user?.photoURL;
-
+  const photoURL = userProfile?.photoURL || user?.photoURL;
 
   if (isLoading) {
     return (
@@ -214,29 +144,12 @@ export default function ProfilePage() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <div className="flex flex-col items-center gap-6">
-                <div className="relative">
-                  <Avatar className="w-32 h-32 text-4xl">
-                     <AvatarImage src={photoURL || undefined} alt={user?.displayName || 'User'} />
-                     <AvatarFallback>
-                       {user?.displayName ? user.displayName.charAt(0) : <UserIcon />}
-                     </AvatarFallback>
-                  </Avatar>
-                  <Button
-                    type="button"
-                    size="icon"
-                    className="absolute bottom-1 right-1 rounded-full"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Camera className="w-5 h-5" />
-                  </Button>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    className="hidden"
-                    accept="image/png, image/jpeg, image/gif"
-                    onChange={handleImageChange}
-                  />
-                </div>
+                <Avatar className="w-32 h-32 text-4xl">
+                    <AvatarImage src={photoURL || undefined} alt={user?.displayName || 'User'} />
+                    <AvatarFallback>
+                    {user?.displayName ? user.displayName.charAt(0) : <UserIcon />}
+                    </AvatarFallback>
+                </Avatar>
                  <div className="w-full space-y-4">
                     <FormField
                       control={form.control}

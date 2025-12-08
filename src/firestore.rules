@@ -16,7 +16,8 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-        return request.auth.token.email == 'samuelmarvel21@gmail.com';
+        // Only allow a specific admin email
+        return request.auth != null && request.auth.token.email == 'samuelmarvel21@gmail.com';
     }
 
     function isUpdatingOwnRequest(userId) {
@@ -26,13 +27,14 @@ service cloud.firestore {
     function isUpdatingSavedPosts(userId) {
       return isOwner(userId) && request.resource.data.keys().hasOnly(['savedPosts']);
     }
-
-    function isUpdatingOwnProfile(userId) {
-      // Allow user to update their own name and photoURL
-      return isOwner(userId) && request.resource.data.keys().hasOnly(['name', 'photoURL']);
-    }
     
+    function isUpdatingOwnProfile(userId) {
+      // Allow user to update only their own name
+      return isOwner(userId) && request.resource.data.keys().hasOnly(['name']);
+    }
+
     function isLikingPost() {
+      // Allow signed-in users to only modify the 'likes' field
       return isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
     }
 
@@ -55,7 +57,7 @@ service cloud.firestore {
     match /reviews/{reviewId} {
         allow read: if true;
         allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-        allow update: if false;
+        allow update: if false; // Reviews should be immutable once created
         allow delete: if isAdmin();
     }
 
