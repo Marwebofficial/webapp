@@ -21,7 +21,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const profileSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters long.'),
-  photoURL: z.string().optional(),
+  photoURL: z.string().url().or(z.string().startsWith("data:")).optional(),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -32,6 +32,42 @@ interface UserProfile {
   phoneNumber: string;
   photoURL?: string;
 }
+
+const resizeImage = (file: File, maxWidth: number, maxHeight: number): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let { width, height } = img;
+
+            if (width > height) {
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+            } else {
+                if (height > maxHeight) {
+                    width = Math.round((width * maxHeight) / height);
+                    height = maxHeight;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                return reject(new Error('Could not get canvas context'));
+            }
+            ctx.drawImage(img, 0, 0, width, height);
+
+            resolve(canvas.toDataURL(file.type || 'image/jpeg'));
+        };
+        img.onerror = (error) => {
+            reject(error);
+        };
+    });
+};
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -67,16 +103,21 @@ export default function ProfilePage() {
     }
   }, [user, isUserLoading, router, form, userProfile]);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const dataUrl = reader.result as string;
-        setPreviewImage(dataUrl);
-        form.setValue('photoURL', dataUrl, { shouldValidate: true, shouldDirty: true });
-      };
-      reader.readAsDataURL(file);
+      try {
+        const resizedDataUrl = await resizeImage(file, 512, 512);
+        setPreviewImage(resizedDataUrl);
+        form.setValue('photoURL', resizedDataUrl, { shouldValidate: true, shouldDirty: true });
+      } catch (error) {
+        console.error("Image resizing failed:", error);
+        toast({
+          title: "Image Error",
+          description: "Could not process the selected image. Please try another one.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -93,8 +134,9 @@ export default function ProfilePage() {
         authUpdates.displayName = data.name;
         firestoreUpdates.name = data.name;
       }
-
-      if (form.formState.dirtyFields.photoURL) {
+      
+      // Check if photoURL is dirty and is a data URL
+      if (form.formState.dirtyFields.photoURL && data.photoURL && data.photoURL.startsWith('data:')) {
         authUpdates.photoURL = data.photoURL;
         firestoreUpdates.photoURL = data.photoURL;
       }
