@@ -24,7 +24,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
-import { User as UserIcon, Hash, Sigma, Smartphone, Phone, Tv, Repeat, Wallet, Megaphone } from 'lucide-react';
+import { User as UserIcon, Hash, Sigma, Smartphone, Phone, Tv, Repeat, Wallet, Megaphone, Edit } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -72,12 +72,17 @@ interface Announcement {
 function AccountInfoSkeleton() {
     return (
         <Card>
-            <CardHeader className="flex flex-row items-center gap-4">
-                <Skeleton className="h-16 w-16 rounded-full" />
-                <div className="space-y-2">
-                    <Skeleton className="h-6 w-40" />
-                    <Skeleton className="h-4 w-52" />
+            <CardHeader className="flex flex-row items-center justify-between">
+                 <div className="flex items-center gap-4">
+                    <Avatar className="h-16 w-16">
+                        <Skeleton className="h-16 w-16 rounded-full" />
+                    </Avatar>
+                    <div className="space-y-2">
+                        <Skeleton className="h-6 w-40" />
+                        <Skeleton className="h-4 w-52" />
+                    </div>
                 </div>
+                <Skeleton className="h-10 w-32" />
             </CardHeader>
         </Card>
     );
@@ -302,16 +307,24 @@ export default function AccountPage() {
                 </AlertDialogContent>
             </AlertDialog>
             <Card>
-                <CardHeader className="flex flex-row items-center gap-4">
-                <Avatar className="h-16 w-16">
-                    <AvatarFallback className="text-2xl">
-                    <UserIcon />
-                    </AvatarFallback>
-                </Avatar>
-                <div>
-                    <CardTitle className="text-2xl">{user.displayName}</CardTitle>
-                    <CardDescription>{user.email}</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <Avatar className="h-16 w-16">
+                        <AvatarFallback className="text-2xl">
+                        <UserIcon />
+                        </AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <CardTitle className="text-2xl">{user.displayName}</CardTitle>
+                        <CardDescription>{user.email}</CardDescription>
+                    </div>
                 </div>
+                 <Button asChild variant="outline">
+                    <Link href="/account/profile">
+                        <Edit className="mr-2 h-4 w-4" />
+                        Manage Profile
+                    </Link>
+                </Button>
                 </CardHeader>
             </Card>
             
@@ -446,3 +459,5 @@ export default function AccountPage() {
     </div>
   );
 }
+
+    

@@ -26,12 +26,17 @@ service cloud.firestore {
     function isUpdatingSavedPosts(userId) {
       return isOwner(userId) && request.resource.data.keys().hasOnly(['savedPosts']);
     }
+
+    function isUpdatingOwnProfile(userId) {
+      // Allow user to update their own name
+      return isOwner(userId) && request.resource.data.keys().hasOnly(['name']);
+    }
     
     function isLikingPost() {
       // Check if the user is signed in and is only modifying the 'likes' field.
       // `request.resource` refers to the document *after* the change.
       // `resource` refers to the document *before* the change.
-      // The `affectedKeys()` method on the diff shows what fields are being changed.
+      // The `diff()` method on the map shows what fields are being changed.
       return isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
     }
 
@@ -43,7 +48,7 @@ service cloud.firestore {
       allow read: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
       allow create: if isOwner(userId);
-      allow update: if isUpdatingOwnRequest(userId) || isUpdatingSavedPosts(userId) || isAdmin();
+      allow update: if isUpdatingOwnRequest(userId) || isUpdatingSavedPosts(userId) || isUpdatingOwnProfile(userId) || isAdmin();
       allow delete: if isOwner(userId) || isAdmin();
 
       match /transactions/{transactionId} {
@@ -80,9 +85,9 @@ service cloud.firestore {
 
     match /blogPosts/{postId} {
         allow read: if true;
-        // Allow write access (create, update, delete) if the user is an admin OR
-        // if they are only performing a 'like' operation.
         allow write: if isAdmin() || isLikingPost();
     }
   }
 }
+
+    
