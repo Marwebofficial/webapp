@@ -28,7 +28,11 @@ service cloud.firestore {
     }
     
     function isLikingPost() {
-      return isSignedIn() && request.resource.data.diff(request.resource.data).affectedKeys().hasOnly(['likes']);
+      // Check if the user is signed in and is only modifying the 'likes' field.
+      // `request.resource` refers to the document *after* the change.
+      // `resource` refers to the document *before* the change.
+      // The `affectedKeys()` method on the diff shows what fields are being changed.
+      return isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
     }
 
     // ----------------------------------------------------------------
@@ -76,8 +80,9 @@ service cloud.firestore {
 
     match /blogPosts/{postId} {
         allow read: if true;
-        allow write: if isAdmin();
-        allow update: if isLikingPost();
+        // Allow write access (create, update, delete) if the user is an admin OR
+        // if they are only performing a 'like' operation.
+        allow write: if isAdmin() || isLikingPost();
     }
   }
 }
