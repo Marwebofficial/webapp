@@ -103,7 +103,7 @@ export default function BlogIndexPage() {
     const { data: posts, isLoading: isLoadingPosts } = useCollection<BlogPost>(postsQuery);
     const { data: userProfile, isLoading: isLoadingUser } = useDoc<UserProfile>(userRef);
 
-    const isLoading = isLoadingPosts || isLoadingUser;
+    const isLoading = false; // isLoadingPosts || isLoadingUser;
 
     const handleInteraction = (e: React.MouseEvent, post: BlogPost, type: 'bookmark' | 'like') => {
         e.preventDefault();
@@ -153,8 +153,8 @@ export default function BlogIndexPage() {
         }
     }
 
-    const featuredPost = posts?.[0];
-    const otherPosts = posts?.slice(1);
+    const featuredPost = undefined; // posts?.[0];
+    const otherPosts = undefined; // posts?.slice(1);
 
     return (
         <main className="container mx-auto p-4 py-8 md:p-12">
@@ -284,7 +284,7 @@ export default function BlogIndexPage() {
                 </section>
             )}
             
-            {!isLoading && posts && posts.length === 0 && (
+            {!isLoading && (!posts || posts.length === 0) && (
                 <div className="md:col-span-2 lg:col-span-3 text-center py-16">
                     <h2 className="text-2xl font-semibold">No posts yet!</h2>
                     <p className="text-muted-foreground mt-2">Check back soon for updates from our team.</p>
