@@ -1,9 +1,9 @@
 
 'use client';
 
-import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc, useAuth } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -32,6 +32,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { collection, doc, deleteDoc, query, serverTimestamp, writeBatch, increment, updateDoc, orderBy, where } from 'firebase/firestore';
+import { sendPasswordResetEmail } from 'firebase/auth';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { networkProviders } from '@/lib/data-plans';
 import { tvProviders } from '@/lib/tv-plans';
@@ -44,7 +45,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { Pencil, Trash2, Megaphone, CheckCircle, WalletCards, PlusCircle } from 'lucide-react';
+import { Pencil, Trash2, Megaphone, CheckCircle, WalletCards, PlusCircle, Search, UserCog } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -190,7 +191,11 @@ function BlogManager() {
 
 function UserManagement() {
     const firestore = useFirestore();
+    const auth = useAuth();
     const { toast } = useToast();
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+    const [isManageUserOpen, setManageUserOpen] = useState(false);
 
     const usersQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -199,22 +204,29 @@ function UserManagement() {
 
     const { data: users, isLoading, error } = useCollection<UserProfile>(usersQuery);
 
-    const handleClearBalance = async (userId: string) => {
-        if (!firestore) return;
-        const userRef = doc(firestore, 'users', userId);
+    const filteredUsers = useMemo(() => {
+        if (!users) return [];
+        if (!searchQuery) return users;
+        return users.filter(user =>
+            user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            user.email.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [users, searchQuery]);
+
+    const handlePasswordReset = async (email: string) => {
+        if (!auth) return;
         try {
-            await updateDoc(userRef, {
-                walletBalance: 0
-            });
+            await sendPasswordResetEmail(auth, email);
             toast({
-                title: "Success!",
-                description: "User's wallet balance has been cleared.",
+                title: 'Password Reset Email Sent',
+                description: `An email has been sent to ${email} with instructions to reset their password.`,
             });
+            setManageUserOpen(false);
         } catch (error: any) {
-            console.error("Clear Balance Error: ", error);
+            console.error("Password Reset Error: ", error);
             toast({
-                title: "Clear Balance Failed",
-                description: `Could not clear balance. Error: ${error.message}`,
+                title: "Failed to Send Email",
+                description: `Could not send password reset email. Error: ${error.message}`,
                 variant: 'destructive',
             });
         }
@@ -228,63 +240,95 @@ function UserManagement() {
         <Card>
             <CardHeader>
                 <CardTitle>User Management</CardTitle>
-                <CardDescription>View and manage user wallet balances.</CardDescription>
+                <CardDescription>Search, view, and manage user accounts.</CardDescription>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>User</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Wallet Balance</TableHead>
-                            <TableHead className="text-right">Action</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading ? (
-                             <TableRow>
-                                <TableCell colSpan={4} className="h-24 text-center">Loading users...</TableCell>
+            <CardContent className="space-y-4">
+                 <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                        placeholder="Search by name or email..."
+                        className="pl-10"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
+                <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>User</TableHead>
+                                <TableHead>Email</TableHead>
+                                <TableHead>Wallet Balance</TableHead>
+                                <TableHead className="text-right">Action</TableHead>
                             </TableRow>
-                        ) : users && users.length > 0 ? (
-                            users.map(user => (
-                                <TableRow key={user.id}>
-                                    <TableCell className="whitespace-nowrap">
-                                        <div className="font-medium">{user.name}</div>
-                                    </TableCell>
-                                    <TableCell className="whitespace-nowrap">{user.email}</TableCell>
-                                    <TableCell className="whitespace-nowrap">₦{(user.walletBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                                    <TableCell className="text-right whitespace-nowrap">
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button size="sm" variant="destructive">
-                                                    <WalletCards className="w-4 h-4 mr-2"/>
-                                                    Clear Balance
-                                                </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        This action will set {user.name}'s wallet balance to ₦0.00. This cannot be undone.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleClearBalance(user.id)}>Continue</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-                                    </TableCell>
+                        </TableHeader>
+                        <TableBody>
+                            {isLoading ? (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="h-24 text-center">Loading users...</TableCell>
                                 </TableRow>
-                            ))
-                        ) : (
-                             <TableRow>
-                                <TableCell colSpan={4} className="h-24 text-center">No users found.</TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+                            ) : filteredUsers && filteredUsers.length > 0 ? (
+                                filteredUsers.map(user => (
+                                    <TableRow key={user.id}>
+                                        <TableCell className="whitespace-nowrap">
+                                            <div className="font-medium">{user.name}</div>
+                                        </TableCell>
+                                        <TableCell className="whitespace-nowrap">{user.email}</TableCell>
+                                        <TableCell className="whitespace-nowrap">₦{(user.walletBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                                        <TableCell className="text-right whitespace-nowrap">
+                                            <Button size="sm" variant="outline" onClick={() => { setSelectedUser(user); setManageUserOpen(true); }}>
+                                                <UserCog className="w-4 h-4 mr-2"/>
+                                                Manage
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="h-24 text-center">No users found.</TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
             </CardContent>
+
+             <Dialog open={isManageUserOpen} onOpenChange={setManageUserOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Manage User: {selectedUser?.name}</DialogTitle>
+                        <DialogDescription>
+                            Perform administrative actions for this user.
+                        </DialogDescription>
+                    </DialogHeader>
+                    {selectedUser && (
+                        <div className="py-4 space-y-4">
+                           <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" className="w-full">
+                                        Send Password Reset Email
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will send a password reset link to {selectedUser.email}. The user will be required to choose a new password.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handlePasswordReset(selectedUser.email)}>
+                                            Yes, Send Email
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                             {/* Add other management actions here */}
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </Card>
     );
 }
@@ -951,8 +995,8 @@ export default function AdminPage() {
   return (
     <div className="container mx-auto p-4 py-8 md:p-12 space-y-8">
       <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-      <FundingApprovalManager />
       <UserManagement />
+      <FundingApprovalManager />
       <BlogManager />
       <AnnouncementManager />
       <NetworkStatusManager />
@@ -962,3 +1006,5 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    
