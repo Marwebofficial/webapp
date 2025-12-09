@@ -16,6 +16,8 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
 
 interface Attachment {
     name: string;
@@ -171,7 +173,7 @@ export default function BlogPostPage() {
                 </div>
                 
                 <div className="prose prose-lg dark:prose-invert max-w-none">
-                  <ReactMarkdown>{post.content}</ReactMarkdown>
+                  <ReactMarkdown rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
                 </div>
 
                 {post.attachments && post.attachments.length > 0 && (
