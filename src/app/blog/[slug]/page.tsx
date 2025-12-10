@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useFirestore, useDoc, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useDoc, useMemoFirebase, useUser, setDocumentNonBlocking } from '@/firebase';
 import { doc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -99,7 +99,7 @@ export default function BlogPostPage() {
                 : { savedPosts: isAdding ? arrayUnion(slug) : arrayRemove(slug) };
 
         const docToUpdate = type === 'like' ? postRef : userRef;
-        updateDocumentNonBlocking(docToUpdate, updateData);
+        setDocumentNonBlocking(docToUpdate, updateData, { merge: true });
 
         toast({
             title: isAdding ? `${type.charAt(0).toUpperCase() + type.slice(1)} Added` : `${type.charAt(0).toUpperCase() + type.slice(1)} Removed`,

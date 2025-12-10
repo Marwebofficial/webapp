@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useFirestore, useCollection, useMemoFirebase, useDoc, useUser, updateDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useDoc, useUser, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc, arrayRemove, arrayUnion } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -132,7 +132,7 @@ export default function BlogIndexPage() {
             docToUpdate = userRef;
         }
 
-        updateDocumentNonBlocking(docToUpdate, updateData);
+        setDocumentNonBlocking(docToUpdate, updateData, { merge: true });
 
         toast({
             title: isAdding ? `${type.charAt(0).toUpperCase() + type.slice(1)} Added` : `${type.charAt(0).toUpperCase() + type.slice(1)} Removed`,

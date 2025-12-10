@@ -83,7 +83,8 @@ service cloud.firestore {
 
     match /blogPosts/{postId} {
         allow read: if true;
-        allow write: if isAdmin() || isLikingPost();
+        allow update: if isLikingPost() || isAdmin();
+        allow create, delete, list: if isAdmin();
     }
   }
 }
