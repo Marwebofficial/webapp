@@ -240,9 +240,9 @@ export function DataPurchaseForm() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          network: data.network,
+          network_id: data.network,
           mobile_number: data.phone,
-          data_id: data.data_id,
+          plan_id: data.data_id,
         }),
       });
 
