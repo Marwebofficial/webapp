@@ -237,7 +237,6 @@ export function DataPurchaseForm() {
         return;
     }
 
-    form.formState.isSubmitting = true;
     try {
       const response = await fetch('/api/data', {
         method: 'POST',
@@ -297,8 +296,6 @@ export function DataPurchaseForm() {
         description: errorMessage,
         variant: 'destructive',
       });
-    } finally {
-      form.formState.isSubmitting = false;
     }
   }
   
@@ -495,7 +492,7 @@ export function DataPurchaseForm() {
                         <Input placeholder="e.g., REF123" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </FormItem>
+                    </Iteem>
                   )}
                 />
               </div>

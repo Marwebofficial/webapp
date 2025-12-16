@@ -27,7 +27,6 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useState } from "react";
 
 const FormSchema = z.object({
   email: z.string().email("Please enter a valid email."),
@@ -40,7 +39,6 @@ export function LoginForm() {
   const { toast } = useToast();
   const auth = useAuth();
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(FormSchema),
@@ -51,7 +49,6 @@ export function LoginForm() {
   });
 
   async function onSubmit(data: FormData) {
-    setIsSubmitting(true);
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
       toast({
@@ -75,8 +72,6 @@ export function LoginForm() {
             ? "Invalid email or password."
             : error.message || "An unexpected error occurred. Please try again.",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   }
 
@@ -128,9 +123,9 @@ export function LoginForm() {
             <Button
               type="submit"
               className="w-full bg-accent text-accent-foreground hover:bg-accent/90 text-lg py-6 font-bold rounded-full shadow-lg transition-transform hover:scale-105"
-              disabled={isSubmitting}
+              disabled={form.formState.isSubmitting}
             >
-              {isSubmitting ? "Signing In..." : "Sign In"}
+              {form.formState.isSubmitting ? "Signing In..." : "Sign In"}
             </Button>
             <p className="text-sm text-center text-muted-foreground">
               Don't have an account?{" "}

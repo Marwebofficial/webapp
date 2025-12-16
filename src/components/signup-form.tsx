@@ -28,7 +28,6 @@ import { doc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
@@ -60,7 +59,6 @@ export function SignupForm() {
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(FormSchema),
@@ -75,7 +73,6 @@ export function SignupForm() {
   });
 
   async function onSubmit(data: FormData) {
-    setIsSubmitting(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -113,8 +110,6 @@ export function SignupForm() {
             ? "This email is already associated with an account."
             : error.message || "An unexpected error occurred. Please try again.",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   }
 
@@ -236,9 +231,9 @@ export function SignupForm() {
             <Button
               type="submit"
               className="w-full bg-accent text-accent-foreground hover:bg-accent/90 text-lg py-6 font-bold rounded-full shadow-lg transition-transform hover:scale-105"
-              disabled={isSubmitting}
+              disabled={form.formState.isSubmitting}
             >
-              {isSubmitting ? "Creating Account..." : "Create Account"}
+              {form.formState.isSubmitting ? "Creating Account..." : "Create Account"}
             </Button>
             <p className="text-sm text-center text-muted-foreground">
               Already have an account?{" "}
