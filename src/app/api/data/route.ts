@@ -1,9 +1,10 @@
 
 import { NextResponse } from 'next/server';
+import axios from 'axios'; // Import axios
 
 // In a real-world application, these should be stored in environment variables
-const GONGOZ_API_KEY = process.env.GONGOZ_API_KEY || 'your_gongozconcept_api_key_placeholder';
-const GONGOZ_API_URL = process.env.GONGOZ_API_URL || 'https://gongozconcept.com/api/data/';
+const GONGOZ_API_KEY = 'cf1711071e40e0a69671c5b8d05cd8f328278933';
+const GONGOZ_API_URL = process.env.GONGOZ_API_URL || 'https://www.gongozconcept.com/api/data/';
 
 export async function POST(request: Request) {
   try {
@@ -13,40 +14,45 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields: network_id, mobile_number, and plan_id are required.' }, { status: 400 });
     }
 
-    // This is a placeholder for where you would map your internal IDs to what GongozConcept expects, if they are different.
-    // For now, we assume they are the same.
-    const externalNetworkId = network_id;
-    const externalPlanId = plan_id;
-
-    const response = await fetch(GONGOZ_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GONGOZ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        network_id: externalNetworkId,
-        mobile_number: mobile_number,
-        plan_id: externalPlanId,
-      }),
+    // Prepare the data payload for the external API
+    var data = JSON.stringify({
+      "network": network_id, // Map internal network_id to external network
+      "mobile_number": mobile_number,
+      "plan": plan_id,         // Map internal plan_id to external plan
+      "Ported_number": true
     });
 
-    const result = await response.json();
+    var config = {
+      method: 'post',
+      maxBodyLength: Infinity,
+      url: GONGOZ_API_URL,
+      headers: { 
+        'Authorization': `Token ${GONGOZ_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      data : data
+    };
 
-    if (!response.ok) {
-      // If the API returns an error, forward it to the client
-      return NextResponse.json({ error: result.error || 'Data purchase failed at the provider.' }, { status: response.status });
-    }
+    const response = await axios(config);
 
     // Forward the success response from the provider to our client
-    return NextResponse.json(result, { status: 200 });
+    return NextResponse.json(response.data, { status: response.status });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in /api/data:', error);
     let errorMessage = 'An internal server error occurred.';
-    if (error instanceof Error) {
+    let statusCode = 500;
+
+    // Check if the error is from axios and has a response
+    if (axios.isAxiosError(error) && error.response) {
+        // Log the detailed error from the external API
+        console.error('External API Error:', error.response.data);
+        errorMessage = error.response.data?.error || error.message;
+        statusCode = error.response.status || 500;
+    } else if (error instanceof Error) {
         errorMessage = error.message;
     }
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+
+    return NextResponse.json({ error: errorMessage }, { status: statusCode });
   }
 }

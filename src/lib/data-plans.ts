@@ -29,7 +29,6 @@ export const dataPlans: Record<Network, DataPlan[]> = {
     { id: 'mtn-40gb-60d', label: '40GB', price: 9700, validity: '60 Days' },
   ],
   airtel: [
-    { id: 'airtel-150mb-1d', label: '150MB', price: 70, validity: '1 Day' },
     { id: 'airtel-1gb-3d', label: '1GB', price: 450, validity: '3 Days' },
     { id: 'airtel-3gb-7d', label: '3GB', price: 1200, validity: '7 Days' },
     { id: 'airtel-7gb-7d', label: '7GB', price: 2350, validity: '7 Days' },

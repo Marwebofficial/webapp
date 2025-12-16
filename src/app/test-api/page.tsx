@@ -14,9 +14,9 @@ import {
 } from '@/components/ui/card';
 
 export default function TestApiPage() {
-  const [network, setNetwork] = useState('');
+  const [networkId, setNetworkId] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
-  const [dataId, setDataId] = useState('');
+  const [planId, setPlanId] = useState('');
   const [response, setResponse] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -32,9 +32,9 @@ export default function TestApiPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          network,
+          network_id: networkId,
           mobile_number: mobileNumber,
-          data_id: dataId,
+          plan_id: planId,
         }),
       });
 
@@ -57,11 +57,11 @@ export default function TestApiPage() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="network">Network</Label>
+              <Label htmlFor="networkId">Network ID</Label>
               <Input
-                id="network"
-                value={network}
-                onChange={(e) => setNetwork(e.target.value)}
+                id="networkId"
+                value={networkId}
+                onChange={(e) => setNetworkId(e.target.value)}
                 placeholder="e.g., mtn"
                 required
               />
@@ -77,11 +77,11 @@ export default function TestApiPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="dataId">Data ID</Label>
+              <Label htmlFor="planId">Plan ID</Label>
               <Input
-                id="dataId"
-                value={dataId}
-                onChange={(e) => setDataId(e.target.value)}
+                id="planId"
+                value={planId}
+                onChange={(e) => setPlanId(e.target.value)}
                 placeholder="e.g., 204"
                 required
               />
