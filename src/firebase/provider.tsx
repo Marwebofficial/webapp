@@ -4,7 +4,8 @@ import React, { DependencyList, createContext, useContext, ReactNode, useMemo, u
 import { FirebaseApp } from 'firebase/app';
 import { Firestore } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
-import { FirebaseErrorListener } from '@/components/FirebaseErrorListener'
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import ClientOnly from '@/components/ClientOnly';
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -105,7 +106,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   return (
     <FirebaseContext.Provider value={contextValue}>
-      <FirebaseErrorListener />
+      <ClientOnly>
+        <FirebaseErrorListener />
+      </ClientOnly>
       {children}
     </FirebaseContext.Provider>
   );

@@ -450,6 +450,19 @@ export function DataPurchaseForm() {
               />
               <FormField
                 control={form.control}
+                name="data_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data ID</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter the data ID" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name="name"
                 render={({ field }) => (
                   <FormItem>
