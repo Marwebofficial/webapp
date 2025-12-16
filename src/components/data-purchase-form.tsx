@@ -34,7 +34,7 @@ import {
 } from '@/lib/data-plans';
 import { NetworkIcon } from './network-icons';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
 import { useRouter } from 'next/navigation';
@@ -244,7 +244,7 @@ export function DataPurchaseForm() {
         body: JSON.stringify({
           network_id: data.network,
           mobile_number: data.phone,
-          plan_id: planDetails.id, // Ensure we are sending the correct plan id
+          plan_id: planDetails.id,
         }),
       });
 
@@ -281,9 +281,6 @@ export function DataPurchaseForm() {
           description: result.error || 'Data purchase failed. Please try again.',
           variant: 'destructive',
         });
-         if (result.error && result.error.toLowerCase().includes('insufficient')) {
-            // Optional: You can add specific logic here if the provider says they have an insufficient balance
-         }
       }
     } catch (error) {
       console.error("Error purchasing data:", error);
@@ -492,7 +489,7 @@ export function DataPurchaseForm() {
                         <Input placeholder="e.g., REF123" {...field} />
                       </FormControl>
                       <FormMessage />
-                    </Iteem>
+                    </FormItem>
                   )}
                 />
               </div>
