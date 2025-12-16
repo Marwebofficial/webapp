@@ -108,7 +108,6 @@ export function LandingPage() {
                     fill
                     priority
                     className="object-cover"
-                    data-ai-hint={heroImage.imageHint}
                 />}
               </div>
             </div>
@@ -341,10 +340,3 @@ function FutureFeatureCard({
         </Card>
     );
 }
-
-    
-
-    
-
-
-
