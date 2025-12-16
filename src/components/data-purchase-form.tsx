@@ -39,8 +39,6 @@ import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
 import { useRouter } from 'next/navigation';
 
-const WHATSAPP_NUMBER = '2349040367103';
-
 const FormSchema = z.object({
   network: z.custom<Network>(
     (val) => networkProviders.some((p) => p.id === val),
@@ -48,7 +46,7 @@ const FormSchema = z.object({
       message: 'Please select a network provider.',
     }
   ),
-  plan: z.string().min(1, 'Please select a data plan.'),
+  data_id: z.string().min(1, 'Please select a data plan.'),
   phone: z
     .string()
     .regex(
@@ -212,19 +210,19 @@ export function DataPurchaseForm() {
     setSelectedNetwork(networkId);
     form.setValue('network', networkId);
     setSelectedPlan(null); // Reset plan when network changes
-    form.resetField('plan');
+    form.resetField('data_id');
     fetchPlans(networkId);
   };
 
   const handlePlanSelect = (plan: DataPlan) => {
     setSelectedPlan(plan);
-    form.setValue('plan', plan.id, { shouldValidate: true });
+    form.setValue('data_id', plan.id, { shouldValidate: true });
   };
 
   async function onSubmit(data: FormData) {
     if (!dataPlans) return;
     const planDetails = dataPlans.find(
-      (p) => p.id === data.plan
+      (p) => p.id === data.data_id
     );
     if (!planDetails) {
       toast({
@@ -235,51 +233,54 @@ export function DataPurchaseForm() {
       return;
     }
 
-    if (user) {
-      const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
-      const transactionData = {
-        type: 'Data Purchase',
-        network: data.network,
-        amount: planDetails.price,
-        details: planDetails.label,
-        recipientPhone: data.phone,
-        status: 'Pending',
-        createdAt: serverTimestamp(),
-      };
-      const newDocRef = await addDocumentNonBlocking(transactionsRef, transactionData);
-      
-      if (newDocRef) {
-        setTimeout(() => {
-            updateDoc(newDocRef, { status: 'Completed' });
-        }, 120000); // 2 minutes
+    try {
+      const response = await fetch('/api/data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          network: data.network,
+          mobile_number: data.phone,
+          data_id: data.data_id,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: 'Success',
+          description: 'Data purchase successful!',
+        });
+        if (user) {
+          const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
+          const transactionData = {
+            type: 'Data Purchase',
+            network: data.network,
+            amount: planDetails.price,
+            details: planDetails.label,
+            recipientPhone: data.phone,
+            status: 'Completed',
+            createdAt: serverTimestamp(),
+          };
+          await addDocumentNonBlocking(transactionsRef, transactionData);
+        }
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error || 'Data purchase failed. Please try again.',
+          variant: 'destructive',
+        });
       }
+    } catch (error) {
+      console.error("Error purchasing data:", error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred. Please try again later.',
+        variant: 'destructive',
+      });
     }
-
-    const networkName =
-      networkProviders.find((p) => p.id === data.network)?.name ||
-      data.network;
-
-    const message = `Hello DataConnect,
-
-I would like to place an order for a data bundle.
-
-Service: Data Purchase
-Network: ${networkName}
-Data Plan: ${planDetails.label} (₦${planDetails.price.toLocaleString()})
-Recipient Phone Number: ${data.phone}
-
-My Details:
-Name: ${data.name}
-${data.email ? `Email: ${data.email}` : ''}
-${data.referral ? `Referral Code: ${data.referral}` : ''}
-
-Please proceed with the transaction. Thank you.`;
-
-    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-      message
-    )}`;
-
-    window.open(whatsappUrl, '_blank');
   }
   
   const getStatusVariant = (status?: string) => {
@@ -367,7 +368,7 @@ Please proceed with the transaction. Thank you.`;
               <div className="animate-in fade-in-20 duration-300">
                 <FormField
                   control={form.control}
-                  name="plan"
+                  name="data_id"
                   render={() => (
                     <FormItem className="space-y-3">
                       <FormLabel className="text-lg font-semibold font-headline">
@@ -482,9 +483,6 @@ Please proceed with the transaction. Thank you.`;
             </div>
           </CardContent>
           <CardFooter className="flex-col items-stretch space-y-4">
-            <p className="text-center text-xs text-muted-foreground">
-              You will be redirected to WhatsApp to complete your purchase.
-            </p>
             <Button
               type="submit"
               className="w-full bg-accent text-accent-foreground hover:bg-accent/90 text-lg py-6 font-bold rounded-full shadow-lg transition-transform hover:scale-105"

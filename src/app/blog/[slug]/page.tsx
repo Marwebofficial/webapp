@@ -1,19 +1,16 @@
 
-
 'use client';
 
-import { useFirestore, useDoc, useMemoFirebase, useUser, setDocumentNonBlocking } from '@/firebase';
-import { doc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { useParams, useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import Image from 'next/image';
-import { Calendar, ChevronLeft, Bookmark, Heart, Download } from 'lucide-react';
+import { Calendar, ChevronLeft, Download } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
@@ -31,12 +28,7 @@ interface BlogPost {
     imageUrl: string;
     createdAt: { seconds: number };
     author: string;
-    likes?: string[];
     attachments?: Attachment[];
-}
-
-interface UserProfile {
-    savedPosts?: string[];
 }
 
 function PostSkeleton() {
@@ -64,8 +56,6 @@ export default function BlogPostPage() {
     const firestore = useFirestore();
     const params = useParams();
     const router = useRouter();
-    const { user } = useUser();
-    const { toast } = useToast();
     const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
 
     const postRef = useMemoFirebase(
@@ -73,43 +63,7 @@ export default function BlogPostPage() {
         [firestore, slug]
     );
 
-    const userRef = useMemoFirebase(
-        () => (firestore && user) ? doc(firestore, 'users', user.uid) : null,
-        [firestore, user]
-    );
-
-    const { data: post, isLoading: isPostLoading } = useDoc<BlogPost>(postRef);
-    const { data: userProfile, isLoading: isUserLoading } = useDoc<UserProfile>(userRef);
-
-    const isBookmarked = userProfile?.savedPosts?.includes(slug) ?? false;
-    const isLiked = post?.likes?.includes(user?.uid ?? '') ?? false;
-    const likeCount = post?.likes?.length ?? 0;
-
-    const handleInteraction = (type: 'bookmark' | 'like') => {
-        if (!user || !userRef || !postRef) {
-            router.push('/login');
-            return;
-        }
-
-        const isAdding = type === 'like' ? !isLiked : !isBookmarked;
-
-        const updateData =
-            type === 'like'
-                ? { likes: isAdding ? arrayUnion(user.uid) : arrayRemove(user.uid) }
-                : { savedPosts: isAdding ? arrayUnion(slug) : arrayRemove(slug) };
-
-        const docToUpdate = type === 'like' ? postRef : userRef;
-        setDocumentNonBlocking(docToUpdate, updateData, { merge: true });
-
-        toast({
-            title: isAdding ? `${type.charAt(0).toUpperCase() + type.slice(1)} Added` : `${type.charAt(0).toUpperCase() + type.slice(1)} Removed`,
-            description: isAdding
-                ? `"${post?.title}" has been added to your ${type === 'like' ? 'liked posts' : 'bookmarks'}.`
-                : `"${post?.title}" has been removed.`,
-        });
-    };
-
-    const isLoading = isPostLoading || isUserLoading;
+    const { data: post, isLoading } = useDoc<BlogPost>(postRef);
 
     if (isLoading) {
         return (
@@ -200,19 +154,7 @@ export default function BlogPostPage() {
                         </Card>
                     </section>
                 )}
-
-                <div className="mt-12 flex items-center gap-4 border-t pt-6">
-                    <Button variant="outline" onClick={() => handleInteraction('like')}>
-                        <Heart className={cn("w-4 h-4 mr-2", isLiked && "fill-red-500 text-red-500")} />
-                        {likeCount} {likeCount === 1 ? 'Like' : 'Likes'}
-                    </Button>
-                     <Button variant="outline" onClick={() => handleInteraction('bookmark')}>
-                        <Bookmark className={cn("w-4 h-4 mr-2", isBookmarked && "fill-primary text-primary")} />
-                        {isBookmarked ? 'Bookmarked' : 'Bookmark'}
-                    </Button>
-                </div>
             </article>
         </main>
     );
 }
-    

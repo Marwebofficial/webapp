@@ -1,15 +1,15 @@
 
 'use client';
 
-import { useFirestore, useCollection, useMemoFirebase, useDoc, useUser, setDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, doc, arrayRemove, arrayUnion } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Calendar, Bookmark, Heart } from 'lucide-react';
+import { ArrowRight, Calendar } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -22,13 +22,7 @@ interface BlogPost {
     imageUrl: string;
     createdAt: { seconds: number };
     author: string;
-    likes?: string[];
 }
-
-interface UserProfile {
-    savedPosts?: string[];
-}
-
 
 function PostCardSkeleton() {
     return (
@@ -86,62 +80,14 @@ function FeaturedPostSkeleton() {
 
 export default function BlogIndexPage() {
     const firestore = useFirestore();
-    const { user } = useUser();
     const router = useRouter();
-    const { toast } = useToast();
 
     const postsQuery = useMemoFirebase(
         () => firestore ? query(collection(firestore, 'blogPosts'), orderBy('createdAt', 'desc')) : null,
         [firestore]
     );
 
-    const userRef = useMemoFirebase(
-        () => (firestore && user) ? doc(firestore, 'users', user.uid) : null,
-        [firestore, user]
-    );
-
-    const { data: posts, isLoading: isLoadingPosts } = useCollection<BlogPost>(postsQuery);
-    const { data: userProfile, isLoading: isLoadingUser } = useDoc<UserProfile>(userRef);
-
-    const isLoading = isLoadingPosts || isLoadingUser;
-
-    const handleInteraction = (e: React.MouseEvent, post: BlogPost, type: 'bookmark' | 'like') => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (!user || !userRef) {
-            router.push('/login');
-            return;
-        }
-        
-        const postRef = doc(firestore, 'blogPosts', post.id);
-        const isLiked = post.likes?.includes(user.uid) ?? false;
-        const isBookmarked = userProfile?.savedPosts?.includes(post.id) ?? false;
-
-        let isAdding: boolean;
-        let updateData: object;
-        let docToUpdate: any;
-
-        if (type === 'like') {
-            isAdding = !isLiked;
-            updateData = { likes: isAdding ? arrayUnion(user.uid) : arrayRemove(user.uid) };
-            docToUpdate = postRef;
-        } else { // bookmark
-            isAdding = !isBookmarked;
-            updateData = { savedPosts: isAdding ? arrayUnion(post.id) : arrayRemove(post.id) };
-            docToUpdate = userRef;
-        }
-
-        setDocumentNonBlocking(docToUpdate, updateData, { merge: true });
-
-        toast({
-            title: isAdding ? `${type.charAt(0).toUpperCase() + type.slice(1)} Added` : `${type.charAt(0).toUpperCase() + type.slice(1)} Removed`,
-            description: isAdding
-                ? `"${post.title}" has been added.`
-                : `"${post.title}" has been removed.`,
-        });
-    };
-
+    const { data: posts, isLoading } = useCollection<BlogPost>(postsQuery);
 
     const isValidHttpUrl = (string: string) => {
         if (!string) return false;
@@ -207,15 +153,6 @@ export default function BlogIndexPage() {
                                         <p className="text-sm text-muted-foreground">Author</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-1">
-                                    <Button variant="ghost" size="icon" onClick={(e) => handleInteraction(e, featuredPost, 'like')}>
-                                        <Heart className={cn("w-5 h-5", featuredPost.likes?.includes(user?.uid ?? '') && "fill-red-500 text-red-500")} />
-                                    </Button>
-                                    <span className="text-sm text-muted-foreground">{featuredPost.likes?.length ?? 0}</span>
-                                    <Button variant="ghost" size="icon" onClick={(e) => handleInteraction(e, featuredPost, 'bookmark')}>
-                                        <Bookmark className={cn("w-5 h-5", userProfile?.savedPosts?.includes(featuredPost.id) && "fill-primary text-primary")} />
-                                    </Button>
-                                </div>
                             </div>
                         </div>
                      </Card>
@@ -232,9 +169,6 @@ export default function BlogIndexPage() {
                                 ? post.imageUrl
                                 : `https://picsum.photos/seed/${post.id}/600/400`;
                             
-                            const isBookmarked = userProfile?.savedPosts?.includes(post.id) ?? false;
-                            const isLiked = post.likes?.includes(user?.uid ?? '') ?? false;
-
                             return (
                                 <Card key={post.id} className="flex flex-col overflow-hidden group shadow-sm hover:shadow-lg transition-all duration-300 border rounded-xl">
                                     <Link href={`/blog/${post.id}`} className="block aspect-video relative overflow-hidden">
@@ -246,14 +180,9 @@ export default function BlogIndexPage() {
                                         />
                                     </Link>
                                     <CardHeader>
-                                        <div className="flex justify-between items-start">
-                                            <CardDescription>
-                                                {post.createdAt ? format(new Date(post.createdAt.seconds * 1000), 'MMM d, yyyy') : ''}
-                                            </CardDescription>
-                                             <Button variant="ghost" size="icon" className="-mt-2 -mr-2" onClick={(e) => handleInteraction(e, post, 'bookmark')}>
-                                                <Bookmark className={cn("w-5 h-5", isBookmarked && "fill-primary text-primary")} />
-                                            </Button>
-                                        </div>
+                                        <CardDescription>
+                                            {post.createdAt ? format(new Date(post.createdAt.seconds * 1000), 'MMM d, yyyy') : ''}
+                                        </CardDescription>
                                         <CardTitle className="text-xl leading-tight pt-2">
                                             <Link href={`/blog/${post.id}`} className="hover:text-primary transition-colors stretched-link">{post.title}</Link>
                                         </CardTitle>
@@ -261,7 +190,7 @@ export default function BlogIndexPage() {
                                     <CardContent className="flex-1">
                                         <p className="text-muted-foreground line-clamp-3">{post.excerpt}</p>
                                     </CardContent>
-                                    <CardFooter className="flex justify-between items-center">
+                                    <CardFooter>
                                          <div className="flex items-center gap-3">
                                             <Avatar className="w-8 h-8">
                                                 <AvatarFallback>{post.author.charAt(0)}</AvatarFallback>
@@ -269,12 +198,6 @@ export default function BlogIndexPage() {
                                             <div>
                                                 <p className="text-sm font-semibold">{post.author}</p>
                                             </div>
-                                        </div>
-                                        <div className="flex items-center gap-1 text-muted-foreground">
-                                             <Button variant="ghost" size="icon" onClick={(e) => handleInteraction(e, post, 'like')}>
-                                                <Heart className={cn("w-5 h-5", isLiked && "fill-red-500 text-red-500")} />
-                                            </Button>
-                                            <span>{post.likes?.length ?? 0}</span>
                                         </div>
                                     </CardFooter>
                                 </Card>
@@ -293,5 +216,3 @@ export default function BlogIndexPage() {
         </main>
     );
 }
-
-    

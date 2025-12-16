@@ -4,7 +4,7 @@ import { PT_Sans } from 'next/font/google';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import { Nav } from '@/components/nav';
-import { FirebaseClientProvider } from '@/firebase';
+import { FirebaseClientProvider, FirebaseProvider } from '@/firebase';
 import { cn } from '@/lib/utils';
 import Script from 'next/script';
 
@@ -60,11 +60,13 @@ export default function RootLayout({
         <meta name="google-site-verification" content="1T_nRhGns7iADI6RuRUEPO5cHXYxC6iAw-7sSAa2bHI" />
       </head>
       <body className={cn('font-body antialiased h-full bg-background', ptSans.variable)}>
-        <FirebaseClientProvider>
-          <Nav />
-          {children}
-          <Toaster />
-        </FirebaseClientProvider>
+        <FirebaseProvider>
+          <FirebaseClientProvider>
+            <Nav />
+            {children}
+            <Toaster />
+          </FirebaseClientProvider>
+        </FirebaseProvider>
         <Script async src="https://www.googletagmanager.com/gtag/js?id=G-YW766Q51T3" />
         <Script id="google-analytics">
           {`
