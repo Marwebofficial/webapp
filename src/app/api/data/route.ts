@@ -3,9 +3,9 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    const { network, mobile_number, data_id } = await request.json();
+    const { network_id, plan_id, mobile_number } = await request.json();
 
-    if (!network || !mobile_number || !data_id) {
+    if (!network_id || !plan_id || !mobile_number) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -14,9 +14,9 @@ export async function POST(request: Request) {
     myHeaders.append("Content-Type", "application/json");
 
     const raw = JSON.stringify({
-      "network": network,
+      "network": network_id,
       "mobile_number": mobile_number,
-      "plan": data_id,
+      "plan": plan_id,
       "Ported_number": true
     });
 
@@ -28,11 +28,11 @@ export async function POST(request: Request) {
     };
 
     const response = await fetch("https://www.gongozconcept.com/api/data/", requestOptions as RequestInit);
-    const result = await response.text();
+    const result = await response.json();
 
-    return NextResponse.json(JSON.parse(result));
+    return NextResponse.json(result);
   } catch (error) {
     console.error('error', error);
-    return NextResponse.json({ error: 'An error occurred' }, { status: 500 });
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }
