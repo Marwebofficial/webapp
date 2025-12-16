@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { doc, collection, serverTimestamp, updateDoc, getDocs } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, getDocs, writeBatch, increment } from 'firebase/firestore';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -68,6 +68,7 @@ interface UserProfile {
   name: string;
   email: string;
   phoneNumber: string;
+  walletBalance?: number;
 }
 
 interface NetworkStatus {
@@ -141,7 +142,6 @@ export function DataPurchaseForm() {
         const statusCol = collection(firestore, 'networkStatus');
         const statusSnapshot = await getDocs(statusCol);
         if (statusSnapshot.empty) {
-            // If firestore is empty, use local data
             const localStatuses = networkProviders.map(p => ({
                 id: p.id,
                 name: p.name,
@@ -209,7 +209,7 @@ export function DataPurchaseForm() {
   const handleNetworkChange = (networkId: Network) => {
     setSelectedNetwork(networkId);
     form.setValue('network', networkId);
-    setSelectedPlan(null); // Reset plan when network changes
+    setSelectedPlan(null);
     form.resetField('data_id');
     fetchPlans(networkId);
   };
@@ -220,42 +220,45 @@ export function DataPurchaseForm() {
   };
 
   async function onSubmit(data: FormData) {
-    if (!dataPlans) return;
-    const planDetails = dataPlans.find(
-      (p) => p.id === data.data_id
-    );
+    if (!dataPlans || !user || !firestore) return;
+
+    const planDetails = dataPlans.find(p => p.id === data.data_id);
     if (!planDetails) {
-      toast({
-        title: 'Error',
-        description: 'Selected plan not found. Please try again.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Selected plan not found. Please try again.', variant: 'destructive' });
       return;
     }
 
+    if (!userProfile || (userProfile.walletBalance || 0) < planDetails.price) {
+        toast({
+            title: 'Insufficient Funds',
+            description: `Your wallet balance is too low for this transaction. Please fund your wallet and try again.`,
+            variant: 'destructive',
+        });
+        return;
+    }
+
+    form.formState.isSubmitting = true;
     try {
       const response = await fetch('/api/data', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           network_id: data.network,
           mobile_number: data.phone,
-          plan_id: data.data_id,
+          plan_id: planDetails.id, // Ensure we are sending the correct plan id
         }),
       });
 
       const result = await response.json();
 
       if (response.ok) {
-        toast({
-          title: 'Success',
-          description: 'Data purchase successful!',
-        });
-        if (user) {
-          const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
-          const transactionData = {
+        const batch = writeBatch(firestore);
+        const userRef = doc(firestore, 'users', user.uid);
+        const transactionRef = doc(collection(firestore, 'users', user.uid, 'transactions'));
+
+        batch.update(userRef, { walletBalance: increment(-planDetails.price) });
+        
+        batch.set(transactionRef, {
             type: 'Data Purchase',
             network: data.network,
             amount: planDetails.price,
@@ -263,23 +266,39 @@ export function DataPurchaseForm() {
             recipientPhone: data.phone,
             status: 'Completed',
             createdAt: serverTimestamp(),
-          };
-          await addDocumentNonBlocking(transactionsRef, transactionData);
-        }
+            transactionId: result.transaction_id || null
+        });
+
+        await batch.commit();
+
+        toast({
+          title: 'Success',
+          description: result.message || 'Data purchase successful!',
+        });
+
       } else {
         toast({
-          title: 'Error',
+          title: 'Purchase Failed',
           description: result.error || 'Data purchase failed. Please try again.',
           variant: 'destructive',
         });
+         if (result.error && result.error.toLowerCase().includes('insufficient')) {
+            // Optional: You can add specific logic here if the provider says they have an insufficient balance
+         }
       }
     } catch (error) {
       console.error("Error purchasing data:", error);
+      let errorMessage = 'An unexpected error occurred. Please try again later.';
+      if (error instanceof Error) {
+          errorMessage = error.message;
+      }
       toast({
         title: 'Error',
-        description: 'An unexpected error occurred. Please try again later.',
+        description: errorMessage,
         variant: 'destructive',
       });
+    } finally {
+      form.formState.isSubmitting = false;
     }
   }
   
@@ -488,7 +507,7 @@ export function DataPurchaseForm() {
               className="w-full bg-accent text-accent-foreground hover:bg-accent/90 text-lg py-6 font-bold rounded-full shadow-lg transition-transform hover:scale-105"
               disabled={!form.formState.isValid || form.formState.isSubmitting}
             >
-              Buy Now
+               {form.formState.isSubmitting ? 'Processing...' : 'Buy Now'}
             </Button>
           </CardFooter>
         </form>

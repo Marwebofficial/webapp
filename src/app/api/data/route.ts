@@ -1,38 +1,52 @@
 
 import { NextResponse } from 'next/server';
 
+// In a real-world application, these should be stored in environment variables
+const GONGOZ_API_KEY = process.env.GONGOZ_API_KEY || 'your_gongozconcept_api_key_placeholder';
+const GONGOZ_API_URL = process.env.GONGOZ_API_URL || 'https://gongozconcept.com/api/data/';
+
 export async function POST(request: Request) {
   try {
-    const { network_id, plan_id, mobile_number } = await request.json();
+    const { network_id, mobile_number, plan_id } = await request.json();
 
-    if (!network_id || !plan_id || !mobile_number) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!network_id || !mobile_number || !plan_id) {
+      return NextResponse.json({ error: 'Missing required fields: network_id, mobile_number, and plan_id are required.' }, { status: 400 });
     }
 
-    const myHeaders = new Headers();
-    myHeaders.append("Authorization", "Token cf1711071e40e0a69671c5b8d05cd8f328278933");
-    myHeaders.append("Content-Type", "application/json");
+    // This is a placeholder for where you would map your internal IDs to what GongozConcept expects, if they are different.
+    // For now, we assume they are the same.
+    const externalNetworkId = network_id;
+    const externalPlanId = plan_id;
 
-    const raw = JSON.stringify({
-      "network": network_id,
-      "mobile_number": mobile_number,
-      "plan": plan_id,
-      "Ported_number": true
+    const response = await fetch(GONGOZ_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GONGOZ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        network_id: externalNetworkId,
+        mobile_number: mobile_number,
+        plan_id: externalPlanId,
+      }),
     });
 
-    const requestOptions = {
-      method: 'POST',
-      headers: myHeaders,
-      body: raw,
-      redirect: 'follow'
-    };
-
-    const response = await fetch("https://www.gongozconcept.com/api/data/", requestOptions as RequestInit);
     const result = await response.json();
 
-    return NextResponse.json(result);
+    if (!response.ok) {
+      // If the API returns an error, forward it to the client
+      return NextResponse.json({ error: result.error || 'Data purchase failed at the provider.' }, { status: response.status });
+    }
+
+    // Forward the success response from the provider to our client
+    return NextResponse.json(result, { status: 200 });
+
   } catch (error) {
-    console.error('error', error);
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+    console.error('Error in /api/data:', error);
+    let errorMessage = 'An internal server error occurred.';
+    if (error instanceof Error) {
+        errorMessage = error.message;
+    }
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
