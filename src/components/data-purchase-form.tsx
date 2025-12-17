@@ -39,6 +39,8 @@ import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
 import { useRouter } from 'next/navigation';
 
+export type { DataPlan };
+
 const FormSchema = z.object({
   network: z.custom<Network>(
     (val) => networkProviders.some((p) => p.id === val),

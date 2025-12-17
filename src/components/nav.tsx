@@ -32,7 +32,7 @@ interface UserProfile {
     photoURL?: string;
 }
 
-export function Nav() {
+export default function Nav() {
   const isMobile = useIsMobile();
   const [isSheetOpen, setSheetOpen] = useState(false);
   const { user, isUserLoading } = useUser();

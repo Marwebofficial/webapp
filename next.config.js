@@ -1,7 +1,5 @@
 /** @type {import('next').NextConfig} */
 const config = {
-  output: 'standalone',
-  trailingSlash: true,
   images: {
     remotePatterns: [
       {
@@ -12,4 +10,4 @@ const config = {
   },
 };
 
-export default config;
+module.exports = config;

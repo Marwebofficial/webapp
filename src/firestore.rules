@@ -16,26 +16,11 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-        // Only allow a specific admin email
-        return isSignedIn() && request.auth.token.email == 'samuelmarvel21@gmail.com';
+        return request.auth.token.email == 'samuelmarvel21@gmail.com';
     }
 
     function isUpdatingOwnRequest(userId) {
       return isOwner(userId) && request.resource.data.keys().hasOnly(['pendingFundingRequest']);
-    }
-
-    function isUpdatingSavedPosts(userId) {
-      return isOwner(userId) && request.resource.data.keys().hasOnly(['savedPosts']);
-    }
-    
-    function isUpdatingOwnProfile(userId) {
-      // Allow user to update only their own name and photoURL
-      return isOwner(userId) && request.resource.data.keys().hasOnly(['name', 'photoURL']);
-    }
-
-    function isLikingPost() {
-      // Allow signed-in users to only modify the 'likes' field
-      return isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
     }
 
     // ----------------------------------------------------------------
@@ -46,7 +31,7 @@ service cloud.firestore {
       allow read: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
       allow create: if isOwner(userId);
-      allow update: if isUpdatingOwnRequest(userId) || isUpdatingSavedPosts(userId) || isUpdatingOwnProfile(userId) || isAdmin();
+      allow update: if isUpdatingOwnRequest(userId) || isAdmin();
       allow delete: if isOwner(userId) || isAdmin();
 
       match /transactions/{transactionId} {
@@ -57,17 +42,17 @@ service cloud.firestore {
     match /reviews/{reviewId} {
         allow read: if true;
         allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-        allow update: if false; // Reviews should be immutable once created
+        allow update: if false;
         allow delete: if isAdmin();
     }
 
-    match /dataPlans/{network}/plans/{planId} {
-        allow read: if true;
+    match /dataPlans/{planId} {
+        allow get, list: if true;
         allow write: if isAdmin();
     }
 
-    match /tvPlans/{provider}/plans/{planId} {
-        allow read: if true;
+    match /tvPlans/{planId} {
+        allow get, list: if true;
         allow write: if isAdmin();
     }
 
@@ -81,10 +66,17 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    match /blogPosts/{postId} {
-        allow read: if true;
-        allow update: if isLikingPost() || isAdmin();
-        allow create, delete, list: if isAdmin();
+    match /blog/{postId} {
+        allow get, list: if true;
+        allow write: if isAdmin();
+    }
+
+    match /funding/{requestId} {
+        allow read, list, write: if isAdmin();
+    }
+
+    match /admin/{docId} {
+      allow read, write: if isAdmin();
     }
   }
 }

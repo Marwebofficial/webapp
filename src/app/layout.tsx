@@ -1,17 +1,13 @@
 
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/firebase/provider";
+import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import Nav from "@/components/nav";
-import Footer from "@/components/about-section";
+import AboutSection from "@/components/about-section";
 import { siteConfig } from "@/lib/utils";
 import { Metadata } from "next";
-import ClientOnly from "@/components/ClientOnly";
-import dynamic from "next/dynamic";
-
-const FirebaseProvider = dynamic(() => import('../firebase/provider'), { ssr: false });
-
+import { FirebaseClientProvider } from "@/firebase/client-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -62,7 +58,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider
           attribute="class"
@@ -70,14 +66,12 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <ClientOnly>
-            <FirebaseProvider>
-              <Nav />
-              {children}
-              <Footer />
-              <Toaster />
-            </FirebaseProvider>
-          </ClientOnly>
+          <FirebaseClientProvider>
+            <Nav />
+            {children}
+            <AboutSection />
+            <Toaster />
+          </FirebaseClientProvider>
         </ThemeProvider>
       </body>
     </html>
