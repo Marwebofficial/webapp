@@ -9,8 +9,10 @@ const GONGOZ_API_URL = process.env.GONGOZ_API_URL || 'https://www.gongozconcept.
 export async function POST(request: Request) {
   try {
     const { network_id, mobile_number, plan_id } = await request.json();
+    console.log('Received request with body:', { network_id, mobile_number, plan_id });
 
     if (!network_id || !mobile_number || !plan_id) {
+      console.log('Validation failed: Missing required fields');
       return NextResponse.json({ error: 'Missing required fields: network_id, mobile_number, and plan_id are required.' }, { status: 400 });
     }
 
@@ -21,6 +23,7 @@ export async function POST(request: Request) {
       "plan": plan_id,         // Map internal plan_id to external plan
       "Ported_number": true
     });
+    console.log('Sending data to external API:', data);
 
     var config = {
       method: 'post',
@@ -34,6 +37,8 @@ export async function POST(request: Request) {
     };
 
     const response = await axios(config);
+    console.log('Received response from external API:', response.data);
+
 
     // Forward the success response from the provider to our client
     return NextResponse.json(response.data, { status: response.status });
