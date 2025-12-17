@@ -48,16 +48,19 @@ export function PlansManager({ title, providers, collectionName, isTvPlan = fals
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const formData = new FormData(e.currentTarget);
+        const form = e.currentTarget;
+        const formData = new FormData(form);
         const data: any = {
             name: formData.get('name') as string,
             price: Number(formData.get('price')),
             provider: formData.get('provider') as string,
+            data_id: formData.get('data_id') as string,
         };
         if (isTvPlan) {
             data.channels = formData.get('channels') as string;
         } else {
             data.speed = formData.get('speed') as string;
+            data.validity = formData.get('validity') as string;
         }
 
         if (editing) {
@@ -66,7 +69,7 @@ export function PlansManager({ title, providers, collectionName, isTvPlan = fals
             await addPlan(collectionName, data);
         }
         setEditing(null);
-        e.currentTarget.reset();
+        form.reset();
     };
 
     if (!providers || providers.length === 0) {
@@ -88,7 +91,7 @@ export function PlansManager({ title, providers, collectionName, isTvPlan = fals
                 <CardTitle>{editing ? 'Edit' : 'Create'} {title.slice(0, -1)}</CardTitle>
             </CardHeader>
             <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Input name="name" placeholder="Plan Name" defaultValue={editing?.name || ''} required />
                     <Input name="price" type="number" placeholder="Price" defaultValue={editing?.price || ''} required />
                     <Select name="provider" defaultValue={editing?.provider || ''}>
@@ -100,9 +103,13 @@ export function PlansManager({ title, providers, collectionName, isTvPlan = fals
                     {isTvPlan ? (
                         <Input name="channels" placeholder="Channels" defaultValue={editing?.channels || ''} />
                     ) : (
-                        <Input name="speed" placeholder="Speed (e.g., 100 Mbps)" defaultValue={editing?.speed || ''} />
+                        <>
+                            <Input name="speed" placeholder="Speed (e.g., 100 Mbps)" defaultValue={editing?.speed || ''} />
+                             <Input name="validity" placeholder="Validity (e.g., 30 days)" defaultValue={editing?.validity || ''} />
+                        </>
                     )}
-                    <div className="flex space-x-2">
+                    <Input name="data_id" placeholder="Data ID" defaultValue={editing?.data_id || ''} required />
+                    <div className="flex space-x-2 md:col-span-3">
                         <Button type="submit"><PlusCircle className="h-4 w-4 mr-2" />{editing ? 'Update Plan' : 'Create Plan'}</Button>
                         {editing && <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>}
                     </div>
@@ -115,20 +122,24 @@ export function PlansManager({ title, providers, collectionName, isTvPlan = fals
                             <TableHead>Name</TableHead>
                             <TableHead>Provider</TableHead>
                             <TableHead>Price</TableHead>
+                            <TableHead>Data ID</TableHead>
                             <TableHead>{isTvPlan ? 'Channels' : 'Speed'}</TableHead>
+                            <TableHead>Validity</TableHead>
                             <TableHead>Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                          {isLoading ? (
-                            <TableRow><TableCell colSpan={5}>Loading plans...</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={7}>Loading plans...</TableCell></TableRow>
                         ) : plans && plans.length > 0 ? (
                             plans.map((plan: any) => (
                                 <TableRow key={plan.id}>
                                     <TableCell>{plan.name}</TableCell>
                                     <TableCell>{providers.find(p => p.id === plan.provider)?.name}</TableCell>
-                                    <TableCell>${plan.price}</TableCell>
+                                    <TableCell>₦{plan.price}</TableCell>
+                                    <TableCell>{plan.data_id}</TableCell>
                                     <TableCell>{isTvPlan ? plan.channels : plan.speed}</TableCell>
+                                    <TableCell>{!isTvPlan ? plan.validity : ''}</TableCell>
                                     <TableCell className="space-x-2">
                                         <Button variant="outline" size="sm" onClick={() => setEditing(plan)}><Edit className="h-4 w-4" /></Button>
                                         <AlertDialog>
@@ -150,7 +161,7 @@ export function PlansManager({ title, providers, collectionName, isTvPlan = fals
                                 </TableRow>
                             ))
                         ) : (
-                             <TableRow><TableCell colSpan={5}>No plans created yet.</TableCell></TableRow>
+                             <TableRow><TableCell colSpan={7}>No plans created yet.</TableCell></TableRow>
                         )}
                     </TableBody>
                 </Table>

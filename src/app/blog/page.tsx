@@ -83,7 +83,7 @@ export default function BlogIndexPage() {
     const router = useRouter();
 
     const postsQuery = useMemoFirebase(
-        () => firestore ? query(collection(firestore, 'blogPosts'), orderBy('createdAt', 'desc')) : null,
+        () => firestore ? query(collection(firestore, 'blog'), orderBy('createdAt', 'desc')) : null,
         [firestore]
     );
 
@@ -106,9 +106,6 @@ export default function BlogIndexPage() {
         <main className="container mx-auto p-4 py-8 md:p-12">
             <header className="mb-12">
                 <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">Our Blog</h1>
-                <p className="mt-4 text-lg text-muted-foreground max-w-2xl">
-                    News, updates, and insights from the DataConnect team. Stay informed on our latest developments.
-                </p>
             </header>
 
              {isLoading && (

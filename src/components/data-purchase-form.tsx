@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { doc, collection, serverTimestamp, getDocs, writeBatch, increment } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, getDocs, writeBatch, increment, query, where } from 'firebase/firestore';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -192,7 +192,8 @@ export function DataPurchaseForm() {
     setIsLoadingPlans(true);
     setDataPlans([]);
     try {
-      const plansQuery = collection(firestore, 'dataPlans', networkId, 'plans');
+      const plansCollection = collection(firestore, 'dataPlans');
+      const plansQuery = query(plansCollection, where('provider', '==', networkId));
       const querySnapshot = await getDocs(plansQuery);
       const plans = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DataPlan));
       setDataPlans(plans);
@@ -246,7 +247,7 @@ export function DataPurchaseForm() {
         body: JSON.stringify({
           network_id: data.network,
           mobile_number: data.phone,
-          plan_id: planDetails.id,
+          plan_id: planDetails.data_id, // Corrected: was planDetails.id
         }),
       });
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { type DataPlan } from '@/components/data-purchase-form';
-import { collection, getDocs, Firestore } from 'firebase/firestore';
+import { collection, getDocs, query, where, Firestore } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { networkProviders } from '@/lib/data-plans';
 import dynamic from 'next/dynamic';
@@ -15,7 +15,8 @@ const DataPurchaseForm = dynamic(() => import('@/components/data-purchase-form')
 
 async function getInitialDataPlans(firestore: Firestore, networkId: string) {
   try {
-    const plansQuery = collection(firestore, 'dataPlans', networkId, 'plans');
+    const plansCollection = collection(firestore, 'dataPlans');
+    const plansQuery = query(plansCollection, where('provider', '==', networkId));
     const querySnapshot = await getDocs(plansQuery);
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DataPlan));
   } catch (error) {

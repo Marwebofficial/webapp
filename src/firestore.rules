@@ -23,6 +23,12 @@ service cloud.firestore {
       return isOwner(userId) && request.resource.data.keys().hasOnly(['pendingFundingRequest']);
     }
 
+    function isUpdatingOwnWallet(userId) {
+      return isOwner(userId) &&
+             request.resource.data.keys().hasOnly(['walletBalance']) &&
+             request.resource.data.walletBalance < resource.data.walletBalance;
+    }
+
     // ----------------------------------------------------------------
     // Collection Rules
     // ----------------------------------------------------------------
@@ -31,7 +37,7 @@ service cloud.firestore {
       allow read: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
       allow create: if isOwner(userId);
-      allow update: if isUpdatingOwnRequest(userId) || isAdmin();
+      allow update: if isUpdatingOwnRequest(userId) || isUpdatingOwnWallet(userId) || isAdmin();
       allow delete: if isOwner(userId) || isAdmin();
 
       match /transactions/{transactionId} {
@@ -46,9 +52,12 @@ service cloud.firestore {
         allow delete: if isAdmin();
     }
 
-    match /dataPlans/{planId} {
-        allow get, list: if true;
-        allow write: if isAdmin();
+    match /dataPlans/{networkId} {
+      allow write: if isAdmin();
+      // Allow read access to the network document and all subcollections
+      match /{path=**} {
+        allow read: if true;
+      }
     }
 
     match /tvPlans/{planId} {
@@ -66,8 +75,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /announcements/{announcementId} {
+        allow read, write: if isAdmin();
+    }
+
     match /blog/{postId} {
-        allow get, list: if true;
+        allow read: if true;
         allow write: if isAdmin();
     }
 

@@ -4,10 +4,10 @@ import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import Nav from "@/components/nav";
-import AboutSection from "@/components/about-section";
 import { siteConfig } from "@/lib/utils";
 import { Metadata } from "next";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
+import { ConditionalAboutSection } from "@/components/conditional-about-section";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -69,7 +69,7 @@ export default function RootLayout({
           <FirebaseClientProvider>
             <Nav />
             {children}
-            <AboutSection />
+            <ConditionalAboutSection />
             <Toaster />
           </FirebaseClientProvider>
         </ThemeProvider>
