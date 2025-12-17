@@ -1,445 +1,119 @@
 
-'use client';
+"use client";
 
-import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc, useAuth } from '@/firebase';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
+import { db } from "@/firebase/firebase-config";
+import { collection, query, orderBy, where } from "firebase/firestore";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { collection, doc, deleteDoc, query, serverTimestamp, writeBatch, increment, updateDoc, orderBy, where } from 'firebase/firestore';
-import { sendPasswordResetEmail } from 'firebase/auth';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { networkProviders } from '@/lib/data-plans';
-import { tvProviders } from '@/lib/tv-plans';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { Badge } from '@/components/ui/badge';
-import { Pencil, Trash2, Megaphone, CheckCircle, WalletCards, PlusCircle, Search, UserCog } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
-import { Skeleton } from '@/components/ui/skeleton';
-import { format } from 'date-fns';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import Link from 'next/link';
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { useCollection } from "@/firebase/firestore/use-collection";
+import { addUser, deleteUser, updateUser } from "@/firebase/firestore/users";
+import { addBlogPost, deleteBlogPost, updateBlogPost } from "@/firebase/firestore/blog";
+import { addAnnouncement, deleteAnnouncement, updateAnnouncement } from "@/firebase/firestore/announcements";
+import { addNetworkStatus, deleteNetworkStatus, updateNetworkStatus } from "@/firebase/firestore/network-status";
+import { addPlan, deletePlan, updatePlan } from "@/firebase/firestore/plans";
+import { deleteReview } from "@/firebase/firestore/reviews";
+import { updateFundingRequest } from "@/firebase/firestore/funding";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { networkProviders, tvProviders } from "@/lib/providers";
+import { Badge } from "@/components/ui/badge";
+import { Trash2, Edit, PlusCircle } from 'lucide-react';
 
-interface Plan {
-  id: string;
-  label: string;
-  price: number;
-  validity?: string;
-}
+// Reusable hook for memoizing Firestore queries
+const useMemoizedQuery = (collectionName, ordering) => {
+    return useMemo(() => query(collection(db, collectionName), orderBy(ordering, "desc")), [collectionName, ordering]);
+};
 
-interface BlogPost {
-  id: string;
-  title: string;
-  createdAt: { seconds: number };
-}
-
-const ADMIN_EMAIL = 'samuelmarvel21@gmail.com';
-
-interface Announcement {
-    text: string;
-    enabled: boolean;
-}
-
-interface UserProfile {
-    id: string;
-    name: string;
-    email: string;
-    walletBalance?: number;
-    pendingFundingRequest?: {
-        amount: number;
-        bankName: string;
-        userName: string;
-        createdAt: { seconds: number, nanoseconds: number };
-    }
-}
-
-function BlogManager() {
-    const firestore = useFirestore();
-    const { toast } = useToast();
-
-    const postsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'blogPosts'), orderBy('createdAt', 'desc'));
-    }, [firestore]);
-
-    const { data: posts, isLoading, error } = useCollection<BlogPost>(postsQuery);
-
-    const handleDelete = async (postId: string) => {
-        if (!firestore) return;
-        const confirmed = await new Promise((resolve) => {
-            const Dialog = () => (
-                <AlertDialog open onOpenChange={() => resolve(false)}>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the blog post.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel onClick={() => resolve(false)}>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => resolve(true)}>Continue</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            );
-            // This is a bit of a hack to render a dialog confirmation
-            // In a real app, you'd use a state management solution for dialogs
-            const root = document.createElement('div');
-            document.body.appendChild(root);
-            const { createRoot } = require('react-dom/client');
-            createRoot(root).render(<Dialog />);
-        });
-
-        if (confirmed) {
-            try {
-                await deleteDoc(doc(firestore, 'blogPosts', postId));
-                toast({ title: 'Success', description: 'Blog post deleted.' });
-            } catch (err: any) {
-                toast({ title: 'Error', description: `Could not delete post: ${err.message}`, variant: 'destructive' });
-            }
-        }
-    };
-
-    return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                    <CardTitle>Blog Management</CardTitle>
-                    <CardDescription>Create, edit, and delete blog posts.</CardDescription>
-                </div>
-                <Button asChild>
-                    <Link href="/admin/blog/editor">
-                        <PlusCircle className="w-4 h-4 mr-2" />
-                        Create New Post
-                    </Link>
-                </Button>
-            </CardHeader>
-            <CardContent className="overflow-x-auto">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Title</TableHead>
-                            <TableHead>Date Created</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading ? (
-                            <TableRow><TableCell colSpan={3} className="h-24 text-center">Loading posts...</TableCell></TableRow>
-                        ) : posts && posts.length > 0 ? (
-                            posts.map(post => (
-                                <TableRow key={post.id}>
-                                    <TableCell className="font-medium whitespace-nowrap">{post.title}</TableCell>
-                                    <TableCell className="whitespace-nowrap">
-                                        {post.createdAt ? format(new Date(post.createdAt.seconds * 1000), 'MMM d, yyyy') : 'N/A'}
-                                    </TableCell>
-                                    <TableCell className="text-right space-x-2 whitespace-nowrap">
-                                        <Button asChild variant="outline" size="sm">
-                                            <Link href={`/admin/blog/editor?slug=${post.id}`}>
-                                                <Pencil className="w-4 h-4 mr-2" /> Edit
-                                            </Link>
-                                        </Button>
-                                        <Button variant="destructive" size="sm" onClick={() => handleDelete(post.id)}>
-                                            <Trash2 className="w-4 h-4 mr-2" /> Delete
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        ) : (
-                            <TableRow><TableCell colSpan={3} className="h-24 text-center">No blog posts found.</TableCell></TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
-    );
-}
-
+// User Management Component
 function UserManagement() {
-    const firestore = useFirestore();
-    const auth = useAuth();
-    const { toast } = useToast();
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
-    const [isManageUserOpen, setManageUserOpen] = useState(false);
-
-    const usersQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return collection(firestore, 'users');
-    }, [firestore]);
-
-    const { data: users, isLoading, error } = useCollection<UserProfile>(usersQuery);
+    const [search, setSearch] = useState('');
+    const usersQuery = useMemoizedQuery("users", "name");
+    const { data: users, isLoading } = useCollection(usersQuery);
 
     const filteredUsers = useMemo(() => {
         if (!users) return [];
-        if (!searchQuery) return users;
         return users.filter(user =>
-            user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user.email.toLowerCase().includes(searchQuery.toLowerCase())
+            (user.name?.toLowerCase() || '').includes(search.toLowerCase()) ||
+            (user.email?.toLowerCase() || '').includes(search.toLowerCase())
         );
-    }, [users, searchQuery]);
+    }, [users, search]);
 
-    const handlePasswordReset = async (email: string) => {
-        if (!auth) return;
-        try {
-            await sendPasswordResetEmail(auth, email);
-            toast({
-                title: 'Password Reset Email Sent',
-                description: `An email has been sent to ${email} with instructions to reset their password.`,
-            });
-            setManageUserOpen(false);
-        } catch (error: any) {
-            console.error("Password Reset Error: ", error);
-            toast({
-                title: "Failed to Send Email",
-                description: `Could not send password reset email. Error: ${error.message}`,
-                variant: 'destructive',
-            });
-        }
+    const handleDelete = async (id) => {
+        await deleteUser(id);
     };
-    
-    if (error) {
-        console.error("Firestore Error in UserManagement: ", error);
-    }
-    
+
     return (
         <Card>
             <CardHeader>
                 <CardTitle>User Management</CardTitle>
-                <CardDescription>Search, view, and manage user accounts.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <Input
-                        placeholder="Search by name or email..."
-                        className="pl-10"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                </div>
-                <div className="overflow-x-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>User</TableHead>
-                                <TableHead>Email</TableHead>
-                                <TableHead>Wallet Balance</TableHead>
-                                <TableHead className="text-right">Action</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {isLoading ? (
-                                <TableRow>
-                                    <TableCell colSpan={4} className="h-24 text-center">Loading users...</TableCell>
-                                </TableRow>
-                            ) : filteredUsers && filteredUsers.length > 0 ? (
-                                filteredUsers.map(user => (
-                                    <TableRow key={user.id}>
-                                        <TableCell className="whitespace-nowrap">
-                                            <div className="font-medium">{user.name}</div>
-                                        </TableCell>
-                                        <TableCell className="whitespace-nowrap">{user.email}</TableCell>
-                                        <TableCell className="whitespace-nowrap">₦{(user.walletBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                                        <TableCell className="text-right whitespace-nowrap">
-                                            <Button size="sm" variant="outline" onClick={() => { setSelectedUser(user); setManageUserOpen(true); }}>
-                                                <UserCog className="w-4 h-4 mr-2"/>
-                                                Manage
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={4} className="h-24 text-center">No users found.</TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
-
-             <Dialog open={isManageUserOpen} onOpenChange={setManageUserOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Manage User: {selectedUser?.name}</DialogTitle>
-                        <DialogDescription>
-                            Perform administrative actions for this user.
-                        </DialogDescription>
-                    </DialogHeader>
-                    {selectedUser && (
-                        <div className="py-4 space-y-4">
-                           <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="destructive" className="w-full">
-                                        Send Password Reset Email
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            This will send a password reset link to {selectedUser.email}. The user will be required to choose a new password.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handlePasswordReset(selectedUser.email)}>
-                                            Yes, Send Email
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                             {/* Add other management actions here */}
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
-        </Card>
-    );
-}
-
-function FundingApprovalManager() {
-    const firestore = useFirestore();
-    const { toast } = useToast();
-
-    const usersWithRequestsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'users'), where('pendingFundingRequest', '!=', null));
-    }, [firestore]);
-
-    const { data: usersWithRequests, isLoading, error } = useCollection<UserProfile>(usersWithRequestsQuery);
-
-    const handleApprove = async (user: UserProfile) => {
-        if (!firestore || !user.pendingFundingRequest) return;
-
-        const amountToCredit = user.pendingFundingRequest.amount * 0.99; // Apply 1% charge
-        const userRef = doc(firestore, 'users', user.id);
-        const transactionRef = doc(collection(firestore, 'users', user.id, 'transactions'));
-
-        const batch = writeBatch(firestore);
-
-        // Update user's wallet balance and clear the pending request
-        batch.update(userRef, {
-            walletBalance: increment(amountToCredit),
-            pendingFundingRequest: null
-        });
-        
-        // Create a transaction record
-        batch.set(transactionRef, {
-            type: 'Wallet Funding',
-            network: 'system',
-            amount: amountToCredit,
-            details: `Wallet funded with ₦${user.pendingFundingRequest.amount.toLocaleString()}`,
-            recipientPhone: user.id,
-            status: 'Completed',
-            createdAt: serverTimestamp(),
-        });
-
-        try {
-            await batch.commit();
-            toast({
-                title: "Success!",
-                description: `${user.name}'s wallet has been credited with ₦${amountToCredit.toLocaleString()}.`,
-            });
-        } catch (error: any) {
-            console.error("Approval Error: ", error);
-            toast({
-                title: "Approval Failed",
-                description: `Could not approve request. Error: ${error.message}`,
-                variant: 'destructive',
-            });
-        }
-    };
-    
-    if (error) {
-        console.error("Firestore Error in FundingApprovalManager: ", error);
-    }
-    
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Wallet Funding Approvals</CardTitle>
-                <CardDescription>Review and approve pending wallet funding requests.</CardDescription>
-            </CardHeader>
-            <CardContent className="overflow-x-auto">
+            <CardContent>
+                <Input
+                    placeholder="Search by name or email"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="mb-4"
+                />
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>User</TableHead>
-                            <TableHead>Amount</TableHead>
-                            <TableHead>Bank</TableHead>
-                            <TableHead>Date</TableHead>
-                            <TableHead className="text-right">Action</TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Role</TableHead>
+                            <TableHead>Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
-                             <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center">Loading requests...</TableCell>
-                            </TableRow>
-                        ) : usersWithRequests && usersWithRequests.length > 0 ? (
-                            usersWithRequests.map(user => (
+                            <TableRow><TableCell colSpan={4}>Loading users...</TableCell></TableRow>
+                        ) : filteredUsers.length > 0 ? (
+                            filteredUsers.map((user) => (
                                 <TableRow key={user.id}>
-                                    <TableCell className="whitespace-nowrap">
-                                        <div className="font-medium">{user.pendingFundingRequest?.userName || user.name}</div>
-                                        <div className="text-sm text-muted-foreground">{user.email}</div>
-                                    </TableCell>
-                                    <TableCell className="whitespace-nowrap">₦{user.pendingFundingRequest?.amount.toLocaleString()}</TableCell>
-                                    <TableCell className="whitespace-nowrap">{user.pendingFundingRequest?.bankName}</TableCell>
-                                    <TableCell className="whitespace-nowrap">
-                                        {user.pendingFundingRequest?.createdAt ?
-                                            format(new Date(user.pendingFundingRequest.createdAt.seconds * 1000), "MMM d, yyyy, h:mm a")
-                                            : 'N/A'
-                                        }
-                                    </TableCell>
-                                    <TableCell className="text-right whitespace-nowrap">
-                                        <Button size="sm" onClick={() => handleApprove(user)}>
-                                            <CheckCircle className="w-4 h-4 mr-2"/>
-                                            Approve
-                                        </Button>
+                                    <TableCell>{user.name || 'N/A'}</TableCell>
+                                    <TableCell>{user.email || 'N/A'}</TableCell>
+                                    <TableCell>{user.role || 'user'}</TableCell>
+                                    <TableCell>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="destructive" size="sm"><Trash2 className="h-4 w-4" /></Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    This action cannot be undone. This will permanently delete the user.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDelete(user.id)}>Delete</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
                                     </TableCell>
                                 </TableRow>
                             ))
                         ) : (
-                             <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center">No pending funding requests.</TableCell>
-                            </TableRow>
+                            <TableRow><TableCell colSpan={4}>No users found.</TableCell></TableRow>
                         )}
                     </TableBody>
                 </Table>
@@ -448,564 +122,474 @@ function FundingApprovalManager() {
     );
 }
 
-function AnnouncementManager() {
-    const firestore = useFirestore();
-    const { toast } = useToast();
 
-    const announcementRef = useMemoFirebase(
-        () => firestore ? doc(firestore, 'announcement', 'current') : null,
-        [firestore]
-    );
-    const { data: announcement, isLoading } = useDoc<Announcement>(announcementRef);
+// Funding Approval Manager
+function FundingApprovalManager() {
+    const fundingQuery = useMemo(() =>
+        query(collection(db, "funding"), where("status", "==", "pending"))
+    , []);
+    const { data: fundingRequests, isLoading } = useCollection(fundingQuery);
 
-    const [text, setText] = useState('');
-    const [enabled, setEnabled] = useState(false);
-
-    useEffect(() => {
-        if (announcement) {
-            setText(announcement.text);
-            setEnabled(announcement.enabled);
-        }
-    }, [announcement]);
-
-    const handleSave = () => {
-        if (!announcementRef) return;
-        setDocumentNonBlocking(announcementRef, { text, enabled }, { merge: true });
-        toast({ title: 'Success', description: 'Announcement updated.' });
+    const handleApproval = async (id, approve) => {
+        const status = approve ? "approved" : "denied";
+        await updateFundingRequest(id, { status });
     };
-
-    if (isLoading) {
-        return (
-            <Card>
-                <CardHeader>
-                    <CardTitle>Broadcast Announcement</CardTitle>
-                    <CardDescription>Manage site-wide announcements.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-20 w-full" />
-                    <Skeleton className="h-10 w-24" />
-                </CardContent>
-            </Card>
-        )
-    }
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Broadcast Announcement</CardTitle>
-                <CardDescription>Manage the site-wide announcement banner.</CardDescription>
+                <CardTitle>Funding Approvals</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-                 <div className="flex items-center space-x-2">
-                    <Switch
-                        id="announcement-enabled"
-                        checked={enabled}
-                        onCheckedChange={setEnabled}
-                    />
-                    <Label htmlFor="announcement-enabled">Enable Announcement Banner</Label>
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="announcement-text">Announcement Text</Label>
-                    <Textarea
-                        id="announcement-text"
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        placeholder="Enter your announcement here..."
-                    />
-                </div>
-                <Button onClick={handleSave}><Megaphone className="mr-2 h-4 w-4"/> Save Announcement</Button>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>User Email</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading ? (
+                            <TableRow><TableCell colSpan={4}>Loading funding requests...</TableCell></TableRow>
+                        ) : fundingRequests && fundingRequests.length > 0 ? (
+                            fundingRequests.map((request) => (
+                                <TableRow key={request.id}>
+                                    <TableCell>{request.userEmail}</TableCell>
+                                    <TableCell>${request.amount}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={request.status === 'pending' ? 'secondary' : 'default'}>
+                                            {request.status}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="space-x-2">
+                                        <Button size="sm" onClick={() => handleApproval(request.id, true)}>Approve</Button>
+                                        <Button size="sm" variant="destructive" onClick={() => handleApproval(request.id, false)}>Deny</Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow><TableCell colSpan={4}>No pending funding requests.</TableCell></TableRow>
+                        )}
+                    </TableBody>
+                </Table>
             </CardContent>
         </Card>
     );
 }
 
-interface Review {
-    id: string;
-    name: string;
-    reviewText: string;
-    rating: number;
-    createdAt: {
-        seconds: number;
-        nanoseconds: number;
-    } | null;
-}
+// Blog Manager Component
+function BlogManager() {
+    const blogQuery = useMemoizedQuery("blog", "createdAt");
+    const { data: posts, isLoading } = useCollection(blogQuery);
+    const [editingPost, setEditingPost] = useState(null);
 
-function ReviewManager() {
-    const firestore = useFirestore();
-    const { toast } = useToast();
-    
-    const reviewsQuery = useMemoFirebase(
-        () => firestore ? query(collection(firestore, 'reviews'), orderBy('createdAt', 'desc')) : null,
-        [firestore]
-    );
-    const { data: reviews, isLoading } = useCollection<Review>(reviewsQuery);
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = {
+            title: formData.get('title'),
+            content: formData.get('content'),
+            author: formData.get('author'),
+            featured: formData.get('featured') === 'on',
+        };
 
-
-    const handleDelete = async (reviewId: string) => {
-        if (!firestore) return;
-        if (window.confirm('Are you sure you want to delete this review?')) {
-            const reviewRef = doc(firestore, 'reviews', reviewId);
-            try {
-                await deleteDoc(reviewRef);
-                toast({ title: 'Success', description: 'Review deleted successfully.' });
-            } catch (error: any) {
-                console.error("Error deleting review:", error);
-                toast({ 
-                    title: 'Error', 
-                    description: `Could not delete review: ${error.message}`,
-                    variant: 'destructive'
-                });
-            }
+        if (editingPost) {
+            await updateBlogPost(editingPost.id, data);
+        } else {
+            await addBlogPost(data);
         }
-    }
+        setEditingPost(null);
+        e.target.reset();
+    };
 
-    const formatDateShort = (timestamp: { seconds: number; nanoseconds: number } | null) => {
-        if (!timestamp) return 'N/A';
-        const date = new Date(timestamp.seconds * 1000);
-        return format(date, "MMM d, yyyy");
+    const handleDelete = async (id) => {
+        await deleteBlogPost(id);
     };
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Review Management</CardTitle>
-                <CardDescription>View and delete customer reviews.</CardDescription>
+                <CardTitle>{editingPost ? 'Edit Blog Post' : 'Create Blog Post'}</CardTitle>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
+            <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <Input name="title" placeholder="Title" defaultValue={editingPost?.title || ''} required />
+                    <Textarea name="content" placeholder="Content (Markdown supported)" defaultValue={editingPost?.content || ''} required />
+                    <Input name="author" placeholder="Author" defaultValue={editingPost?.author || ''} required />
+                    <div className="flex items-center space-x-2">
+                        <Checkbox id="featured" name="featured" defaultChecked={editingPost?.featured || false} />
+                        <label htmlFor="featured">Featured Post</label>
+                    </div>
+                    <div className="flex space-x-2">
+                        <Button type="submit">{editingPost ? 'Update Post' : 'Create Post'}</Button>
+                        {editingPost && <Button variant="outline" onClick={() => setEditingPost(null)}>Cancel</Button>}
+                    </div>
+                </form>
+            </CardContent>
+            <CardFooter>
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Rating</TableHead>
-                            <TableHead>Review</TableHead>
-                            <TableHead className="text-right">Action</TableHead>
+                            <TableHead>Title</TableHead>
+                            <TableHead>Author</TableHead>
+                            <TableHead>Featured</TableHead>
+                            <TableHead>Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
-                            <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center">Loading reviews...</TableCell>
+                             <TableRow><TableCell colSpan={4}>Loading posts...</TableCell></TableRow>
+                        ) : posts && posts.length > 0 ? (
+                            posts.map((post) => (
+                                <TableRow key={post.id}>
+                                    <TableCell>{post.title}</TableCell>
+                                    <TableCell>{post.author}</TableCell>
+                                    <TableCell>{post.featured ? 'Yes' : 'No'}</TableCell>
+                                    <TableCell className="space-x-2">
+                                        <Button variant="outline" size="sm" onClick={() => setEditingPost(post)}><Edit className="h-4 w-4" /></Button>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="destructive" size="sm"><Trash2 className="h-4 w-4" /></Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>This will permanently delete the blog post.</AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDelete(post.id)}>Delete</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow><TableCell colSpan={4}>No posts yet.</TableCell></TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </CardFooter>
+        </Card>
+    );
+}
+
+
+// Announcement Manager Component
+function AnnouncementManager() {
+    const announcementQuery = useMemoizedQuery("announcements", "createdAt");
+    const { data: announcements, isLoading } = useCollection(announcementQuery);
+    const [editing, setEditing] = useState(null);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const data = { message: e.target.message.value };
+        if (editing) {
+            await updateAnnouncement(editing.id, data);
+        } else {
+            await addAnnouncement(data);
+        }
+        setEditing(null);
+        e.target.reset();
+    };
+
+    return (
+        <Card>
+            <CardHeader><CardTitle>{editing ? 'Edit' : 'Create'} Announcement</CardTitle></CardHeader>
+            <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <Input name="message" placeholder="Announcement Message" defaultValue={editing?.message || ''} required />
+                    <div className="flex space-x-2">
+                        <Button type="submit">{editing ? 'Update' : 'Create'}</Button>
+                        {editing && <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>}
+                    </div>
+                </form>
+            </CardContent>
+            <CardFooter>
+                <Table>
+                    <TableHeader><TableRow><TableHead>Message</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
+                    <TableBody>
+                        {isLoading ? (
+                            <TableRow><TableCell colSpan={2}>Loading...</TableCell></TableRow>
+                        ) : announcements?.map(ann => (
+                            <TableRow key={ann.id}>
+                                <TableCell>{ann.message}</TableCell>
+                                <TableCell className="space-x-2">
+                                    <Button variant="outline" size="sm" onClick={() => setEditing(ann)}><Edit className="h-4 w-4" /></Button>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="destructive" size="sm"><Trash2 className="h-4 w-4" /></Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader><AlertDialogTitle>Delete this announcement?</AlertDialogTitle></AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => deleteAnnouncement(ann.id)}>Delete</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </TableCell>
                             </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardFooter>
+        </Card>
+    );
+}
+
+// Network Status Manager
+function NetworkStatusManager() {
+    const statusQuery = useMemoizedQuery("networkStatus", "createdAt");
+    const { data: statuses, isLoading } = useCollection(statusQuery);
+    const [editing, setEditing] = useState(null);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const data = { message: e.target.message.value, status: e.target.status.value };
+        if (editing) {
+            await updateNetworkStatus(editing.id, data);
+        } else {
+            await addNetworkStatus(data);
+        }
+        setEditing(null);
+        e.target.reset();
+    };
+
+    return (
+        <Card>
+            <CardHeader><CardTitle>{editing ? 'Edit' : 'Create'} Network Status</CardTitle></CardHeader>
+            <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <Input name="message" placeholder="Status Message" defaultValue={editing?.message || ''} required />
+                    <Select name="status" defaultValue={editing?.status || 'operational'}>
+                        <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="operational">Operational</SelectItem>
+                            <SelectItem value="degraded">Degraded</SelectItem>
+                            <SelectItem value="outage">Outage</SelectItem>
+                        </SelectContent>
+                    </Select>
+                     <div className="flex space-x-2">
+                        <Button type="submit">{editing ? 'Update' : 'Create'}</Button>
+                        {editing && <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>}
+                    </div>
+                </form>
+            </CardContent>
+            <CardFooter>
+                <Table>
+                    <TableHeader><TableRow><TableHead>Message</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
+                    <TableBody>
+                        {isLoading ? (
+                            <TableRow><TableCell colSpan={3}>Loading...</TableCell></TableRow>
+                        ) : statuses?.map(s => (
+                             <TableRow key={s.id}>
+                                <TableCell>{s.message}</TableCell>
+                                <TableCell><Badge>{s.status}</Badge></TableCell>
+                                <TableCell className="space-x-2">
+                                     <Button variant="outline" size="sm" onClick={() => setEditing(s)}><Edit className="h-4 w-4" /></Button>
+                                     <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="destructive" size="sm"><Trash2 className="h-4 w-4" /></Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader><AlertDialogTitle>Delete this status?</AlertDialogTitle></AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => deleteNetworkStatus(s.id)}>Delete</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardFooter>
+        </Card>
+    );
+}
+
+
+// Review Manager Component
+function ReviewManager() {
+    const reviewsQuery = useMemoizedQuery("reviews", "createdAt");
+    const { data: reviews, isLoading } = useCollection(reviewsQuery);
+
+    return (
+        <Card>
+            <CardHeader><CardTitle>Review Management</CardTitle></CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Rating</TableHead><TableHead>Comment</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
+                     <TableBody>
+                        {isLoading ? (
+                            <TableRow><TableCell colSpan={4}>Loading reviews...</TableCell></TableRow>
                         ) : reviews && reviews.length > 0 ? (
                             reviews.map(review => (
                                 <TableRow key={review.id}>
-                                    <TableCell className="whitespace-nowrap">{formatDateShort(review.createdAt)}</TableCell>
-                                    <TableCell className="whitespace-nowrap">{review.name}</TableCell>
-                                    <TableCell className="whitespace-nowrap">{review.rating}/5</TableCell>
-                                    <TableCell className="max-w-xs truncate">{review.reviewText}</TableCell>
-                                    <TableCell className="text-right whitespace-nowrap">
-                                        <Button variant="destructive" size="sm" onClick={() => handleDelete(review.id)}>
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
+                                    <TableCell>{review.userName || 'Anonymous'}</TableCell>
+                                    <TableCell>{review.rating} / 5</TableCell>
+                                    <TableCell>{review.comment}</TableCell>
+                                    <TableCell>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="destructive" size="sm"><Trash2 className="h-4 w-4" /></Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>This will permanently delete the review.</AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => deleteReview(review.id)}>Delete</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     </TableCell>
                                 </TableRow>
                             ))
                         ) : (
-                            <TableRow>
-                                <TableCell colSpan={5} className="h-24 text-center">No reviews found.</TableCell>
-                            </TableRow>
+                            <TableRow><TableCell colSpan={4}>No reviews yet.</TableCell></TableRow>
                         )}
                     </TableBody>
                 </Table>
             </CardContent>
         </Card>
-    )
-}
-
-function PlanForm({
-  plan,
-  networkId,
-  collectionName,
-  onSave,
-  isTvPlan = false,
-}: {
-  plan?: Plan;
-  networkId: string;
-  collectionName: string;
-  onSave: () => void;
-  isTvPlan?: boolean;
-}) {
-  const firestore = useFirestore();
-  const [label, setLabel] = useState(plan?.label || '');
-  const [price, setPrice] = useState(plan?.price || 0);
-  const [validity, setValidity] = useState(plan?.validity || '');
-  const { toast } = useToast();
-
-  const handleSave = async () => {
-    if (!firestore) return;
-    if (!label || price <= 0) {
-      toast({
-        title: 'Invalid Input',
-        description: 'Please fill out all fields correctly.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    const planId = plan?.id || doc(collection(firestore, 'dummy')).id;
-    const planRef = doc(firestore, collectionName, networkId, 'plans', planId);
-    const data: Omit<Plan, 'id'> = { label, price };
-    if (!isTvPlan) {
-      data.validity = validity;
-    }
-
-    setDocumentNonBlocking(planRef, data, { merge: true });
-    toast({ title: 'Success', description: 'Plan saved successfully!' });
-    onSave();
-  };
-
-  return (
-    <div className="grid gap-4 py-4">
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="label" className="text-right">
-          Label
-        </Label>
-        <Input
-          id="label"
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          className="col-span-3"
-        />
-      </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="price" className="text-right">
-          Price (₦)
-        </Label>
-        <Input
-          id="price"
-          type="number"
-          value={price}
-          onChange={(e) => setPrice(Number(e.target.value))}
-          className="col-span-3"
-        />
-      </div>
-      {!isTvPlan && (
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="validity" className="text-right">
-            Validity
-          </Label>
-          <Input
-            id="validity"
-            value={validity}
-            onChange={(e) => setValidity(e.target.value)}
-            className="col-span-3"
-            placeholder="e.g., 30 Days"
-          />
-        </div>
-      )}
-      <DialogFooter>
-        <DialogClose asChild>
-          <Button type="button" variant="secondary">
-            Cancel
-          </Button>
-        </DialogClose>
-        <Button onClick={handleSave}>Save Plan</Button>
-      </DialogFooter>
-    </div>
-  );
-}
-
-function PlansManager({
-  title,
-  providers,
-  collectionName,
-  isTvPlan = false,
-}: {
-  title: string;
-  providers: { id: string; name: string }[];
-  collectionName: string;
-  isTvPlan?: boolean;
-}) {
-  const [selectedProvider, setSelectedProvider] = useState(providers[0].id);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingPlan, setEditingPlan] = useState<Plan | undefined>(undefined);
-  const firestore = useFirestore();
-  const { toast } = useToast();
-
-  const plansQuery = useMemoFirebase(
-    () => firestore ? collection(firestore, collectionName, selectedProvider, 'plans') : null,
-    [firestore, collectionName, selectedProvider]
-  );
-  const { data: plans, isLoading } = useCollection<Plan>(plansQuery);
-
-
-  const handleDelete = async (planId: string) => {
-    if (!firestore) return;
-    if (window.confirm('Are you sure you want to delete this plan?')) {
-      const planRef = doc(firestore, collectionName, selectedProvider, 'plans', planId);
-      await deleteDoc(planRef);
-      toast({ title: 'Success', description: 'Plan deleted successfully.' });
-    }
-  };
-  
-  const openForm = (plan?: Plan) => {
-    setEditingPlan(plan);
-    setIsFormOpen(true);
-  };
-  
-  const closeForm = () => {
-    setIsFormOpen(false);
-    setEditingPlan(undefined);
-  }
-
-  const colSpan = isTvPlan ? 3 : 4;
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>
-          Select a provider to view and manage their plans.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <Select
-            value={selectedProvider}
-            onValueChange={setSelectedProvider}
-          >
-            <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder="Select provider" />
-            </SelectTrigger>
-            <SelectContent>
-              {providers.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Dialog open={isFormOpen} onOpenChange={(isOpen) => {
-              if (!isOpen) closeForm();
-              else setIsFormOpen(true);
-          }}>
-            <DialogTrigger asChild>
-                <Button onClick={() => openForm()} className="w-full md:w-auto">Add New Plan</Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>{editingPlan ? 'Edit' : 'Add'} Plan</DialogTitle>
-                </DialogHeader>
-                <PlanForm
-                    plan={editingPlan}
-                    networkId={selectedProvider}
-                    collectionName={collectionName}
-                    onSave={closeForm}
-                    isTvPlan={isTvPlan}
-                />
-            </DialogContent>
-          </Dialog>
-        </div>
-        <div className="overflow-x-auto">
-            <Table>
-            <TableHeader>
-                <TableRow>
-                <TableHead>Label</TableHead>
-                <TableHead>Price</TableHead>
-                {!isTvPlan && <TableHead>Validity</TableHead>}
-                <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {isLoading ? (
-                <TableRow>
-                    <TableCell colSpan={colSpan} className="h-24 text-center">
-                    Loading...
-                    </TableCell>
-                </TableRow>
-                ) : plans && plans.length > 0 ? (
-                plans.map((plan) => (
-                    <TableRow key={plan.id}>
-                    <TableCell className="whitespace-nowrap">{plan.label}</TableCell>
-                    <TableCell className="whitespace-nowrap">₦{plan.price.toLocaleString()}</TableCell>
-                    {!isTvPlan && <TableCell className="whitespace-nowrap">{plan.validity}</TableCell>}
-                    <TableCell className="text-right space-x-2 whitespace-nowrap">
-                        <Button variant="outline" size="sm" onClick={() => openForm(plan)}>
-                            <Pencil className="w-4 h-4 mr-2" /> Edit
-                        </Button>
-                        <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDelete(plan.id)}
-                        >
-                        <Trash2 className="w-4 h-4 mr-2" /> Delete
-                        </Button>
-                    </TableCell>
-                    </TableRow>
-                ))
-                ) : (
-                <TableRow>
-                    <TableCell colSpan={colSpan} className="h-24 text-center">
-                    No plans found for this provider.
-                    </TableCell>
-                </TableRow>
-                )}
-            </TableBody>
-            </Table>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-type NetworkStatusType = 'Online' | 'Degraded' | 'Offline';
-interface NetworkStatus {
-    id: string;
-    name: string;
-    status: NetworkStatusType;
-}
-
-function NetworkStatusManager() {
-    const firestore = useFirestore();
-    const { toast } = useToast();
-    const statuses: NetworkStatusType[] = ['Online', 'Degraded', 'Offline'];
-    
-    const networkStatusQuery = useMemoFirebase(
-        () => firestore ? collection(firestore, 'networkStatus') : null,
-        [firestore]
     );
-    const { data: networkStatuses, isLoading } = useCollection<NetworkStatus>(networkStatusQuery);
+}
 
-    useEffect(() => {
-        if (isLoading || !firestore) return;
+// Plans Manager Component
+function PlansManager({ title, providers, collectionName, isTvPlan = false }) {
+    const plansQuery = useMemo(() => query(collection(db, collectionName), orderBy("price")), [collectionName]);
+    const { data: plans, isLoading } = useCollection(plansQuery);
+    const [editing, setEditing] = useState(null);
 
-        const allProviders = [...networkProviders, ...tvProviders];
-        const existingIds = networkStatuses?.map(s => s.id) || [];
-        
-        allProviders.forEach(provider => {
-            if (!existingIds.includes(provider.id)) {
-                 const newStatus = {
-                    id: provider.id,
-                    name: provider.name,
-                    status: 'Online' as NetworkStatusType,
-                    lastChecked: serverTimestamp()
-                };
-                const statusRef = doc(firestore, 'networkStatus', provider.id);
-                setDocumentNonBlocking(statusRef, newStatus, { merge: true });
-            }
-        });
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = {
+            name: formData.get('name'),
+            price: Number(formData.get('price')),
+            provider: formData.get('provider'),
+            ...(isTvPlan ? { channels: formData.get('channels') } : { speed: formData.get('speed') })
+        };
 
-    }, [networkStatuses, isLoading, firestore]);
-
-    const handleStatusChange = (networkId: string, status: NetworkStatusType) => {
-        if (!firestore) return;
-        const statusRef = doc(firestore, 'networkStatus', networkId);
-        setDocumentNonBlocking(statusRef, { status, lastChecked: serverTimestamp() }, { merge: true });
-        toast({ title: 'Success', description: 'Network status updated.' });
+        if (editing) {
+            await updatePlan(collectionName, editing.id, data);
+        } else {
+            await addPlan(collectionName, data);
+        }
+        setEditing(null);
+        e.target.reset();
     };
 
-    const getStatusVariant = (status: string) => {
-        switch (status) {
-          case 'Online':
-            return 'default';
-          case 'Degraded':
-            return 'secondary';
-          case 'Offline':
-            return 'destructive';
-          default:
-            return 'outline';
-        }
-      };
+    if (!providers || providers.length === 0) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle>{title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p>No providers configured for this plan type.</p>
+                </CardContent>
+            </Card>
+        );
+    }
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Service Status</CardTitle>
-                <CardDescription>
-                    Update the operational status of all service providers.
-                </CardDescription>
+                <CardTitle>{editing ? 'Edit' : 'Create'} {title.slice(0, -1)}</CardTitle>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
+            <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <Input name="name" placeholder="Plan Name" defaultValue={editing?.name || ''} required />
+                    <Input name="price" type="number" placeholder="Price" defaultValue={editing?.price || ''} required />
+                    <Select name="provider" defaultValue={editing?.provider || ''}>
+                        <SelectTrigger><SelectValue placeholder="Select provider" /></SelectTrigger>
+                        <SelectContent>
+                            {providers.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                    {isTvPlan ? (
+                        <Input name="channels" placeholder="Channels" defaultValue={editing?.channels || ''} />
+                    ) : (
+                        <Input name="speed" placeholder="Speed (e.g., 100 Mbps)" defaultValue={editing?.speed || ''} />
+                    )}
+                    <div className="flex space-x-2">
+                        <Button type="submit"><PlusCircle className="h-4 w-4 mr-2" />{editing ? 'Update Plan' : 'Create Plan'}</Button>
+                        {editing && <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>}
+                    </div>
+                </form>
+            </CardContent>
+             <CardFooter>
                 <Table>
                     <TableHeader>
                         <TableRow>
+                            <TableHead>Name</TableHead>
                             <TableHead>Provider</TableHead>
-                            <TableHead>Current Status</TableHead>
-                            <TableHead className="text-right">Change Status</TableHead>
+                            <TableHead>Price</TableHead>
+                            <TableHead>{isTvPlan ? 'Channels' : 'Speed'}</TableHead>
+                            <TableHead>Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {isLoading ? (
-                            <TableRow>
-                                <TableCell colSpan={3} className="h-24 text-center">Loading...</TableCell>
-                            </TableRow>
-                        ) : networkStatuses && networkStatuses.length > 0 ? (
-                            networkStatuses.map(network => (
-                                <TableRow key={network.id}>
-                                    <TableCell className="font-medium whitespace-nowrap">{network.name}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={getStatusVariant(network.status)}>{network.status}</Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right whitespace-nowrap">
-                                        <Dialog>
-                                            <DialogTrigger asChild>
-                                                <Button variant="outline" size="sm"><Pencil className="w-4 h-4 mr-2" /> Edit</Button>
-                                            </DialogTrigger>
-                                            <DialogContent>
-                                                <DialogHeader>
-                                                    <DialogTitle>Update {network.name} Status</DialogTitle>
-                                                </DialogHeader>
-                                                <div className="py-4">
-                                                    <Select onValueChange={(value) => handleStatusChange(network.id, value as NetworkStatusType)} defaultValue={network.status}>
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Select status" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {statuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                            </DialogContent>
-                                        </Dialog>
+                         {isLoading ? (
+                            <TableRow><TableCell colSpan={5}>Loading plans...</TableCell></TableRow>
+                        ) : plans && plans.length > 0 ? (
+                            plans.map(plan => (
+                                <TableRow key={plan.id}>
+                                    <TableCell>{plan.name}</TableCell>
+                                    <TableCell>{providers.find(p => p.id === plan.provider)?.name}</TableCell>
+                                    <TableCell>${plan.price}</TableCell>
+                                    <TableCell>{isTvPlan ? plan.channels : plan.speed}</TableCell>
+                                    <TableCell className="space-x-2">
+                                        <Button variant="outline" size="sm" onClick={() => setEditing(plan)}><Edit className="h-4 w-4" /></Button>
+                                        <AlertDialog>
+                                             <AlertDialogTrigger asChild>
+                                                <Button variant="destructive" size="sm"><Trash2 className="h-4 w-4" /></Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>This will permanently delete the plan.</AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => deletePlan(collectionName, plan.id)}>Delete</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     </TableCell>
                                 </TableRow>
                             ))
                         ) : (
-                            <TableRow>
-                                <TableCell colSpan={3} className="h-24 text-center">No network statuses found.</TableCell>
-                            </TableRow>
+                             <TableRow><TableCell colSpan={5}>No plans created yet.</TableCell></TableRow>
                         )}
                     </TableBody>
                 </Table>
-            </CardContent>
+            </CardFooter>
         </Card>
     );
 }
 
 export default function AdminPage() {
-  const { user, isUserLoading } = useUser();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isUserLoading) {
-      if (!user || user.email !== ADMIN_EMAIL) {
-        router.push('/login');
-      }
-    }
-  }, [user, isUserLoading, router]);
-
-  if (isUserLoading || !user || user.email !== ADMIN_EMAIL) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <p>Loading...</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="container mx-auto p-4 py-8 md:p-12 space-y-8">
-      <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-      <UserManagement />
-      <FundingApprovalManager />
-      <BlogManager />
-      <AnnouncementManager />
-      <NetworkStatusManager />
-      <ReviewManager />
-      <PlansManager title="Data Plans" providers={networkProviders} collectionName="dataPlans" />
-      <PlansManager title="TV Subscriptions" providers={tvProviders} collectionName="tvPlans" isTvPlan />
-    </div>
-  );
-}
-
-    
+        <div className="container mx-auto p-4 py-8 md:p-12 space-y-8">
+          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <UserManagement />
+          <FundingApprovalManager />
+          <BlogManager />
+          <AnnouncementManager />
+          <NetworkStatusManager />
+          <ReviewManager />
+          <PlansManager title="Data Plans" providers={networkProviders} collectionName="dataPlans" />
+          <PlansManager title="TV Subscriptions" providers={tvProviders} collectionName="tvPlans" isTvPlan />
+        </div>
+      );
+    }
