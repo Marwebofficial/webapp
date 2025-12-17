@@ -1,8 +1,17 @@
 
-import { DataPurchaseForm, type DataPlan } from '@/components/data-purchase-form';
+'use client';
+
+import { type DataPlan } from '@/components/data-purchase-form';
 import { collection, getDocs } from 'firebase/firestore';
 import { firestore } from '@/firebase';
 import { networkProviders } from '@/lib/data-plans';
+import dynamic from 'next/dynamic';
+import { DataPurchaseFormSkeleton } from '@/components/data-purchase-form-skeleton';
+
+const DataPurchaseForm = dynamic(() => import('@/components/data-purchase-form').then(mod => mod.DataPurchaseForm), {
+  ssr: false,
+  loading: () => <DataPurchaseFormSkeleton />,
+});
 
 async function getInitialDataPlans(networkId: string) {
   if (!firestore) return [];
