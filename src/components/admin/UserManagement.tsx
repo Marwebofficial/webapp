@@ -50,7 +50,11 @@ export function UserManagement() {
             alert('User deleted successfully!');
         } catch (error) {
             console.error("Error deleting user: ", error);
-            alert(`Failed to delete user: ${error.message}`);
+            if (error instanceof Error) {
+                alert(`Failed to delete user: ${error.message}`);
+            } else {
+                alert('Failed to delete user: An unknown error occurred');
+            }
         }
     };
 
@@ -60,7 +64,11 @@ export function UserManagement() {
             alert('Wallet balance cleared successfully!');
         } catch (error) {
             console.error("Error clearing wallet balance: ", error);
-            alert(`Failed to clear wallet balance: ${error.message}`);
+            if (error instanceof Error) {
+                alert(`Failed to clear wallet balance: ${error.message}`);
+            } else {
+                alert('Failed to clear wallet balance: An unknown error occurred');
+            }
         }
     };
     
@@ -90,7 +98,11 @@ export function UserManagement() {
             }
         } catch (error) {
             console.error("Error clearing specific amount: ", error);
-            alert(`Failed to clear specific amount: ${error.message}`);
+            if (error instanceof Error) {
+                alert(`Failed to clear specific amount: ${error.message}`);
+            } else {
+                alert('Failed to clear specific amount: An unknown error occurred');
+            }
         }
         setAmountToClear(''); // Reset the input
     };
@@ -107,7 +119,7 @@ export function UserManagement() {
                     onChange={(e) => setSearch(e.target.value)}
                     className="mb-4"
                 />
-                {error && <p className='text-red-500'>{error.message}</p>}
+                {error && <p className='text-red-500'>{error instanceof Error ? error.message : 'An unknown error occurred'}</p>}
                 <Table>
                     <TableHeader>
                         <TableRow>
