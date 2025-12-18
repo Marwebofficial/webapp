@@ -1,31 +1,32 @@
 
 import { NextResponse } from 'next/server';
-import axios from 'axios'; // Import axios
+import axios from 'axios';
 
-// In a real-world application, these should be stored in environment variables
 const GONGOZ_API_KEY = 'cf1711071e40e0a69671c5b8d05cd8f328278933';
 const GONGOZ_API_URL = process.env.GONGOZ_API_URL || 'https://www.gongozconcept.com/api/data/';
 
 export async function POST(request: Request) {
   try {
-    const { network_id, mobile_number, plan_id } = await request.json();
-    console.log('Received request with body:', { network_id, mobile_number, plan_id });
+    const body = await request.json();
+    console.log('Received request with body:', body);
+
+    const { network_id, mobile_number, plan_id } = body;
+    const Ported_number = body.Ported_number !== undefined ? body.Ported_number : true;
 
     if (!network_id || !mobile_number || !plan_id) {
-      console.log('Validation failed: Missing required fields');
       return NextResponse.json({ error: 'Missing required fields: network_id, mobile_number, and plan_id are required.' }, { status: 400 });
     }
 
-    // Prepare the data payload for the external API
-    var data = JSON.stringify({
-      "network": network_id, // Map internal network_id to external network
-      "mobile_number": mobile_number,
-      "plan": plan_id,         // Map internal plan_id to external plan
-      "Ported_number": true
+    const data = JSON.stringify({
+      network: network_id,
+      mobile_number: mobile_number,
+      plan: plan_id,
+      Ported_number,
     });
-    console.log('Sending data to external API:', data);
 
-    var config = {
+    console.log('Sending numeric data to external API:', data);
+
+    const config = {
       method: 'post',
       maxBodyLength: Infinity,
       url: GONGOZ_API_URL,
@@ -33,14 +34,12 @@ export async function POST(request: Request) {
         'Authorization': `Token ${GONGOZ_API_KEY}`,
         'Content-Type': 'application/json'
       },
-      data : data
+      data
     };
 
     const response = await axios(config);
     console.log('Received response from external API:', response.data);
 
-
-    // Forward the success response from the provider to our client
     return NextResponse.json(response.data, { status: response.status });
 
   } catch (error: any) {
@@ -48,9 +47,7 @@ export async function POST(request: Request) {
     let errorMessage = 'An internal server error occurred.';
     let statusCode = 500;
 
-    // Check if the error is from axios and has a response
     if (axios.isAxiosError(error) && error.response) {
-        // Log the detailed error from the external API
         console.error('External API Error:', error.response.data);
         errorMessage = error.response.data?.error || error.message;
         statusCode = error.response.status || 500;

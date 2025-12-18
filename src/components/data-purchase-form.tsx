@@ -247,17 +247,16 @@ export function DataPurchaseForm() {
         body: JSON.stringify({
           network_id: data.network,
           mobile_number: data.phone,
-          plan_id: planDetails.id,
+          plan_id: planDetails.data_id, // Use the correct numeric data_id
         }),
       });
 
       const result = await response.json();
+      const batch = writeBatch(firestore);
+      const userRef = doc(firestore, 'users', user.uid);
+      const transactionRef = doc(collection(firestore, 'users', user.uid, 'transactions'));
 
-      if (response.ok) {
-        const batch = writeBatch(firestore);
-        const userRef = doc(firestore, 'users', user.uid);
-        const transactionRef = doc(collection(firestore, 'users', user.uid, 'transactions'));
-
+      if (response.ok && result.status === 'success') {
         batch.update(userRef, { walletBalance: increment(-planDetails.price) });
         
         batch.set(transactionRef, {
@@ -279,6 +278,19 @@ export function DataPurchaseForm() {
         });
 
       } else {
+        batch.set(transactionRef, {
+            type: 'Data Purchase',
+            network: data.network,
+            amount: planDetails.price,
+            details: planDetails.label,
+            recipientPhone: data.phone,
+            status: 'Failed',
+            createdAt: serverTimestamp(),
+            transactionId: result.transaction_id || null
+        });
+        
+        await batch.commit();
+
         toast({
           title: 'Purchase Failed',
           description: result.error || 'Data purchase failed. Please try again.',

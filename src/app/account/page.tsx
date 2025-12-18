@@ -38,6 +38,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { FundWalletDialog } from '@/components/fund-wallet-dialog';
 
 const Testimonials = lazy(() => import('@/components/testimonials-section'));
 
@@ -200,7 +201,7 @@ export default function AccountPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
-  const [showAnnouncement, setShowAnnouncement] = useState(false);
+  const [announcementDialog, setAnnouncementDialog] = useState({ open: false, text: '' });
   
   const userDocRef = useMemoFirebase(
     () => user ? doc(firestore, 'users', user.uid) : null,
@@ -222,7 +223,7 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (!isAnnouncementLoading && announcement?.enabled && announcement.text) {
-      setShowAnnouncement(true);
+        setAnnouncementDialog({ open: true, text: announcement.text });
     }
   }, [announcement, isAnnouncementLoading]);
 
@@ -293,7 +294,7 @@ export default function AccountPage() {
   return (
     <div className="space-y-8">
        <div className="container mx-auto p-4 py-8 md:p-12 space-y-8">
-            <AlertDialog open={showAnnouncement} onOpenChange={setShowAnnouncement}>
+            <AlertDialog open={announcementDialog.open} onOpenChange={(open) => setAnnouncementDialog(prev => ({ ...prev, open }))}>
                 <AlertDialogContent>
                 <AlertDialogHeader>
                     <div className="flex items-center gap-3 mb-2">
@@ -303,12 +304,13 @@ export default function AccountPage() {
                     <AlertDialogTitle className="text-2xl">Announcement</AlertDialogTitle>
                     </div>
                     <AlertDialogDescription className="text-base text-foreground">
-                    {announcement?.text}
+                    {announcementDialog.text}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogAction>Got it!</AlertDialogAction>
                 </AlertDialogContent>
             </AlertDialog>
+
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -353,10 +355,11 @@ export default function AccountPage() {
                         <p className="text-xs text-muted-foreground">Available for purchases</p>
                     </CardContent>
                     <CardFooter className="flex-col items-start">
-                        <Button className="w-full" disabled>
-                            <Wallet className="mr-2 h-4 w-4" /> Fund Wallet
-                        </Button>
-                        <p className="text-xs text-muted-foreground text-center w-full pt-2">Coming soon</p>
+                        <FundWalletDialog>
+                            <Button className="w-full">
+                                <Wallet className="mr-2 h-4 w-4" /> Fund Wallet
+                            </Button>
+                        </FundWalletDialog>
                     </CardFooter>
                 </Card>
                 <Card>

@@ -1,7 +1,7 @@
 
 import { firebaseConfig } from "@/firebase/config";
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, deleteDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { getFirestore, collection, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, getDocs } from "firebase/firestore";
 
 const app = initializeApp(firebaseConfig);
 const firestore = getFirestore(app);
@@ -22,4 +22,9 @@ export const updatePlan = (collectionName: string, id: string, data: any) => {
 export const deletePlan = (collectionName: string, id: string) => {
     const docRef = doc(firestore, collectionName, id);
     return deleteDoc(docRef);
+};
+
+export const getPlans = (collectionName: string) => {
+    const plansCollection = collection(firestore, collectionName);
+    return getDocs(plansCollection);
 };

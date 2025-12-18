@@ -47,7 +47,6 @@ const BANK_NAME = 'Palmpay';
 const ACCOUNT_NAME = 'Onyeka Marvelous';
 
 export function FundWalletDialog({ children }: { children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
   const [fundingStep, setFundingStep] = useState<'amount' | 'details'>('amount');
   const { toast } = useToast();
   const { user } = useUser();
@@ -66,8 +65,8 @@ export function FundWalletDialog({ children }: { children: React.ReactNode }) {
   const amountToReceive = amount - charge;
 
   const onSubmit = (data: FundingFormData) => {
-    if (!user) {
-        toast({ title: "Not Logged In", description: "You must be logged in to fund your wallet.", variant: "destructive" });
+    if (!user || !firestore) {
+        toast({ title: "Error", description: "Could not process request. Please try again later.", variant: "destructive" });
         return;
     }
     const userDocRef = doc(firestore, 'users', user.uid);
@@ -84,9 +83,8 @@ export function FundWalletDialog({ children }: { children: React.ReactNode }) {
   };
 
   const handleOpenChange = (isOpen: boolean) => {
-    setOpen(isOpen);
     if (!isOpen) {
-      // Reset to the first step when the dialog is closed
+      // Reset to the first step after a delay to allow the dialog to close
       setTimeout(() => {
         form.reset();
         setFundingStep('amount');
@@ -103,7 +101,7 @@ export function FundWalletDialog({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
         {fundingStep === 'amount' ? (

@@ -1,10 +1,11 @@
+
 "use client";
 
 import { useState } from 'react';
 import { useFirestore } from "@/firebase";
-import { collection, query, orderBy } from "firebase/firestore";
+import { collection, query, orderBy, doc, getDoc, updateDoc } from "firebase/firestore";
 import { useCollection } from "@/firebase/firestore/use-collection";
-import { deleteUser } from "@/firebase/firestore/users";
+import { deleteUser, clearUserWallet } from "@/firebase/firestore/users";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -20,19 +21,20 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Trash2 } from 'lucide-react';
+import { Trash2, Wallet, X } from 'lucide-react';
 import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
 
 export function UserManagement() {
     const firestore = useFirestore();
     const [search, setSearch] = useState('');
+    const [amountToClear, setAmountToClear] = useState('');
 
     const usersQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(collection(firestore, "users"), orderBy("name", "desc"));
     }, [firestore]);
 
-    const { data: users, isLoading } = useCollection(usersQuery);
+    const { data: users, isLoading, error } = useCollection(usersQuery);
 
     const filteredUsers = useMemoFirebase(() => {
         if (!users) return [];
@@ -43,7 +45,54 @@ export function UserManagement() {
     }, [users, search]);
 
     const handleDelete = async (id: string) => {
-        await deleteUser(id);
+        try {
+            await deleteUser(id);
+            alert('User deleted successfully!');
+        } catch (error) {
+            console.error("Error deleting user: ", error);
+            alert(`Failed to delete user: ${error.message}`);
+        }
+    };
+
+    const handleClearBalance = async (userId: string) => {
+        try {
+            await clearUserWallet(userId);
+            alert('Wallet balance cleared successfully!');
+        } catch (error) {
+            console.error("Error clearing wallet balance: ", error);
+            alert(`Failed to clear wallet balance: ${error.message}`);
+        }
+    };
+    
+    const handleClearSpecificAmount = async (userId: string, amountString: string) => {
+        const amount = parseFloat(amountString);
+        if (isNaN(amount) || amount <= 0) {
+            alert('Please enter a valid positive amount.');
+            return;
+        }
+    
+        const userRef = doc(firestore, 'users', userId);
+        
+        try {
+            const userDoc = await getDoc(userRef);
+    
+            if (userDoc.exists()) {
+                const currentBalance = userDoc.data().walletBalance || 0;
+                if (amount > currentBalance) {
+                    alert('Amount to clear cannot be greater than the current wallet balance.');
+                    return;
+                }
+                const newBalance = Math.max(0, currentBalance - amount);
+                await updateDoc(userRef, { walletBalance: newBalance });
+                alert(`Successfully cleared ₦${amount}. New balance is ₦${newBalance.toLocaleString()}.`);
+            } else {
+                alert('User document not found.');
+            }
+        } catch (error) {
+            console.error("Error clearing specific amount: ", error);
+            alert(`Failed to clear specific amount: ${error.message}`);
+        }
+        setAmountToClear(''); // Reset the input
     };
 
     return (
@@ -58,25 +107,70 @@ export function UserManagement() {
                     onChange={(e) => setSearch(e.target.value)}
                     className="mb-4"
                 />
+                {error && <p className='text-red-500'>{error.message}</p>}
                 <Table>
                     <TableHeader>
                         <TableRow>
                             <TableHead>Name</TableHead>
                             <TableHead>Email</TableHead>
                             <TableHead>Role</TableHead>
+                            <TableHead>Wallet Balance</TableHead>
                             <TableHead>Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
-                            <TableRow><TableCell colSpan={4}>Loading users...</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={5}>Loading users...</TableCell></TableRow>
                         ) : filteredUsers.length > 0 ? (
                             filteredUsers.map((user) => (
                                 <TableRow key={user.id}>
                                     <TableCell>{user.name || 'N/A'}</TableCell>
                                     <TableCell>{user.email || 'N/A'}</TableCell>
                                     <TableCell>{user.role || 'user'}</TableCell>
-                                    <TableCell>
+                                    <TableCell>₦{user.walletBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</TableCell>
+                                    <TableCell className='space-x-2'>
+                                        <AlertDialog>
+                                             <AlertDialogTrigger asChild>
+                                                <Button variant="outline" size="sm"><Wallet className="h-4 w-4 mr-2"/>Clear Balance</Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Clear Balance</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        This will clear the user's entire wallet balance. This action cannot be undone.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleClearBalance(user.id)}>Clear All Balance</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+
+                                        <AlertDialog onOpenChange={() => setAmountToClear('')}>
+                                             <AlertDialogTrigger asChild>
+                                                <Button variant="secondary" size="sm"><X className="h-4 w-4 mr-2"/>Clear Specific</Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Clear Specific Amount</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Enter the amount to clear from {user.name}'s wallet.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <Input 
+                                                    type='number' 
+                                                    placeholder='e.g., 500'
+                                                    value={amountToClear}
+                                                    onChange={(e) => setAmountToClear(e.target.value)}
+                                                />
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleClearSpecificAmount(user.id, amountToClear)}>Clear Amount</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                                 <Button variant="destructive" size="sm"><Trash2 className="h-4 w-4" /></Button>
@@ -98,7 +192,7 @@ export function UserManagement() {
                                 </TableRow>
                             ))
                         ) : (
-                            <TableRow><TableCell colSpan={4}>No users found.</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={5}>No users found.</TableCell></TableRow>
                         )}
                     </TableBody>
                 </Table>

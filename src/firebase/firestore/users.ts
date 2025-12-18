@@ -15,3 +15,8 @@ export const deleteUser = (id: string) => {
     const docRef = doc(firestore, "users", id);
     return deleteDoc(docRef);
 };
+
+export const clearUserWallet = (id: string) => {
+    const docRef = doc(firestore, "users", id);
+    return updateDoc(docRef, { walletBalance: 0 });
+};
