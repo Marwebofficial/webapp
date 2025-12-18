@@ -1,4 +1,4 @@
-'''"use client";
+"use client";
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -29,9 +29,9 @@ interface Plan {
 }
 
 export default function DataPurchasePage() {
-  const [networkId, setNetworkId] = useState<number | '''>('');
+  const [networkId, setNetworkId] = useState<number | ''>('');
   const [mobileNumber, setMobileNumber] = useState('');
-  const [planId, setPlanId] = useState<string | '''>('');
+  const [planId, setPlanId] = useState<string | ''>('');
   const [plans, setPlans] = useState<Plan[]>([]);
   const [response, setResponse] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -126,7 +126,7 @@ export default function DataPurchasePage() {
                       onClick={() => setPlanId(plan.plan_id)}
                       type="button"
                     >
-                      {plan.name} - {plan.amount}
+                      {plan.name}
                     </Button>
                   ))}
                 </div>
@@ -161,4 +161,3 @@ export default function DataPurchasePage() {
     </main>
   );
 }
-'''

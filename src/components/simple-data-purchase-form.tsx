@@ -25,6 +25,7 @@ import {
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, writeBatch, increment, collection, serverTimestamp } from 'firebase/firestore';
 import { Wallet } from 'lucide-react';
+import { Receipt } from '@/components/receipt'; // Import the Receipt component
 
 const networkOptions = [
   { id: 1, name: 'mtn' },
@@ -36,12 +37,21 @@ const networkOptions = [
 interface Plan {
   id: string;
   name: string;
-  amount: number;
   data_id: string;
 }
 
 interface UserProfile {
   walletBalance?: number;
+}
+
+interface Transaction {
+  type: string;
+  network?: string;
+  details: string;
+  recipientPhone: string;
+  status: string;
+  createdAt: any;
+  transactionId?: string;
 }
 
 export function SimpleDataPurchaseForm() {
@@ -52,6 +62,7 @@ export function SimpleDataPurchaseForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingPlans, setIsFetchingPlans] = useState(false);
   const [alertState, setAlertState] = useState<{ open: boolean; title: string; message: string }>({ open: false, title: '', message: '' });
+  const [receipt, setReceipt] = useState<Transaction | null>(null); // State for the receipt
 
   const { user } = useUser();
   const firestore = useFirestore();
@@ -86,6 +97,7 @@ export function SimpleDataPurchaseForm() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
+    setReceipt(null); // Clear previous receipt
 
     if (!user || !firestore) {
       setAlertState({ open: true, title: 'Error', message: 'You must be logged in to make a purchase.' });
@@ -100,13 +112,7 @@ export function SimpleDataPurchaseForm() {
       return;
     }
 
-    const currentBalance = userProfile?.walletBalance || 0;
-    if (currentBalance < selectedPlan.amount) {
-        setAlertState({ open: true, title: 'Insufficient Funds', message: `You do not have enough funds for this transaction. Your balance is ₦${currentBalance.toLocaleString()}.` });
-        setIsLoading(false);
-        return;
-    }
-
+    let result: any;
     try {
       const res = await fetch('/api/data', {
         method: 'POST',
@@ -121,48 +127,64 @@ export function SimpleDataPurchaseForm() {
         }),
       });
 
-      const result = await res.json();
+      result = await res.json();
+
+      if (!res.ok) {
+        throw new Error(result.error || `Request failed with status ${res.status}`);
+      }
+
       const batch = writeBatch(firestore);
       const userRef = doc(firestore, 'users', user.uid);
       const transactionRef = doc(collection(firestore, 'users', user.uid, 'transactions'));
       
-      if (res.ok && result.status === 'success') {
-        batch.update(userRef, { walletBalance: increment(-selectedPlan.amount) });
-        batch.set(transactionRef, {
-            type: 'Data Purchase',
-            network: networkOptions.find(n => n.id === networkId)?.name,
-            amount: selectedPlan.amount,
-            details: selectedPlan.name,
-            recipientPhone: mobileNumber,
-            status: 'Completed',
-            createdAt: serverTimestamp(),
-            transactionId: result.transaction_id || null
-        });
+      const transactionData: Transaction = {
+        type: 'Data Purchase',
+        network: networkOptions.find(n => n.id === networkId)?.name,
+        details: selectedPlan.name,
+        recipientPhone: mobileNumber,
+        status: result.status === 'success' ? 'Completed' : 'Failed',
+        createdAt: serverTimestamp(),
+        transactionId: result.transaction_id || null,
+      };
+
+      if (result.status === 'success') {
+        batch.set(transactionRef, transactionData);
         setAlertState({ open: true, title: 'Purchase Successful', message: result.message || 'Your data purchase was successful!' });
+        setReceipt(transactionData); // Set receipt data
       } else {
-        batch.set(transactionRef, {
-            type: 'Data Purchase',
-            network: networkOptions.find(n => n.id === networkId)?.name,
-            amount: selectedPlan.amount,
-            details: selectedPlan.name,
-            recipientPhone: mobileNumber,
-            status: 'Failed',
-            createdAt: serverTimestamp(),
-            transactionId: result.transaction_id || null
-        });
+        batch.set(transactionRef, { ...transactionData, failureReason: result.error || 'Unknown failure reason' });
         setAlertState({ open: true, title: 'Purchase Failed', message: result.error || 'The transaction failed. Your wallet was not charged.' });
       }
 
       await batch.commit();
 
-    } catch (error) {
-      setAlertState({ open: true, title: 'Error', message: 'An unexpected error occurred. Please try again later.' });
+    } catch (error: any) {
+        console.error("Data purchase failed:", error);
+        const transactionRef = doc(collection(firestore, 'users', user.uid, 'transactions'));
+        const batch = writeBatch(firestore);
+        const transactionData: Transaction = {
+            type: 'Data Purchase',
+            network: networkOptions.find(n => n.id === networkId)?.name,
+            details: selectedPlan.name,
+            recipientPhone: mobileNumber,
+            status: 'Failed',
+            createdAt: serverTimestamp(),
+            failureReason: error.message
+        };
+        batch.set(transactionRef, transactionData);
+        await batch.commit().catch(console.error); 
+
+        setAlertState({ open: true, title: 'Error', message: error.message || 'An unexpected error occurred. Please try again later.' });
     } finally {
       setIsLoading(false);
     }
   };
 
   const selectedPlan = plans.find(p => p.id === selectedPlanDocId);
+
+  if (receipt) {
+    return <Receipt transaction={receipt} />;
+  }
 
   return (
     <main className="flex min-h-screen w-full items-center justify-center p-4 py-8 md:p-12 bg-background">
@@ -171,17 +193,6 @@ export function SimpleDataPurchaseForm() {
           <CardTitle>Data Purchase</CardTitle>
           <CardDescription>A simple form to test data purchases.</CardDescription>
         </CardHeader>
-        {userProfile && (
-            <CardContent className='pb-0'>
-                <div className="border rounded-lg p-3 flex justify-between items-center bg-muted/50">
-                    <div className='flex items-center gap-2'>
-                        <Wallet className="h-5 w-5 text-muted-foreground" />
-                        <span className="text-sm font-medium text-muted-foreground">Wallet Balance</span>
-                    </div>
-                    <span className="text-lg font-bold">₦{(userProfile.walletBalance || 0).toLocaleString()}</span>
-                </div>
-            </CardContent>
-        )}
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4 pt-6">
             <div className="space-y-2">
@@ -216,7 +227,7 @@ export function SimpleDataPurchaseForm() {
                       type="button"
                       className="h-auto whitespace-normal"
                     >
-                      {plan.name} - ₦{plan.amount}
+                      {plan.name}
                     </Button>
                   ))}
                 </div>
@@ -228,7 +239,6 @@ export function SimpleDataPurchaseForm() {
                     <p className='font-medium'>Summary:</p>
                     <p>Network: <span className='font-bold'>{networkOptions.find(n => n.id === networkId)?.name.toUpperCase()}</span></p>
                     <p>Plan: <span className='font-bold'>{selectedPlan.name}</span></p>
-                    <p>Price: <span className='font-bold'>₦{selectedPlan.amount}</span></p>
                 </div>
             )}
 

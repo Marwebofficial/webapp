@@ -22,26 +22,28 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Receipt } from "@/components/receipt";
 
 interface Transaction {
   id: string;
   type: string;
   network: string;
-  amount: number;
+  amount?: number;
   details: string;
   recipientPhone: string;
   status: 'Pending' | 'Completed' | 'Failed';
   createdAt: {
     seconds: number;
     nanoseconds: number;
-  } | null;
+  } | any;
 }
 
 export default function HistoryPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
   const transactionsQuery = useMemoFirebase(
     () => {
@@ -93,6 +95,14 @@ export default function HistoryPage() {
     </TableRow>
   );
 
+  if (selectedTransaction) {
+    return (
+      <div className="container mx-auto p-4 py-8 md:p-12">
+        <Receipt transaction={selectedTransaction} onBack={() => setSelectedTransaction(null)} />
+      </div>
+    );
+  }
+
   if (isUserLoading || !user) {
     return (
         <div className="container mx-auto p-4 py-8 md:p-12">
@@ -129,7 +139,7 @@ export default function HistoryPage() {
       <Card>
         <CardHeader>
           <CardTitle>Purchase History</CardTitle>
-          <CardDescription>A record of your recent transactions.</CardDescription>
+          <CardDescription>A record of your recent transactions. Click on a row to view receipt.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -148,13 +158,13 @@ export default function HistoryPage() {
                   renderSkeleton()
                 ) : transactions && transactions.length > 0 ? (
                   transactions.map((tx) => (
-                    <TableRow key={tx.id}>
+                    <TableRow key={tx.id} onClick={() => setSelectedTransaction(tx)} className="cursor-pointer">
                       <TableCell className="font-medium whitespace-nowrap">{formatDate(tx.createdAt)}</TableCell>
                       <TableCell className="whitespace-nowrap">
                           <div className="font-medium">{tx.type}</div>
                           <div className="text-sm text-muted-foreground">{tx.details} on {tx.network.toUpperCase()}</div>
                       </TableCell>
-                      <TableCell className="whitespace-nowrap">₦{tx.amount.toLocaleString()}</TableCell>
+                      <TableCell className="whitespace-nowrap">{tx.amount ? `₦${tx.amount.toLocaleString()}` : 'N/A'}</TableCell>
                       <TableCell className="whitespace-nowrap">{tx.recipientPhone}</TableCell>
                       <TableCell className="whitespace-nowrap">
                         <Badge variant={getStatusVariant(tx.status)}>{tx.status}</Badge>

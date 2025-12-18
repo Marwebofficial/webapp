@@ -1,13 +1,21 @@
+"use client";
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function PrivacyPolicyPage() {
+  const [lastUpdated, setLastUpdated] = useState('');
+
+  useEffect(() => {
+    setLastUpdated(new Date().toLocaleDateString());
+  }, []);
+
   return (
     <main className="container mx-auto p-4 py-8 md:p-12">
       <Card className="max-w-4xl mx-auto">
         <CardHeader>
           <CardTitle className="text-3xl font-bold">Privacy Policy</CardTitle>
-          <p className="text-muted-foreground">Last updated: {new Date().toLocaleDateString()}</p>
+          {lastUpdated && <p className="text-muted-foreground">Last updated: {lastUpdated}</p>}
         </CardHeader>
         <CardContent className="space-y-6 prose prose-lg max-w-none">
           <p>

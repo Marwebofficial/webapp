@@ -195,7 +195,17 @@ export function DataPurchaseForm() {
       const plansCollection = collection(firestore, 'dataPlans');
       const plansQuery = query(plansCollection, where('provider', '==', networkId));
       const querySnapshot = await getDocs(plansQuery);
-      const plans = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DataPlan));
+      const plans = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+              id: doc.id,
+              label: data.label,
+              amount: data.amount,
+              provider: data.provider,
+              data_id: data.data_id,
+              validity: data.validity
+          } as DataPlan;
+      });
       setDataPlans(plans);
     } catch (error) {
       console.error("Error fetching data plans:", error);
@@ -231,7 +241,14 @@ export function DataPurchaseForm() {
       return;
     }
 
-    if (!userProfile || (userProfile.walletBalance || 0) < planDetails.price) {
+    const price = planDetails.amount;
+
+    if (price === undefined) {
+        toast({ title: 'Error', description: 'Plan price is not available. Please select another plan.', variant: 'destructive' });
+        return;
+    }
+
+    if (!userProfile || (userProfile.walletBalance || 0) < price) {
         toast({
             title: 'Insufficient Funds',
             description: `Your wallet balance is too low for this transaction. Please fund your wallet and try again.`,
@@ -257,12 +274,12 @@ export function DataPurchaseForm() {
       const transactionRef = doc(collection(firestore, 'users', user.uid, 'transactions'));
 
       if (response.ok && result.status === 'success') {
-        batch.update(userRef, { walletBalance: increment(-planDetails.price) });
+        batch.update(userRef, { walletBalance: increment(-price) });
         
         batch.set(transactionRef, {
             type: 'Data Purchase',
             network: data.network,
-            amount: planDetails.price,
+            amount: price,
             details: planDetails.label,
             recipientPhone: data.phone,
             status: 'Completed',
@@ -281,7 +298,7 @@ export function DataPurchaseForm() {
         batch.set(transactionRef, {
             type: 'Data Purchase',
             network: data.network,
-            amount: planDetails.price,
+            amount: price,
             details: planDetails.label,
             recipientPhone: data.phone,
             status: 'Failed',
@@ -332,10 +349,10 @@ export function DataPurchaseForm() {
     <Card className="w-full max-w-2xl mx-auto shadow-2xl animate-in fade-in-50 zoom-in-95 duration-500">
       <CardHeader>
         <CardTitle className="text-3xl font-headline text-center">
-          DataConnect Nigeria
+          Data Purchase
         </CardTitle>
         <CardDescription className="text-center">
-          Buy mobile data instantly. Delivered in minutes.
+          A simple form to test data purchases.
         </CardDescription>
       </CardHeader>
       <Form {...form}>
@@ -411,32 +428,37 @@ export function DataPurchaseForm() {
                               <Skeleton className="h-24 w-full" />
                             </>
                           )}
-                          {dataPlans && dataPlans.map((plan) => (
-                            <Card
-                              key={plan.id}
-                              onClick={() => handlePlanSelect(plan)}
-                              className={cn(
-                                'cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1',
-                                selectedPlan?.id === plan.id
-                                  ? 'border-primary ring-2 ring-primary'
-                                  : 'border-border'
-                              )}
-                            >
-                              <CardContent className="p-3 md:p-4 text-center flex flex-col items-center justify-center h-full">
-                                <p className="font-bold text-base md:text-lg text-primary">
-                                  {plan.label}
-                                </p>
-                                <p className="text-muted-foreground font-semibold">
-                                  ₦{plan.price.toLocaleString()}
-                                </p>
-                                {plan.validity && (
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    {plan.validity}
-                                  </p>
-                                )}
-                              </CardContent>
-                            </Card>
-                          ))}
+                          {dataPlans && dataPlans.map((plan) => {
+                            const price = plan.amount;
+                            return (
+                                <Card
+                                  key={plan.id}
+                                  onClick={() => handlePlanSelect(plan)}
+                                  className={cn(
+                                    'cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1',
+                                    selectedPlan?.id === plan.id
+                                      ? 'border-primary ring-2 ring-primary'
+                                      : 'border-border'
+                                  )}
+                                >
+                                  <CardContent className="p-3 md:p-4 text-center flex flex-col items-center justify-center h-full">
+                                    <p className="font-bold text-base md:text-lg text-primary">
+                                      {plan.label}
+                                    </p>
+                                    {price !== undefined && (
+                                        <p className="text-muted-foreground font-semibold">
+                                            ₦{price.toLocaleString()}
+                                        </p>
+                                    )}
+                                    {plan.validity && (
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        {plan.validity}
+                                      </p>
+                                    )}
+                                  </CardContent>
+                                </Card>
+                            );
+                          })}
                         </div>
                       </FormControl>
                       <FormMessage />

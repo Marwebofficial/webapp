@@ -46,7 +46,7 @@ interface Transaction {
   id: string;
   type: string;
   network: string;
-  amount: number;
+  amount?: number;
   details: string;
   recipientPhone: string;
   status: 'Pending' | 'Completed' | 'Failed';
@@ -246,7 +246,7 @@ export default function AccountPage() {
   const transactionStats = useMemo(() => {
     if (!allTransactions) return { totalSpent: 0, totalCount: 0 };
     return allTransactions.reduce((acc, tx) => {
-        if (tx.status === 'Completed') {
+        if (tx.status === 'Completed' && tx.amount) {
             acc.totalSpent += tx.amount;
         }
         acc.totalCount += 1;
@@ -442,7 +442,7 @@ export default function AccountPage() {
                                 <div className="font-medium">{tx.type}</div>
                                 <div className="text-sm text-muted-foreground">{tx.details}</div>
                             </TableCell>
-                            <TableCell>₦{tx.amount.toLocaleString()}</TableCell>
+                            <TableCell>{tx.amount ? `₦${tx.amount.toLocaleString()}` : 'N/A'}</TableCell>
                             <TableCell>
                             <Badge variant={getStatusVariant(tx.status)}>{tx.status}</Badge>
                             </TableCell>

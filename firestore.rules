@@ -63,7 +63,7 @@ service cloud.firestore {
     }
 
     match /networkStatus/{networkId} {
-      allow read: if true;
+      allow read, list: if true;
       allow write: if isAdmin();
     }
 

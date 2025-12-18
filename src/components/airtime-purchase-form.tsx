@@ -35,8 +35,6 @@ import { Badge } from './ui/badge';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from './ui/skeleton';
 
-const WHATSAPP_NUMBER = '2349040367103';
-
 const FormSchema = z.object({
   network: z.custom<Network>(
     (val) => networkProviders.some((p) => p.id === val),
@@ -54,12 +52,6 @@ const FormSchema = z.object({
       /^(\+234|0)?[7-9][01]\d{8}$/,
       'Please enter a valid Nigerian phone number.'
     ),
-  name: z.string().min(2, 'Name must be at least 2 characters.').max(50),
-  email: z
-    .string()
-    .email('Please enter a valid email.')
-    .optional()
-    .or(z.literal('')),
 });
 
 type FormData = z.infer<typeof FormSchema>;
@@ -118,6 +110,7 @@ export function AirtimePurchaseForm() {
   const firestore = useFirestore();
   const router = useRouter();
   const [networkStatuses, setNetworkStatuses] = useState<NetworkStatus[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const userDocRef = useMemoFirebase(
     () => (user ? doc(firestore, 'users', user.uid) : null),
@@ -131,7 +124,6 @@ export function AirtimePurchaseForm() {
         const statusCol = collection(firestore, 'networkStatus');
         const statusSnapshot = await getDocs(statusCol);
          if (statusSnapshot.empty) {
-            // If firestore is empty, use local data
             const localStatuses = networkProviders.map(p => ({
                 id: p.id,
                 name: p.name,
@@ -151,9 +143,7 @@ export function AirtimePurchaseForm() {
   const form = useForm<FormData>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      name: '',
       phone: '',
-      email: '',
       amount: 100,
     },
   });
@@ -173,60 +163,57 @@ export function AirtimePurchaseForm() {
 
   useEffect(() => {
     if (userProfile) {
-      form.setValue('name', userProfile.name || '');
-      form.setValue('email', userProfile.email || '');
       form.setValue('phone', userProfile.phoneNumber || '');
     } else if (user) {
-      form.setValue('name', user.displayName || '');
-      form.setValue('email', user.email || '');
+        form.setValue('phone', user.phoneNumber || '');
     }
   }, [user, userProfile, form]);
 
   async function onSubmit(data: FormData) {
-    if (user) {
-        const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
-        const transactionData = {
-          type: 'Airtime Purchase',
-          network: data.network,
-          amount: data.amount,
-          details: 'Airtime Top-up',
-          recipientPhone: data.phone,
-          status: 'Pending',
-          createdAt: serverTimestamp(),
-        };
-        const newDocRef = await addDocumentNonBlocking(transactionsRef, transactionData);
-        
-        if (newDocRef) {
-            setTimeout(() => {
-                updateDoc(newDocRef, { status: 'Completed' });
-            }, 120000); // 2 minutes
+    setIsLoading(true);
+    try {
+        const response = await fetch('/api/airtime', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                network_id: data.network,
+                amount: data.amount,
+                phone: data.phone,
+            }),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            toast({
+                title: "Airtime Purchase Successful",
+                description: `Successfully purchased ₦${data.amount} of airtime for ${data.phone}.`,
+            });
+            if (user && firestore) {
+                const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
+                addDocumentNonBlocking(transactionsRef, {
+                  type: 'Airtime Purchase',
+                  network: data.network,
+                  amount: data.amount,
+                  details: 'Airtime Top-up',
+                  recipientPhone: data.phone,
+                  status: 'Completed',
+                  createdAt: serverTimestamp(),
+                });
+            }
+        } else {
+            throw new Error(result.error || 'An unknown error occurred.');
         }
-      }
-
-    const networkName =
-      networkProviders.find((p) => p.id === data.network)?.name ||
-      data.network;
-
-    const message = `Hello DataConnect,
-
-I would like to purchase airtime.
-
-Service: Airtime Purchase
-Network: ${networkName}
-Amount: ₦${data.amount.toLocaleString()}
-Recipient Phone Number: ${data.phone}
-
-My Details:
-Name: ${data.name}
-${data.email ? `Email: ${data.email}` : ''}
-
-Please proceed with the top-up. Thank you.`;
-
-    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-      message
-    )}`;
-
-    window.open(whatsappUrl, '_blank');
+    } catch (error: any) {
+        console.error("Airtime purchase failed:", error);
+        toast({
+            title: "Airtime Purchase Failed",
+            description: error.message || "An unexpected error occurred. Please try again.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsLoading(false);
+    }
   }
 
   const getStatusVariant = (status?: string) => {
@@ -338,48 +325,15 @@ Please proceed with the top-up. Thank you.`;
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Tunde Ednut" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email (Optional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="For receipt"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
           </CardContent>
           <CardFooter className="flex-col items-stretch space-y-4">
-            <p className="text-center text-xs text-muted-foreground">
-              You will be redirected to WhatsApp to complete your purchase.
-            </p>
             <Button
               type="submit"
               className="w-full bg-accent text-accent-foreground hover:bg-accent/90 text-lg py-6 font-bold rounded-full shadow-lg transition-transform hover:scale-105"
-              disabled={!form.formState.isValid || form.formState.isSubmitting}
+              disabled={!form.formState.isValid || form.formState.isSubmitting || isLoading}
             >
-              Buy Airtime Now
+              {isLoading ? 'Processing...' : 'Buy Airtime Now'}
             </Button>
           </CardFooter>
         </form>
