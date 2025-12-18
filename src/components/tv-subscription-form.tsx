@@ -212,13 +212,7 @@ export function TvSubscriptionForm() {
         status: 'Pending',
         createdAt: serverTimestamp(),
       };
-      const newDocRef = await addDocumentNonBlocking(transactionsRef, transactionData);
-      
-      if (newDocRef) {
-        setTimeout(() => {
-            updateDoc(newDocRef, { status: 'Completed' });
-        }, 120000); // 2 minutes
-      }
+      addDocumentNonBlocking(transactionsRef, transactionData);
     }
 
     const providerName =

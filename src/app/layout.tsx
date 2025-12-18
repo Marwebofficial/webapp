@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
-import Nav from "@/components/nav";
+import Navbar from "@/components/Navbar";
 import { siteConfig } from "@/lib/utils";
 import { Metadata, Viewport } from "next";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
@@ -70,7 +70,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <FirebaseClientProvider>
-            <Nav />
+            <Navbar />
             {children}
             <ConditionalAboutSection />
             <Toaster />

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -32,7 +33,7 @@ interface UserProfile {
     photoURL?: string;
 }
 
-export default function Nav() {
+export default function Navbar() {
   const isMobile = useIsMobile();
   const [isSheetOpen, setSheetOpen] = useState(false);
   const { user, isUserLoading } = useUser();
@@ -250,6 +251,9 @@ export default function Nav() {
                     </span>
                   </Link>
                 </SheetTitle>
+                <SheetDescription>
+                  A mobile navigation menu for DataConnect.
+                </SheetDescription>
               </SheetHeader>
               <div className="flex flex-col gap-4 p-4">
                 <div className="flex flex-col gap-4 mt-4">{navLinks}</div>
