@@ -5,7 +5,7 @@ import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import Nav from "@/components/nav";
 import { siteConfig } from "@/lib/utils";
-import { Metadata } from "next";
+import { Metadata, Viewport } from "next";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { ConditionalAboutSection } from "@/components/conditional-about-section";
 
@@ -25,10 +25,6 @@ export const metadata: Metadata = {
     },
   ],
   creator: "shadcn",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "white" },
-    { media: "(prefers-color-scheme: dark)", color: "black" },
-  ],
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -50,6 +46,13 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.png",
   },
   manifest: `${siteConfig.url}/site.webmanifest`,
+}
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "white" },
+    { media: "(prefers-color-scheme: dark)", color: "black" },
+  ],
 }
 
 export default function RootLayout({

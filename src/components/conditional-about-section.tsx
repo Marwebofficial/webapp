@@ -6,7 +6,7 @@ import AboutSection from '@/components/about-section';
 export function ConditionalAboutSection() {
   const pathname = usePathname();
 
-  if (pathname.startsWith('/admin') || pathname.startsWith('/account')) {
+  if (pathname !== '/') {
     return null;
   }
 

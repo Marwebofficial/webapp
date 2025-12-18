@@ -247,7 +247,7 @@ export function DataPurchaseForm() {
         body: JSON.stringify({
           network_id: data.network,
           mobile_number: data.phone,
-          plan_id: planDetails.data_id, // Corrected: was planDetails.id
+          plan_id: planDetails.id,
         }),
       });
 
