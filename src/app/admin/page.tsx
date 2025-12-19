@@ -9,7 +9,6 @@ import { NetworkStatusManager } from "@/components/admin/NetworkStatusManager";
 import { ReviewManager } from "@/components/admin/ReviewManager";
 import { PlansManager } from "@/components/admin/PlansManager";
 import { networkProviders } from "@/lib/data-plans";
-import { tvProviders } from "@/lib/tv-plans";
 import { useUser } from "@/firebase/provider";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import { doc } from "firebase/firestore";
@@ -47,7 +46,6 @@ export default function AdminPage() {
             <NetworkStatusManager />
             <ReviewManager />
             <PlansManager title="Data Plans" providers={networkProviders} collectionName="dataPlans" />
-            <PlansManager title="TV Subscriptions" providers={tvProviders} collectionName="tvPlans" isTvPlan />
         </div>
     );
 }
