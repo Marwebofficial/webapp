@@ -33,12 +33,13 @@ export function HeroSection() {
                     </Button>
                 </div>
               </div>
-              <div className="relative aspect-video mx-auto overflow-hidden rounded-xl sm:w-full shadow-2xl">
+              <div className="relative aspect-video mx-auto overflow-hidden rounded-xl w-full shadow-2xl">
                  {heroImage && <Image
                     src={heroImage.imageUrl}
                     alt={heroImage.description}
                     fill
                     priority
+                    sizes="(max-width: 1024px) 100vw, 50vw"
                     className="object-cover"
                 />}
               </div>

@@ -42,6 +42,7 @@ interface Plan {
 
 interface UserProfile {
   walletBalance?: number;
+  pin?: string;
 }
 
 interface Transaction {
@@ -57,6 +58,7 @@ interface Transaction {
 export function SimpleDataPurchaseForm() {
   const [networkId, setNetworkId] = useState<number | ''>('');
   const [mobileNumber, setMobileNumber] = useState('');
+  const [pin, setPin] = useState('');
   const [selectedPlanDocId, setSelectedPlanDocId] = useState<string | ''>('');
   const [plans, setPlans] = useState<Plan[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -103,6 +105,12 @@ export function SimpleDataPurchaseForm() {
       setAlertState({ open: true, title: 'Error', message: 'You must be logged in to make a purchase.' });
       setIsLoading(false);
       return;
+    }
+
+    if (userProfile?.pin !== pin) {
+        setAlertState({ open: true, title: 'Invalid PIN', message: 'The PIN you entered is incorrect. Please try again.' });
+        setIsLoading(false);
+        return;
     }
 
     const selectedPlan = plans.find(p => p.id === selectedPlanDocId);
@@ -252,9 +260,21 @@ export function SimpleDataPurchaseForm() {
                 required
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="pin">Transaction PIN</Label>
+              <Input
+                id="pin"
+                type="password"
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
+                placeholder="****"
+                maxLength={4}
+                required
+              />
+            </div>
           </CardContent>
           <CardFooter className="flex flex-col items-stretch">
-            <Button type="submit" disabled={isLoading || isFetchingPlans || !selectedPlanDocId || !mobileNumber}>
+            <Button type="submit" disabled={isLoading || isFetchingPlans || !selectedPlanDocId || !mobileNumber || pin.length !== 4}>
               {isLoading ? 'Processing...' : 'Purchase'}
             </Button>
           </CardFooter>

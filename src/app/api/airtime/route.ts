@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
 
-const GONGOZ_API_KEY = 'cf1711071e40e0a69671c5b8d05cd8f328278933';
+const GONGOZ_API_KEY = '5fec546d385a3d03746e3243bc1396510748a6a0';
 const GONGOZ_API_URL = 'https://www.gongozconcept.com/api/topup/';
 
 const networkIdMap: { [key: string]: number } = {

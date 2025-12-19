@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { doc, collection, serverTimestamp, updateDoc, getDocs } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, getDocs } from 'firebase/firestore';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -49,9 +49,10 @@ const FormSchema = z.object({
   phone: z
     .string()
     .regex(
-      /^(\+234|0)?[7-9][01]\d{8}$/,
+      /^(\+234|0)?[7-9][01]\\d{8}$/,
       'Please enter a valid Nigerian phone number.'
     ),
+  pin: z.string().length(4, "PIN must be 4 digits."),
 });
 
 type FormData = z.infer<typeof FormSchema>;
@@ -60,6 +61,7 @@ interface UserProfile {
   name: string;
   email: string;
   phoneNumber: string;
+  pin?: string;
 }
 
 interface NetworkStatus {
@@ -145,6 +147,7 @@ export function AirtimePurchaseForm() {
     defaultValues: {
       phone: '',
       amount: 100,
+      pin: '',
     },
   });
 
@@ -170,7 +173,28 @@ export function AirtimePurchaseForm() {
   }, [user, userProfile, form]);
 
   async function onSubmit(data: FormData) {
+    if (!userProfile?.pin) {
+        toast({
+            title: "Set Transaction PIN",
+            description: "Please set your transaction PIN in your profile before making a purchase.",
+            variant: "destructive",
+        });
+        router.push('/account/profile');
+        return;
+    }
+
+    if (userProfile?.pin !== data.pin) {
+        toast({
+            title: "Invalid PIN",
+            description: "The PIN you entered is incorrect. Please try again.",
+            variant: "destructive",
+        });
+        form.setError("pin", { type: "manual", message: "The PIN you entered is incorrect." });
+        return;
+    }
+
     setIsLoading(true);
+
     try {
         const response = await fetch('/api/airtime', {
             method: 'POST',
@@ -201,6 +225,7 @@ export function AirtimePurchaseForm() {
                   createdAt: serverTimestamp(),
                 });
             }
+            form.reset();
         } else {
             throw new Error(result.error || 'An unknown error occurred.');
         }
@@ -234,6 +259,7 @@ export function AirtimePurchaseForm() {
   }
 
   return (
+    <>
     <Card className="w-full max-w-2xl mx-auto shadow-2xl animate-in fade-in-50 zoom-in-95 duration-500">
       <CardHeader>
         <CardTitle className="text-3xl font-headline text-center">
@@ -297,7 +323,7 @@ export function AirtimePurchaseForm() {
 
             <div className="space-y-4">
               <p className="text-lg font-semibold font-headline">
-                2. Enter Details
+                2. Enter Details & Authorize
               </p>
               <FormField
                 control={form.control}
@@ -325,6 +351,19 @@ export function AirtimePurchaseForm() {
                   </FormItem>
                 )}
               />
+               <FormField
+                control={form.control}
+                name="pin"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Transaction PIN</FormLabel>
+                    <FormControl>
+                      <Input type="password" maxLength={4} placeholder="****" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           </CardContent>
           <CardFooter className="flex-col items-stretch space-y-4">
@@ -339,5 +378,6 @@ export function AirtimePurchaseForm() {
         </form>
       </Form>
     </Card>
+    </>
   );
 }

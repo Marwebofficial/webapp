@@ -11,7 +11,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { Menu, Wifi, UserCircle, History, Shield } from 'lucide-react';
+import { Menu, Wifi, UserCircle, History, Shield, Tv } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useState, useMemo } from 'react';
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
@@ -64,6 +64,14 @@ export default function Navbar() {
         onClick={closeSheet}
       >
         Home
+      </Link>
+      <Link
+        href="/pay-tv"
+        className="text-sm font-medium hover:underline underline-offset-4"
+        prefetch={false}
+        onClick={closeSheet}
+      >
+        Pay TV
       </Link>
       <Link
         href="/#features"
@@ -154,6 +162,12 @@ export default function Navbar() {
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
+                <Link href="/pay-tv">
+                    <Tv className="mr-2 h-4 w-4" />
+                    <span>Pay TV</span>
+                </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
               <Link href="/history">
                 <History className="mr-2 h-4 w-4" />
                 <span>Purchase History</span>
@@ -192,6 +206,9 @@ export default function Navbar() {
           )}
           <Button asChild variant="outline" onClick={closeSheet}>
             <Link href="/account">My Account</Link>
+          </Button>
+          <Button asChild variant="outline" onClick={closeSheet}>
+            <Link href="/pay-tv">Pay TV</Link>
           </Button>
           <Button asChild variant="outline" onClick={closeSheet}>
             <Link href="/history">Purchase History</Link>

@@ -27,9 +27,6 @@ const FutureUpdatesSection = dynamic(() => import('./future-updates-section').th
 const EngagementSection = dynamic(() => import('./engagement-section').then(mod => mod.EngagementSection), {
     loading: () => <div className="h-96 w-full bg-gray-200 animate-pulse" />
 });
-const Footer = dynamic(() => import('./footer').then(mod => mod.Footer), {
-    loading: () => <div className="h-64 w-full bg-gray-200 animate-pulse" />
-});
 
 function TestimonialsSkeleton() {
     return (
@@ -75,21 +72,18 @@ export function LandingPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <main className="flex-1">
-        <HeroSection />
-        <KeyFeaturesSection />
-        <Suspense fallback={<div className="h-96 w-full bg-gray-200 animate-pulse" />}>
-            <AboutSection />
-        </Suspense>
-        <Suspense fallback={<TestimonialsSkeleton />}>
-          <Testimonials />
-        </Suspense>
-        <SecuritySection />
-        <FutureUpdatesSection />
-        <EngagementSection />
-      </main>
-      <Footer />
-    </div>
+    <>
+      <HeroSection />
+      <KeyFeaturesSection />
+      <Suspense fallback={<div className="h-96 w-full bg-gray-200 animate-pulse" />}>
+          <AboutSection />
+      </Suspense>
+      <Suspense fallback={<TestimonialsSkeleton />}>
+        <Testimonials />
+      </Suspense>
+      <SecuritySection />
+      <FutureUpdatesSection />
+      <EngagementSection />
+    </>
   );
 }

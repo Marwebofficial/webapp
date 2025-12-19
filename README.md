@@ -1,2 +1,2 @@
-These is dataconnectplztform
+These is dataconnect platform
 To get started, take a look at src/app/page.tsx.

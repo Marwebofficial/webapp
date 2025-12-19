@@ -3,7 +3,7 @@
 
 import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { useForm } from 'react-hook-form';
@@ -23,13 +23,23 @@ const profileSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters long.'),
 });
 
+const pinSchema = z.object({
+    pin: z.string().length(4, 'PIN must be 4 digits'),
+    confirmPin: z.string().length(4, 'PIN must be 4 digits'),
+}).refine((data) => data.pin === data.confirmPin, {
+    message: "PINs don't match",
+    path: ["confirmPin"],
+});
+
 type ProfileFormData = z.infer<typeof profileSchema>;
+type PinFormData = z.infer<typeof pinSchema>;
 
 interface UserProfile {
   name: string;
   email: string;
   phoneNumber: string;
   photoURL?: string;
+  pin?: string;
 }
 
 export default function ProfilePage() {
@@ -38,7 +48,8 @@ export default function ProfilePage() {
   const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmittingProfile, setIsSubmittingProfile] = useState(false);
+  const [isSubmittingPin, setIsSubmittingPin] = useState(false);
 
   const userDocRef = useMemoFirebase(
     () => (user ? doc(firestore, 'users', user.uid) : null),
@@ -46,8 +57,16 @@ export default function ProfilePage() {
   );
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
-  const form = useForm<ProfileFormData>({
+  const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
+  });
+
+  const pinForm = useForm<PinFormData>({
+    resolver: zodResolver(pinSchema),
+    defaultValues: {
+        pin: '',
+        confirmPin: '',
+    }
   });
 
   useEffect(() => {
@@ -55,19 +74,19 @@ export default function ProfilePage() {
       router.push('/login');
     }
     if (user) {
-      form.setValue('name', user.displayName || '');
+      profileForm.setValue('name', user.displayName || '');
     }
-  }, [user, isUserLoading, router, form]);
+  }, [user, isUserLoading, router, profileForm]);
 
-  const onSubmit = async (data: ProfileFormData) => {
+  const onProfileSubmit = async (data: ProfileFormData) => {
     if (!user || !userDocRef) return;
 
-    setIsSubmitting(true);
+    setIsSubmittingProfile(true);
     try {
       const authUpdates: { displayName?: string } = {};
       const firestoreUpdates: { name?: string } = {};
 
-      if (form.formState.dirtyFields.name) {
+      if (profileForm.formState.dirtyFields.name) {
         authUpdates.displayName = data.name;
         firestoreUpdates.name = data.name;
       }
@@ -84,7 +103,7 @@ export default function ProfilePage() {
         title: 'Profile updated!',
         description: 'Your name has been successfully saved.',
       });
-      form.reset({}, { keepValues: true }); // Reset dirty state
+      profileForm.reset({}, { keepValues: true }); // Reset dirty state
     } catch (error: any) {
       console.error('Error updating profile:', error);
       toast({
@@ -93,7 +112,29 @@ export default function ProfilePage() {
         variant: 'destructive',
       });
     } finally {
-      setIsSubmitting(false);
+      setIsSubmittingProfile(false);
+    }
+  };
+
+  const onPinSubmit = async (data: PinFormData) => {
+    if (!user || !userDocRef) return;
+    setIsSubmittingPin(true);
+    try {
+        await updateDoc(userDocRef, { pin: data.pin });
+        toast({
+            title: 'PIN Updated',
+            description: 'Your transaction PIN has been set successfully.',
+        });
+        pinForm.reset();
+    } catch (error: any) {
+        console.error('Error updating PIN:', error);
+        toast({
+            title: 'PIN Update Failed',
+            description: error.message || 'Could not update your PIN. Please try again.',
+            variant: 'destructive',
+        });
+    } finally {
+        setIsSubmittingPin(false);
     }
   };
 
@@ -135,56 +176,102 @@ export default function ProfilePage() {
           </Link>
         </Button>
       </div>
-      <Card className="max-w-2xl mx-auto shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-3xl">Manage Your Profile</CardTitle>
-          <CardDescription>View your account details and update your information.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <div className="flex flex-col items-center gap-6">
-                <Avatar className="w-32 h-32 text-4xl">
-                    <AvatarImage src={photoURL || undefined} alt={user?.displayName || 'User'} />
-                    <AvatarFallback>
-                    {user?.displayName ? user.displayName.charAt(0) : <UserIcon />}
-                    </AvatarFallback>
-                </Avatar>
-                 <div className="w-full space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Display Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Your display name" {...field} />
-                            </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                     <div className="space-y-3 rounded-md border p-4 bg-secondary/50">
-                        <div className="flex items-center gap-4">
-                            <Mail className="h-5 w-5 text-muted-foreground" />
-                            <span>{user?.email}</span>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <Phone className="h-5 w-5 text-muted-foreground" />
-                            <span>{userProfile?.phoneNumber || 'Not provided'}</span>
-                        </div>
-                    </div>
+      <div className="max-w-2xl mx-auto space-y-8">
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-3xl">Manage Your Profile</CardTitle>
+            <CardDescription>View your account details and update your information.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...profileForm}>
+              <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-8">
+                <div className="flex flex-col items-center gap-6">
+                  <Avatar className="w-32 h-32 text-4xl">
+                      <AvatarImage src={photoURL || undefined} alt={user?.displayName || 'User'} />
+                      <AvatarFallback>
+                      {user?.displayName ? user.displayName.charAt(0) : <UserIcon />}
+                      </AvatarFallback>
+                  </Avatar>
+                   <div className="w-full space-y-4">
+                      <FormField
+                        control={profileForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Display Name</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Your display name" {...field} />
+                              </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                       <div className="space-y-3 rounded-md border p-4 bg-secondary/50">
+                          <div className="flex items-center gap-4">
+                              <Mail className="h-5 w-5 text-muted-foreground" />
+                              <span>{user?.email}</span>
+                          </div>
+                          <div className="flex items-center gap-4">
+                              <Phone className="h-5 w-5 text-muted-foreground" />
+                              <span>{userProfile?.phoneNumber || 'Not provided'}</span>
+                          </div>
+                      </div>
+                  </div>
                 </div>
-              </div>
-              <div className="flex justify-end">
-                <Button type="submit" disabled={isSubmitting || !form.formState.isDirty}>
-                  {isSubmitting ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+                <div className="flex justify-end">
+                  <Button type="submit" disabled={isSubmittingProfile || !profileForm.formState.isDirty}>
+                    {isSubmittingProfile ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg">
+            <CardHeader>
+                <CardTitle className="text-3xl">Transaction PIN</CardTitle>
+                <CardDescription>Set or update your 4-digit transaction PIN for secure payments.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Form {...pinForm}>
+                    <form onSubmit={pinForm.handleSubmit(onPinSubmit)} className='space-y-6'>
+                        <FormField
+                            control={pinForm.control}
+                            name="pin"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>New PIN</FormLabel>
+                                    <FormControl>
+                                        <Input type="password" maxLength={4} placeholder="****" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={pinForm.control}
+                            name="confirmPin"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Confirm New PIN</FormLabel>
+                                    <FormControl>
+                                        <Input type="password" maxLength={4} placeholder="****" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <div className="flex justify-end">
+                            <Button type="submit" disabled={isSubmittingPin || !pinForm.formState.isDirty}>
+                                {isSubmittingPin ? 'Saving...' : (userProfile?.pin ? 'Update PIN' : 'Set PIN')}
+                            </Button>
+                        </div>
+                    </form>
+                </Form>
+            </CardContent>
+        </Card>
+      </div>
     </main>
   );
 }

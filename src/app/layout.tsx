@@ -7,7 +7,7 @@ import Navbar from "@/components/Navbar";
 import { siteConfig } from "@/lib/utils";
 import { Metadata, Viewport } from "next";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
-import { ConditionalAboutSection } from "@/components/conditional-about-section";
+import { Footer } from "@/components/footer";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -62,7 +62,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${inter.className} flex flex-col min-h-screen`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -71,8 +71,8 @@ export default function RootLayout({
         >
           <FirebaseClientProvider>
             <Navbar />
-            {children}
-            <ConditionalAboutSection />
+            <main className="flex-1">{children}</main>
+            <Footer />
             <Toaster />
           </FirebaseClientProvider>
         </ThemeProvider>

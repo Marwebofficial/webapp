@@ -52,16 +52,16 @@ const FormSchema = z.object({
   phone: z
     .string()
     .regex(
-      /^(\+234|0)?[7-9][01]\d{8}$/,
+      /^(\+234|0)?[7-9][01]\\d{8}$/,
       'Please enter a valid Nigerian phone number.'
     ),
+  pin: z.string().length(4, "PIN must be 4 digits."),
   name: z.string().optional(),
   email: z
     .string()
     .email('Please enter a valid email.')
     .optional()
-    .or(z.literal('')),
-  referral: z.string().optional(),
+    .or(z.literal(''))
 });
 
 type FormData = z.infer<typeof FormSchema>;
@@ -71,6 +71,7 @@ interface UserProfile {
   email: string;
   phoneNumber: string;
   walletBalance?: number;
+  pin?: string;
 }
 
 interface NetworkStatus {
@@ -121,6 +122,7 @@ export function DataPurchaseForm() {
   const [dataPlans, setDataPlans] = useState<DataPlan[]>([]);
   const [isLoadingPlans, setIsLoadingPlans] = useState(false);
   const [networkStatuses, setNetworkStatuses] = useState<NetworkStatus[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
@@ -166,7 +168,7 @@ export function DataPurchaseForm() {
       name: '',
       phone: '',
       email: '',
-      referral: '',
+      pin: '',
     },
   });
   
@@ -233,11 +235,34 @@ export function DataPurchaseForm() {
   };
 
   async function onSubmit(data: FormData) {
+    if (!userProfile?.pin) {
+        toast({
+            title: "Set Transaction PIN",
+            description: "Please set your transaction PIN in your profile before making a purchase.",
+            variant: "destructive",
+        });
+        router.push('/account/profile');
+        return;
+    }
+
+    if (userProfile?.pin !== data.pin) {
+        toast({
+            title: "Invalid PIN",
+            description: "The PIN you entered is incorrect. Please try again.",
+            variant: "destructive",
+        });
+        form.setError("pin", { type: "manual", message: "The PIN you entered is incorrect. Please try again." });
+        return;
+    }
+
     if (!dataPlans || !user || !firestore) return;
+
+    setIsSubmitting(true);
 
     const planDetails = dataPlans.find(p => p.id === data.data_id);
     if (!planDetails) {
       toast({ title: 'Error', description: 'Selected plan not found. Please try again.', variant: 'destructive' });
+      setIsSubmitting(false);
       return;
     }
 
@@ -245,6 +270,7 @@ export function DataPurchaseForm() {
 
     if (price === undefined) {
         toast({ title: 'Error', description: 'Plan price is not available. Please select another plan.', variant: 'destructive' });
+        setIsSubmitting(false);
         return;
     }
 
@@ -254,6 +280,7 @@ export function DataPurchaseForm() {
             description: `Your wallet balance is too low for this transaction. Please fund your wallet and try again.`,
             variant: 'destructive',
         });
+        setIsSubmitting(false);
         return;
     }
 
@@ -264,7 +291,7 @@ export function DataPurchaseForm() {
         body: JSON.stringify({
           network_id: data.network,
           mobile_number: data.phone,
-          plan_id: planDetails.data_id, // Use the correct numeric data_id
+          plan_id: planDetails.data_id,
         }),
       });
 
@@ -293,6 +320,7 @@ export function DataPurchaseForm() {
           title: 'Success',
           description: result.message || 'Data purchase successful!',
         });
+        form.reset();
 
       } else {
         batch.set(transactionRef, {
@@ -325,6 +353,8 @@ export function DataPurchaseForm() {
         description: errorMessage,
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   }
   
@@ -346,6 +376,7 @@ export function DataPurchaseForm() {
   }
 
   return (
+    <>
     <Card className="w-full max-w-2xl mx-auto shadow-2xl animate-in fade-in-50 zoom-in-95 duration-500">
       <CardHeader>
         <CardTitle className="text-3xl font-headline text-center">
@@ -470,7 +501,7 @@ export function DataPurchaseForm() {
 
             <div className="space-y-4">
               <p className="text-lg font-semibold font-headline">
-                3. Recipient Phone Number
+                3. Recipient Details & Authorization
               </p>
               <FormField
                 control={form.control}
@@ -485,19 +516,33 @@ export function DataPurchaseForm() {
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="pin"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Transaction PIN</FormLabel>
+                    <FormControl>
+                      <Input type="password" maxLength={4} placeholder="****" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           </CardContent>
           <CardFooter className="flex-col items-stretch space-y-4">
             <Button
               type="submit"
               className="w-full bg-accent text-accent-foreground hover:bg-accent/90 text-lg py-6 font-bold rounded-full shadow-lg transition-transform hover:scale-105"
-              disabled={!form.formState.isValid || form.formState.isSubmitting}
+              disabled={!form.formState.isValid || isSubmitting}
             >
-               {form.formState.isSubmitting ? 'Processing...' : 'Buy Now'}
+               {isSubmitting ? 'Processing...' : 'Buy Now'}
             </Button>
           </CardFooter>
         </form>
       </Form>
     </Card>
+    </>
   );
 }
