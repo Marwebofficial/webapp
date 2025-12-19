@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     console.log('Received request with body:', body);
 
     const { network_id, mobile_number, plan_id } = body;
-    const Ported_number = body.Ported_number !== undefined ? body.Ported_number : true;
+    const Ported_number = body.Ported_number !== undefined ? body.Ported_number : false;
 
     if (!network_id || !mobile_number || !plan_id) {
       return NextResponse.json({ error: 'Missing required fields: network_id, mobile_number, and plan_id are required.' }, { status: 400 });

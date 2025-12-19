@@ -31,7 +31,10 @@ export function Receipt({ transaction, onBack }: ReceiptProps) {
       html2canvas(input).then((canvas) => {
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF();
-        pdf.addImage(imgData, 'PNG', 0, 0);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const canvasAspectRatio = canvas.height / canvas.width;
+        const scaledHeight = pdfWidth * canvasAspectRatio;
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, scaledHeight);
         pdf.save("receipt.pdf");
       });
        if(onBackButton) {

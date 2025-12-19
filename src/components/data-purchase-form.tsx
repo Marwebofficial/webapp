@@ -29,7 +29,6 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   networkProviders,
-  type DataPlan,
   type Network,
 } from '@/lib/data-plans';
 import { NetworkIcon } from './network-icons';
@@ -39,7 +38,14 @@ import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
 import { useRouter } from 'next/navigation';
 
-export type { DataPlan };
+export type DataPlan = {
+  id: string;
+  label: string;
+  validity?: string;
+  data_id?: string;
+  provider?: string;
+  amount?: number;
+};
 
 const FormSchema = z.object({
   network: z.custom<Network>(

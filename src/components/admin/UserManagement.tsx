@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useFirestore } from "@/firebase";
 import { collection, query, orderBy, doc, getDoc, updateDoc } from "firebase/firestore";
 import { useCollection } from "@/firebase/firestore/use-collection";
@@ -22,21 +22,20 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Trash2, Wallet, X } from 'lucide-react';
-import { useMemoFirebase } from '@/firebase/firestore/use-memo-firebase';
 
 export function UserManagement() {
     const firestore = useFirestore();
     const [search, setSearch] = useState('');
     const [amountToClear, setAmountToClear] = useState('');
 
-    const usersQuery = useMemoFirebase(() => {
+    const usersQuery = useMemo(() => {
         if (!firestore) return null;
         return query(collection(firestore, "users"), orderBy("name", "desc"));
     }, [firestore]);
 
     const { data: users, isLoading, error } = useCollection(usersQuery);
 
-    const filteredUsers = useMemoFirebase(() => {
+    const filteredUsers = useMemo(() => {
         if (!users) return [];
         return users.filter(user =>
             (user.name?.toLowerCase() || '').includes(search.toLowerCase()) ||

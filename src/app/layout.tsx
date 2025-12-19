@@ -8,6 +8,7 @@ import { siteConfig } from "@/lib/utils";
 import { Metadata, Viewport } from "next";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { Footer } from "@/components/footer";
+import { FirebaseErrorListener } from "@/components/FirebaseErrorListener";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -70,6 +71,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <FirebaseClientProvider>
+            <FirebaseErrorListener />
             <Navbar />
             <main className="flex-1">{children}</main>
             <Footer />
