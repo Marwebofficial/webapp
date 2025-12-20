@@ -14,11 +14,11 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: {
-    default: siteConfig.name,
-    template: `%s | ${siteConfig.name}`,
+    default: "Dataconnect Nigeria",
+    template: `%s | ${"Dataconnect Nigeria"}`,
   },
   description: siteConfig.description,
-  keywords: ["Next.js", "React", "Tailwind CSS", "Server Components", "Radix UI"],
+  keywords: ["buy data Nigeria", "cheap data plans", "MTN data", "Glo data", "Airtel data", "9mobile data", "buy airtime Nigeria", "sell airtime for cash", "data reseller Nigeria", "VTU portal Nigeria", "how to buy cheap data in Nigeria", "best data plans Nigeria", "MTN cheap data code", "Glo cheap data code", "Airtel cheap data code", "9mobile cheap data code", "data subscription Nigeria", "airtime to cash converter", "VTU business in Nigeria", "data reselling website", "cheap internet data plans", "mobile data Nigeria"],
   authors: [
     {
       name: "shadcn",
@@ -30,13 +30,13 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: siteConfig.url,
-    title: siteConfig.name,
+    title: "Dataconnect Nigeria",
     description: siteConfig.description,
-    siteName: siteConfig.name,
+    siteName: "Dataconnect Nigeria",
   },
   twitter: {
     card: "summary_large_image",
-    title: siteConfig.name,
+    title: "Dataconnect Nigeria",
     description: siteConfig.description,
     images: [`${siteConfig.url}/og.jpg`],
     creator: "@shadcn",
