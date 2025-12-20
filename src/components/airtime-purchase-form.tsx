@@ -5,13 +5,14 @@ import { useState, useEffect, useMemo } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { doc, collection, serverTimestamp, getDocs } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, getDocs, writeBatch, increment } from 'firebase/firestore';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -30,10 +31,11 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { networkProviders, type Network } from '@/lib/data-plans';
 import { NetworkIcon } from './network-icons';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { Badge } from './ui/badge';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from './ui/skeleton';
+import { Checkbox } from './ui/checkbox';
 
 const FormSchema = z.object({
   network: z.custom<Network>(
@@ -49,10 +51,11 @@ const FormSchema = z.object({
   phone: z
     .string()
     .regex(
-      /^(\+234|0)?[7-9][01]\\d{8}$/,
+      /^(\+234|0)?[789]\d{9}$/,
       'Please enter a valid Nigerian phone number.'
     ),
   pin: z.string().length(4, "PIN must be 4 digits."),
+  portedNumber: z.boolean().default(false),
 });
 
 type FormData = z.infer<typeof FormSchema>;
@@ -62,6 +65,7 @@ interface UserProfile {
   email: string;
   phoneNumber: string;
   pin?: string;
+  walletBalance?: number;
 }
 
 interface NetworkStatus {
@@ -144,10 +148,13 @@ export function AirtimePurchaseForm() {
 
   const form = useForm<FormData>({
     resolver: zodResolver(FormSchema),
+    mode: 'onChange',
+    reValidateMode: 'onChange',
     defaultValues: {
       phone: '',
       amount: 100,
       pin: '',
+      portedNumber: false,
     },
   });
 
@@ -193,6 +200,19 @@ export function AirtimePurchaseForm() {
         return;
     }
 
+    if (!user || !firestore) return;
+
+    const price = data.amount;
+
+    if (!userProfile || (userProfile.walletBalance || 0) < price) {
+        toast({
+            title: 'Insufficient Funds',
+            description: `Your wallet balance is too low for this transaction. Please fund your wallet and try again.`,
+            variant: 'destructive',
+        });
+        return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -203,30 +223,48 @@ export function AirtimePurchaseForm() {
                 network_id: data.network,
                 amount: data.amount,
                 phone: data.phone,
+                Ported_number: data.portedNumber,
             }),
         });
 
         const result = await response.json();
+        const batch = writeBatch(firestore);
+        const userRef = doc(firestore, 'users', user.uid);
+        const transactionRef = doc(collection(firestore, 'users', user.uid, 'transactions'));
 
         if (response.ok) {
+            batch.update(userRef, { walletBalance: increment(-price) });
+            batch.set(transactionRef, {
+                type: 'Airtime Purchase',
+                network: data.network,
+                amount: price,
+                details: 'Airtime Top-up',
+                recipientPhone: data.phone,
+                status: 'Completed',
+                createdAt: serverTimestamp(),
+                transactionId: result.transaction_id || null
+            });
+            await batch.commit();
+
             toast({
                 title: "Airtime Purchase Successful",
                 description: `Successfully purchased ₦${data.amount} of airtime for ${data.phone}.`,
             });
-            if (user && firestore) {
-                const transactionsRef = collection(firestore, 'users', user.uid, 'transactions');
-                addDocumentNonBlocking(transactionsRef, {
-                  type: 'Airtime Purchase',
-                  network: data.network,
-                  amount: data.amount,
-                  details: 'Airtime Top-up',
-                  recipientPhone: data.phone,
-                  status: 'Completed',
-                  createdAt: serverTimestamp(),
-                });
-            }
+            
             form.reset();
         } else {
+             batch.set(transactionRef, {
+                type: 'Airtime Purchase',
+                network: data.network,
+                amount: price,
+                details: 'Airtime Top-up',
+                recipientPhone: data.phone,
+                status: 'Failed',
+                createdAt: serverTimestamp(),
+                transactionId: result.transaction_id || null
+            });
+            await batch.commit();
+
             throw new Error(result.error || 'An unknown error occurred.');
         }
     } catch (error: any) {
@@ -348,6 +386,28 @@ export function AirtimePurchaseForm() {
                       <Input placeholder="e.g., 08012345678" {...field} />
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="portedNumber"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Ported Number
+                      </FormLabel>
+                      <FormDescription>
+                        Select this if the phone number has been ported to a different network.
+                      </FormDescription>
+                    </div>
                   </FormItem>
                 )}
               />

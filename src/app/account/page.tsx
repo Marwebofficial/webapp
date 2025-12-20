@@ -7,7 +7,7 @@ import { useEffect, useState, Suspense, lazy } from 'react';
 import { doc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Smartphone, Phone, Tv, Repeat, Megaphone } from 'lucide-react';
+import { Smartphone, Phone, Repeat, Megaphone } from 'lucide-react';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
@@ -219,7 +219,6 @@ export default function AccountPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <ActionCard href="/buy-data" title="Buy Data" icon={<Smartphone className="w-8 h-8 text-primary" />} />
                     <ActionCard href="/buy-airtime" title="Buy Airtime" icon={<Phone className="w-8 h-8 text-primary" />} />
-                    <ActionCard href="/tv-subscription" title="TV Subscription" icon={<Tv className="w-8 h-8 text-primary" />} />
                     <ActionCard href="/airtime-to-cash" title="Airtime to Cash" icon={<Repeat className="w-8 h-8 text-primary" />} />
                 </div>
                 </CardContent>

@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
+import BlogPostSidebar from '@/components/BlogPostSidebar';
 
 interface Attachment {
     name: string;
@@ -87,74 +88,81 @@ export default function BlogPostPage() {
 
     return (
         <main className="container mx-auto p-4 py-8 md:py-12">
-            <article className="max-w-4xl mx-auto">
-                <div className="mb-8">
-                    <Button asChild variant="ghost">
-                        <Link href="/blog">
-                            <ChevronLeft className="w-4 h-4 mr-2" />
-                            Back to Blog
-                        </Link>
-                    </Button>
-                </div>
-                <header className="mb-8">
-                    <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight mb-4 text-gray-900 dark:text-gray-100">
-                        {post.title}
-                    </h1>
-                    <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-2">
-                             <Avatar className="h-8 w-8">
-                                <AvatarImage src={undefined} alt={post.author} />
-                                <AvatarFallback>{post.author.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <span>By {post.author}</span>
+            <div className="flex flex-col md:flex-row gap-8">
+                <div className="md:w-3/4">
+                    <article className="max-w-4xl mx-auto">
+                        <div className="mb-8">
+                            <Button asChild variant="ghost">
+                                <Link href="/blog">
+                                    <ChevronLeft className="w-4 h-4 mr-2" />
+                                    Back to Blog
+                                </Link>
+                            </Button>
                         </div>
-                        <div className="flex items-center gap-2">
-                             <Calendar className="w-4 h-4" />
-                            <time dateTime={new Date(post.createdAt.seconds * 1000).toISOString()}>
-                                {format(new Date(post.createdAt.seconds * 1000), 'MMMM d, yyyy')}
-                            </time>
+                        <header className="mb-8">
+                            <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight mb-4 text-gray-900 dark:text-gray-100">
+                                {post.title}
+                            </h1>
+                            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-2">
+                                     <Avatar className="h-8 w-8">
+                                        <AvatarImage src={undefined} alt={post.author} />
+                                        <AvatarFallback>{post.author.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <span>By {post.author}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                     <Calendar className="w-4 h-4" />
+                                    <time dateTime={new Date(post.createdAt.seconds * 1000).toISOString()}>
+                                        {format(new Date(post.createdAt.seconds * 1000), 'MMMM d, yyyy')}
+                                    </time>
+                                </div>
+                            </div>
+                        </header>
+                        <div className="relative aspect-video w-full rounded-lg overflow-hidden mb-12 shadow-lg">
+                            <Image
+                                src={post.imageUrl || `https://picsum.photos/seed/${post.id}/1200/675`}
+                                alt={post.title}
+                                fill
+                                className="object-cover"
+                                priority
+                            />
                         </div>
-                    </div>
-                </header>
-                <div className="relative aspect-video w-full rounded-lg overflow-hidden mb-12 shadow-lg">
-                    <Image
-                        src={post.imageUrl || `https://picsum.photos/seed/${post.id}/1200/675`}
-                        alt={post.title}
-                        fill
-                        className="object-cover"
-                        priority
-                    />
-                </div>
-                
-                <div className="prose prose-lg dark:prose-invert max-w-none">
-                  <ReactMarkdown rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
-                </div>
+                        
+                        <div className="prose prose-lg dark:prose-invert max-w-none">
+                          <ReactMarkdown rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
+                        </div>
 
-                {post.attachments && post.attachments.length > 0 && (
-                    <section className="mt-12">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-xl">Downloads</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <ul className="space-y-3">
-                                    {post.attachments.map((file, index) => (
-                                        <li key={index} className="flex items-center justify-between">
-                                            <span className="font-medium">{file.name}</span>
-                                            <Button asChild variant="outline" size="sm">
-                                                <a href={file.url} download={file.name}>
-                                                    <Download className="mr-2 h-4 w-4" />
-                                                    Download
-                                                </a>
-                                            </Button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </CardContent>
-                        </Card>
-                    </section>
-                )}
-            </article>
+                        {post.attachments && post.attachments.length > 0 && (
+                            <section className="mt-12">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-xl">Downloads</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <ul className="space-y-3">
+                                            {post.attachments.map((file, index) => (
+                                                <li key={index} className="flex items-center justify-between">
+                                                    <span className="font-medium">{file.name}</span>
+                                                    <Button asChild variant="outline" size="sm">
+                                                        <a href={file.url} download={file.name}>
+                                                            <Download className="mr-2 h-4 w-4" />
+                                                            Download
+                                                        </a>
+                                                    </Button>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </CardContent>
+                                </Card>
+                            </section>
+                        )}
+                    </article>
+                </div>
+                <div className="md:w-1/4">
+                    <BlogPostSidebar />
+                </div>
+            </div>
         </main>
     );
 }
