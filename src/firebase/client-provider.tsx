@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useMemo, type ReactNode } from 'react';
-import FirebaseProvider from '@/firebase/provider';
-import { initializeFirebase } from '@/firebase';
+import React, { useMemo, type ReactNode, useContext } from 'react';
+import FirebaseProvider, { FirebaseContext } from '@/firebase/provider';
+import { initializeFirebase } from './initialize';
+import { Firestore } from 'firebase/firestore';
 
 interface FirebaseClientProviderProps {
   children: ReactNode;
@@ -24,3 +25,11 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     </FirebaseProvider>
   );
 }
+
+export const useFirestore = (): Firestore => {
+  const context = useContext(FirebaseContext);
+  if (!context || !context.firestore) {
+    throw new Error('useFirestore must be used within a FirebaseProvider and have a firestore instance');
+  }
+  return context.firestore;
+};

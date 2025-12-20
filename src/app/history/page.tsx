@@ -33,10 +33,8 @@ interface Transaction {
   details: string;
   recipientPhone: string;
   status: 'Pending' | 'Completed' | 'Failed';
-  createdAt: {
-    seconds: number;
-    nanoseconds: number;
-  } | any;
+  createdAt: any;
+  failureReason?: string;
 }
 
 export default function HistoryPage() {
@@ -98,7 +96,13 @@ export default function HistoryPage() {
   if (selectedTransaction) {
     return (
       <div className="container mx-auto p-4 py-8 md:p-12">
-        <Receipt transaction={selectedTransaction} onBack={() => setSelectedTransaction(null)} />
+        <Receipt 
+            transaction={{
+                ...selectedTransaction,
+                createdAt: selectedTransaction.createdAt.toDate(),
+            }}
+            onBack={() => setSelectedTransaction(null)} 
+        />
       </div>
     );
   }

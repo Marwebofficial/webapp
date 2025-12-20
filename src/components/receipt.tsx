@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { Wifi } from 'lucide-react';
+import { Wifi, AlertTriangle } from 'lucide-react';
 
 interface ReceiptProps {
   transaction: {
@@ -14,8 +14,9 @@ interface ReceiptProps {
     details: string;
     recipientPhone: string;
     status: string;
-    createdAt: any; // Consider a more specific type
+    createdAt: Date;
     transactionId?: string;
+    failureReason?: string;
   };
   onBack?: () => void;
 }
@@ -24,22 +25,14 @@ export function Receipt({ transaction, onBack }: ReceiptProps) {
   const downloadPdf = () => {
     const input = document.getElementById('receipt-content');
     if (input) {
-      const onBackButton = document.getElementById('on-back-button');
-      if(onBackButton) {
-        onBackButton.style.display = 'none';
-      }
       html2canvas(input).then((canvas) => {
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF();
         const pdfWidth = pdf.internal.pageSize.getWidth();
-        const canvasAspectRatio = canvas.height / canvas.width;
-        const scaledHeight = pdfWidth * canvasAspectRatio;
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, scaledHeight);
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
         pdf.save("receipt.pdf");
       });
-       if(onBackButton) {
-        onBackButton.style.display = 'block';
-      }
     }
   };
 
@@ -74,13 +67,19 @@ export function Receipt({ transaction, onBack }: ReceiptProps) {
         </div>
          <div className="flex justify-between">
           <span className="text-muted-foreground">Date:</span>
-          <span className="font-medium">{new Date(transaction.createdAt?.toDate()).toLocaleString()}</span>
+          <span className="font-medium">{transaction.createdAt.toLocaleString()}</span>
         </div>
          {transaction.transactionId && (
-        <div className="flex justify-between">
-            <span className="text-muted-foreground">Transaction ID:</span>
-            <span className="font-medium">{transaction.transactionId}</span>
-        </div>
+            <div className="flex justify-between">
+                <span className="text-muted-foreground">Transaction ID:</span>
+                <span className="font-medium">{transaction.transactionId}</span>
+            </div>
+        )}
+         {transaction.status === 'Failed' && transaction.failureReason && (
+            <div className="flex justify-between items-center bg-red-50 p-3 rounded-md">
+                <AlertTriangle className="w-5 h-5 text-red-500 mr-2"/>
+                <span className="text-red-700 text-sm">{transaction.failureReason}</span>
+            </div>
         )}
         <div className="border-t border-dashed my-4" />
         <div className="flex justify-between items-center">
@@ -92,7 +91,7 @@ export function Receipt({ transaction, onBack }: ReceiptProps) {
       </CardContent>
       <div className="p-6 text-center space-y-4">
         <Button onClick={downloadPdf} className="w-full">Download PDF</Button>
-        {onBack && <Button onClick={onBack} variant="outline" id="on-back-button" className="w-full">Back to History</Button>}
+        {onBack && <Button onClick={onBack} variant="outline" className="w-full">Back to History</Button>}
       </div>
     </Card>
   );

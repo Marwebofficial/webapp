@@ -1,37 +1,18 @@
-'use client';
-
-import { firebaseConfig } from '@/firebase/config';
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore'
-
-// IMPORTANT: DO NOT MODIFY THIS FUNCTION
-export function initializeFirebase() {
-  if (!getApps().length) {
-    // For environments like Vercel, we must initialize with the config object.
-    // The previous try/catch for automatic initialization is specific to Firebase App Hosting.
-    const firebaseApp = initializeApp(firebaseConfig);
-    return getSdks(firebaseApp);
-  }
-
-  // If already initialized, return the SDKs with the already initialized App
-  return getSdks(getApp());
-}
-
-export function getSdks(firebaseApp: FirebaseApp) {
-  return {
-    firebaseApp,
-    auth: getAuth(firebaseApp),
-    firestore: getFirestore(firebaseApp)
-  };
-}
-
+export { FirebaseClientProvider } from './client-provider';
+export * from './config';
+export * from './error-emitter';
+export * from './errors';
+export * from './initialize';
+export * from './non-blocking-login';
+export * from './non-blocking-updates';
 export * from './provider';
-export * from './client-provider';
+export * from './use-memo-firebase';
+export * from './firestore/announcements';
+export * from './firestore/blog';
+export * from './firestore/funding';
+export * from './firestore/network-status';
+export * from './firestore/plans';
+export * from './firestore/reviews';
 export * from './firestore/use-collection';
 export * from './firestore/use-doc';
-export * from './non-blocking-updates';
-export * from './non-blocking-login';
-export * from './errors';
-export * from './error-emitter';
-export * from './use-memo-firebase';
+export * from './firestore/users';

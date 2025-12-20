@@ -53,6 +53,7 @@ interface Transaction {
   status: string;
   createdAt: any;
   transactionId?: string;
+  failureReason?: string;
 }
 
 export function SimpleDataPurchaseForm() {
