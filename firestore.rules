@@ -19,12 +19,11 @@ service cloud.firestore {
         return request.auth.token.email == 'samuelmarvel21@gmail.com';
     }
 
-    function isUpdatingOwnRequest(userId) {
-      return isOwner(userId) && request.resource.data.keys().hasOnly(['pendingFundingRequest']);
-    }
-
-    function isUpdatingSavedPosts(userId) {
-      return isOwner(userId) && request.resource.data.keys().hasOnly(['savedPosts']);
+    function userCanUpdate(userId) {
+      // A user can update their own document if they are the owner,
+      // AND the update request does not change their 'walletBalance'.
+      // This is checked by comparing the balance before and after the update.
+      return isOwner(userId) && request.resource.data.walletBalance == resource.data.walletBalance;
     }
 
     // ----------------------------------------------------------------
@@ -35,7 +34,9 @@ service cloud.firestore {
       allow read: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
       allow create: if isOwner(userId);
-      allow update: if isUpdatingOwnRequest(userId) || isUpdatingSavedPosts(userId) || isAdmin();
+      // An update is allowed if it's from the user and doesn't change the walletBalance,
+      // OR if it's from an admin.
+      allow update: if userCanUpdate(userId) || isAdmin();
       allow delete: if isOwner(userId) || isAdmin();
 
       match /transactions/{transactionId} {
@@ -78,7 +79,8 @@ service cloud.firestore {
     }
 
     match /funding/{requestId} {
-        allow read, list, write: if isAdmin();
+        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+        allow read, list, update, delete: if isAdmin();
     }
   }
 }

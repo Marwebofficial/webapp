@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { doc, collection, serverTimestamp, getDocs, writeBatch, increment, query, where } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, getDocs, writeBatch, increment, query, where, Timestamp } from 'firebase/firestore';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
 import { useRouter } from 'next/navigation';
+import { Receipt } from './receipt'; // Import the Receipt component
 
 export type DataPlan = {
   id: string;
@@ -46,6 +47,18 @@ export type DataPlan = {
   provider?: string;
   amount?: number;
 };
+
+// Define a type for the transaction to be passed to the receipt
+interface TransactionData {
+    type: string;
+    network?: string;
+    details: string;
+    recipientPhone: string;
+    status: 'Completed' | 'Failed';
+    createdAt: Date;
+    transactionId?: string;
+    failureReason?: string;
+}
 
 const FormSchema = z.object({
   network: z.custom<Network>(
@@ -129,6 +142,7 @@ export function DataPurchaseForm() {
   const [isLoadingPlans, setIsLoadingPlans] = useState(false);
   const [networkStatuses, setNetworkStatuses] = useState<NetworkStatus[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [latestTransaction, setLatestTransaction] = useState<TransactionData | null>(null); // State for receipt
 
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
@@ -290,6 +304,8 @@ export function DataPurchaseForm() {
         return;
     }
 
+    let transactionData: TransactionData;
+
     try {
       const response = await fetch('/api/data', {
         method: 'POST',
@@ -305,20 +321,23 @@ export function DataPurchaseForm() {
       const batch = writeBatch(firestore);
       const userRef = doc(firestore, 'users', user.uid);
       const transactionRef = doc(collection(firestore, 'users', user.uid, 'transactions'));
+      
+      const now = new Date();
 
       if (response.ok && result.status === 'success') {
         batch.update(userRef, { walletBalance: increment(-price) });
         
-        batch.set(transactionRef, {
+        transactionData = {
             type: 'Data Purchase',
             network: data.network,
-            amount: price,
             details: planDetails.label,
             recipientPhone: data.phone,
             status: 'Completed',
-            createdAt: serverTimestamp(),
+            createdAt: now,
             transactionId: result.transaction_id || null
-        });
+        };
+        
+        batch.set(transactionRef, { ...transactionData, createdAt: Timestamp.fromDate(now) });
 
         await batch.commit();
 
@@ -327,20 +346,25 @@ export function DataPurchaseForm() {
           description: result.message || 'Data purchase successful!',
         });
         form.reset();
+        setLatestTransaction(transactionData); // Show receipt
 
       } else {
-        batch.set(transactionRef, {
+        transactionData = {
             type: 'Data Purchase',
             network: data.network,
-            amount: price,
             details: planDetails.label,
             recipientPhone: data.phone,
             status: 'Failed',
-            createdAt: serverTimestamp(),
-            transactionId: result.transaction_id || null
-        });
+            createdAt: now,
+            transactionId: result.transaction_id || null,
+            failureReason: result.error || 'Data purchase failed. Please try again.'
+        };
+        
+        batch.set(transactionRef, { ...transactionData, createdAt: Timestamp.fromDate(now) });
         
         await batch.commit();
+        
+        setLatestTransaction(transactionData); // Show receipt for failed transaction
 
         toast({
           title: 'Purchase Failed',
@@ -376,9 +400,17 @@ export function DataPurchaseForm() {
         return 'outline';
     }
   };
+  
+  const handleBackToForm = () => {
+    setLatestTransaction(null);
+  };
 
   if (isUserLoading || !user) {
     return <PurchaseFormSkeleton />;
+  }
+  
+  if (latestTransaction) {
+    return <Receipt transaction={latestTransaction} onBack={handleBackToForm} />;
   }
 
   return (
@@ -403,9 +435,7 @@ export function DataPurchaseForm() {
                   <FormLabel className="text-lg font-semibold font-headline flex justify-between items-center">
                     <span>1. Select Network</span>
                     {currentNetworkStatus && (
-                      <Badge variant={getStatusVariant(currentNetworkStatus.status)}>
-                        {currentNetworkStatus.status}
-                      </Badge>
+                      <Badge variant={getStatusVariant(currentNetworkStatus.status)}>{currentNetworkStatus.status}</Badge>
                     )}
                   </FormLabel>
                   <FormControl>

@@ -6,11 +6,13 @@ import { useFirestore } from '@/firebase/client-provider';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Edit, User as UserIcon } from 'lucide-react';
+import { Edit, User as UserIcon, Wallet } from 'lucide-react';
 import Link from 'next/link';
+import { FundWalletDialog } from '@/components/fund-wallet-dialog';
 
 interface UserProfile {
     photoURL?: string;
+    pendingFundingRequest?: boolean;
 }
 
 export function AccountInfo() {
@@ -29,7 +31,7 @@ export function AccountInfo() {
 
     return (
         <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16">
                         <AvatarImage src={photoURL || undefined} alt={user.displayName || 'User'} />
@@ -42,12 +44,19 @@ export function AccountInfo() {
                         <CardDescription>{user.email}</CardDescription>
                     </div>
                 </div>
-                <Button asChild variant="outline">
-                    <Link href="/account/profile">
-                        <Edit className="mr-2 h-4 w-4" />
-                        Manage Profile
-                    </Link>
-                </Button>
+                <div className="flex items-center gap-2 self-end md:self-center">
+                     <FundWalletDialog>
+                        <Button disabled={!!userProfile?.pendingFundingRequest}>
+                            <Wallet className="mr-2 h-4 w-4" /> Fund Wallet
+                        </Button>
+                    </FundWalletDialog>
+                    <Button asChild variant="outline">
+                        <Link href="/account/profile">
+                            <Edit className="mr-2 h-4 w-4" />
+                            Manage Profile
+                        </Link>
+                    </Button>
+                </div>
             </CardHeader>
         </Card>
     );

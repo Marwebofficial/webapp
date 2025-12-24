@@ -21,12 +21,13 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Trash2, Wallet, X } from 'lucide-react';
+import { Trash2, Wallet, X, CreditCard } from 'lucide-react';
 
 export function UserManagement() {
     const firestore = useFirestore();
     const [search, setSearch] = useState('');
     const [amountToClear, setAmountToClear] = useState('');
+    const [amountToAdd, setAmountToAdd] = useState('');
 
     const usersQuery = useMemo(() => {
         if (!firestore) return null;
@@ -106,6 +107,37 @@ export function UserManagement() {
         setAmountToClear(''); // Reset the input
     };
 
+    const handleAddMoney = async (userId: string, amountString: string) => {
+        const amount = parseFloat(amountString);
+        if (isNaN(amount) || amount <= 0) {
+            alert('Please enter a valid positive amount.');
+            return;
+        }
+    
+        const userRef = doc(firestore, 'users', userId);
+        
+        try {
+            const userDoc = await getDoc(userRef);
+    
+            if (userDoc.exists()) {
+                const currentBalance = userDoc.data().walletBalance || 0;
+                const newBalance = currentBalance + amount;
+                await updateDoc(userRef, { walletBalance: newBalance });
+                alert(`Successfully added ₦${amount}. New balance is ₦${newBalance.toLocaleString()}.`);
+            } else {
+                alert('User document not found.');
+            }
+        } catch (error) {
+            console.error("Error adding money: ", error);
+            if (error instanceof Error) {
+                alert(`Failed to add money: ${error.message}`);
+            } else {
+                alert('Failed to add money: An unknown error occurred');
+            }
+        }
+        setAmountToAdd(''); // Reset the input
+    };
+
     return (
         <Card>
             <CardHeader>
@@ -140,6 +172,30 @@ export function UserManagement() {
                                     <TableCell>{user.role || 'user'}</TableCell>
                                     <TableCell>₦{user.walletBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</TableCell>
                                     <TableCell className='space-x-2'>
+                                        <AlertDialog onOpenChange={() => setAmountToAdd('')}>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="outline" size="sm"><CreditCard className="h-4 w-4 mr-2"/>Add Money</Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Add Money</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Enter the amount to add to {user.name}'s wallet.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <Input 
+                                                    type='number' 
+                                                    placeholder='e.g., 1000'
+                                                    value={amountToAdd}
+                                                    onChange={(e) => setAmountToAdd(e.target.value)}
+                                                />
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleAddMoney(user.id, amountToAdd)}>Add Amount</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+
                                         <AlertDialog>
                                              <AlertDialogTrigger asChild>
                                                 <Button variant="outline" size="sm"><Wallet className="h-4 w-4 mr-2"/>Clear Balance</Button>

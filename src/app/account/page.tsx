@@ -219,7 +219,6 @@ export default function AccountPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <ActionCard href="/buy-data" title="Buy Data" icon={<Smartphone className="w-8 h-8 text-primary" />} />
                     <ActionCard href="/buy-airtime" title="Buy Airtime" icon={<Phone className="w-8 h-8 text-primary" />} />
-                    <ActionCard href="/airtime-to-cash" title="Airtime to Cash" icon={<Repeat className="w-8 h-8 text-primary" />} />
                 </div>
                 </CardContent>
             </Card>

@@ -9,7 +9,6 @@ export * from './provider';
 export * from './use-memo-firebase';
 export * from './firestore/announcements';
 export * from './firestore/blog';
-export * from './firestore/funding';
 export * from './firestore/network-status';
 export * from './firestore/plans';
 export * from './firestore/reviews';

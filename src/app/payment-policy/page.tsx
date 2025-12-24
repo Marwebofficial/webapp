@@ -22,7 +22,7 @@ export default function PaymentPolicyPage() {
           <h2 className="text-2xl font-semibold">2. Wallet Funding</h2>
           <ul>
             <li>Your DataConnect wallet can be funded via automated bank transfer to the account details provided in the "Fund Wallet" section of your dashboard.</li>
-            <li>A processing fee of 1% is applied to all wallet funding transactions. For example, if you transfer ₦1,000, your wallet will be credited with ₦990.</li>
+            <li>A processing fee of ₦50 is applied to all wallet funding transactions. For example, if you transfer ₦1,000, your wallet will be credited with ₦950.</li>
             <li>It is your responsibility to transfer the exact amount and to the correct account details provided. DataConnect Nigeria is not liable for funds transferred to the wrong account.</li>
             <li>Wallet funding is typically confirmed and credited within minutes, but may be subject to delays from payment processing partners.</li>
           </ul>

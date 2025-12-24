@@ -1,3 +1,4 @@
+
 {
   "hosting": {
     "public": "public",
@@ -10,5 +11,9 @@
   "firestore": {
     "rules": "src/firestore.rules",
     "indexes": "src/firestore.indexes.json"
+  },
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs16"
   }
 }

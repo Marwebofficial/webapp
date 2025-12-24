@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
 
-const GONGOZ_API_KEY = '5fec546d385a3d03746e3243bc1396510748a6a0';
+const GONGOZ_API_KEY = process.env.GONGOZ_API_KEY;
 const GONGOZ_API_URL = 'https://www.gongozconcept.com/api/topup/';
 
 const networkIdMap: { [key: string]: number } = {
@@ -21,6 +21,11 @@ export async function POST(request: Request) {
 
     if (!network_id || !amount || !phone) {
       return NextResponse.json({ error: 'Missing required fields: network_id, amount, and phone are required.' }, { status: 400 });
+    }
+
+    if (!GONGOZ_API_KEY) {
+      console.error('GONGOZ_API_KEY is not defined in environment variables.');
+      return NextResponse.json({ error: 'Internal server configuration error.' }, { status: 500 });
     }
 
     const numericNetworkId = networkIdMap[network_id.toLowerCase()];

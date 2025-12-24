@@ -2,7 +2,6 @@
 
 import { useMemo } from 'react';
 import { UserManagement } from "@/components/admin/UserManagement";
-import { FundingApprovalManager } from "@/components/admin/FundingApprovalManager";
 import { BlogManager } from "@/components/admin/BlogManager";
 import { AnnouncementManager } from "@/components/admin/AnnouncementManager";
 import { NetworkStatusManager } from "@/components/admin/NetworkStatusManager";
@@ -40,7 +39,6 @@ export default function AdminPage() {
         <div className="container mx-auto p-4 py-8 md:p-12 space-y-8">
             <h1 className="text-3xl font-bold">Admin Dashboard</h1>
             <UserManagement />
-            <FundingApprovalManager />
             <BlogManager />
             <AnnouncementManager />
             <NetworkStatusManager />

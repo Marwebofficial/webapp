@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { doc, collection, serverTimestamp, getDocs, writeBatch, increment } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, getDocs, writeBatch, increment, Timestamp } from 'firebase/firestore';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,7 @@ import { Badge } from './ui/badge';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from './ui/skeleton';
 import { Checkbox } from './ui/checkbox';
+import { Receipt } from './receipt';
 
 const FormSchema = z.object({
   network: z.custom<Network>(
@@ -59,6 +60,17 @@ const FormSchema = z.object({
 });
 
 type FormData = z.infer<typeof FormSchema>;
+
+interface TransactionData {
+    type: string;
+    network?: string;
+    details: string;
+    recipientPhone: string;
+    status: 'Completed' | 'Failed';
+    createdAt: Date;
+    transactionId?: string;
+    failureReason?: string;
+}
 
 interface UserProfile {
   name: string;
@@ -117,6 +129,7 @@ export function AirtimePurchaseForm() {
   const router = useRouter();
   const [networkStatuses, setNetworkStatuses] = useState<NetworkStatus[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [latestTransaction, setLatestTransaction] = useState<TransactionData | null>(null);
 
   const userDocRef = useMemoFirebase(
     () => (user ? doc(firestore, 'users', user.uid) : null),
@@ -151,6 +164,7 @@ export function AirtimePurchaseForm() {
     mode: 'onChange',
     reValidateMode: 'onChange',
     defaultValues: {
+      network: networkProviders[0].id,
       phone: '',
       amount: 100,
       pin: '',
@@ -214,6 +228,7 @@ export function AirtimePurchaseForm() {
     }
 
     setIsLoading(true);
+    let transactionData: TransactionData;
 
     try {
         const response = await fetch('/api/airtime', {
@@ -231,19 +246,20 @@ export function AirtimePurchaseForm() {
         const batch = writeBatch(firestore);
         const userRef = doc(firestore, 'users', user.uid);
         const transactionRef = doc(collection(firestore, 'users', user.uid, 'transactions'));
+        const now = new Date();
 
         if (response.ok) {
             batch.update(userRef, { walletBalance: increment(-price) });
-            batch.set(transactionRef, {
+            transactionData = {
                 type: 'Airtime Purchase',
                 network: data.network,
-                amount: price,
-                details: 'Airtime Top-up',
+                details: `₦${price} Airtime Top-up`,
                 recipientPhone: data.phone,
                 status: 'Completed',
-                createdAt: serverTimestamp(),
+                createdAt: now,
                 transactionId: result.transaction_id || null
-            });
+            };
+            batch.set(transactionRef, { ...transactionData, createdAt: Timestamp.fromDate(now) });
             await batch.commit();
 
             toast({
@@ -252,20 +268,24 @@ export function AirtimePurchaseForm() {
             });
             
             form.reset();
+            setLatestTransaction(transactionData);
         } else {
-             batch.set(transactionRef, {
+            const failureReason = result.error || 'An unknown error occurred.';
+            transactionData = {
                 type: 'Airtime Purchase',
                 network: data.network,
-                amount: price,
-                details: 'Airtime Top-up',
+                details: `₦${price} Airtime Top-up`,
                 recipientPhone: data.phone,
                 status: 'Failed',
-                createdAt: serverTimestamp(),
-                transactionId: result.transaction_id || null
-            });
+                createdAt: now,
+                transactionId: result.transaction_id || null,
+                failureReason,
+            };
+             batch.set(transactionRef, { ...transactionData, createdAt: Timestamp.fromDate(now) });
             await batch.commit();
 
-            throw new Error(result.error || 'An unknown error occurred.');
+            setLatestTransaction(transactionData);
+            throw new Error(failureReason);
         }
     } catch (error: any) {
         console.error("Airtime purchase failed:", error);
@@ -291,9 +311,17 @@ export function AirtimePurchaseForm() {
         return 'outline';
     }
   };
+  
+  const handleBackToForm = () => {
+    setLatestTransaction(null);
+  };
 
   if (isUserLoading || !user) {
     return <PurchaseFormSkeleton />;
+  }
+  
+  if (latestTransaction) {
+      return <Receipt transaction={latestTransaction} onBack={handleBackToForm} />;
   }
 
   return (
