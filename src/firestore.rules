@@ -18,7 +18,7 @@ service cloud.firestore {
       allow read: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId) || isAdmin(); // Simplified rule for debugging
+      allow update: if (isOwner(userId) && request.resource.data.keys().hasAll(['pin', 'name', 'phoneNumber'])) || isAdmin();
       allow delete: if isOwner(userId) || isAdmin();
 
       match /transactions/{transactionId} {
