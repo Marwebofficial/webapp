@@ -275,8 +275,7 @@ function BlogPostEditor() {
                                     <FormLabel>Cover Image</FormLabel>
                                     <FormControl>
                                        <ImageUploader 
-                                            onUploadSuccess={(url) => form.setValue('imageUrl', url, { shouldValidate: true })} 
-                                            initialUrl={field.value}
+                                            onUploadComplete={(url) => form.setValue('imageUrl', url, { shouldValidate: true })} 
                                         />
                                     </FormControl>
                                     <FormMessage />

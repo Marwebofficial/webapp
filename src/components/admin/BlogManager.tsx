@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useFirestore } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
 import { useCollection } from "@/firebase/firestore/use-collection";
@@ -23,10 +23,12 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Trash2, Edit, PlusCircle } from 'lucide-react';
+import { ImageUploader } from './ImageUploader';
 
 export function BlogManager() {
     const firestore = useFirestore();
     const [editingPost, setEditingPost] = useState<any>(null);
+    const [imageUrl, setImageUrl] = useState<string | null>(null);
 
     const blogQuery = useMemo(() => {
         if (!firestore) return null;
@@ -35,15 +37,27 @@ export function BlogManager() {
 
     const { data: posts, isLoading } = useCollection(blogQuery);
 
+    useEffect(() => {
+        if (editingPost && editingPost.imageUrl) {
+            setImageUrl(editingPost.imageUrl);
+        } else {
+            setImageUrl(null);
+        }
+    }, [editingPost]);
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
-        const data = {
+        const data: any = {
             title: formData.get('title') as string,
             content: formData.get('content') as string,
             author: formData.get('author') as string,
             featured: formData.get('featured') === 'on',
         };
+
+        if (imageUrl) {
+            data.imageUrl = imageUrl;
+        }
 
         if (editingPost) {
             await updateBlogPost(editingPost.id, data);
@@ -51,12 +65,18 @@ export function BlogManager() {
             await addBlogPost(data);
         }
         setEditingPost(null);
+        setImageUrl(null);
         e.currentTarget.reset();
     };
 
     const handleDelete = async (id: string) => {
         await deleteBlogPost(id);
     };
+
+    const handleCancelEdit = () => {
+        setEditingPost(null);
+        setImageUrl(null);
+    }
 
     return (
         <Card>
@@ -68,13 +88,21 @@ export function BlogManager() {
                     <Input name="title" placeholder="Title" defaultValue={editingPost?.title || ''} required />
                     <Textarea name="content" placeholder="Content (Markdown supported)" defaultValue={editingPost?.content || ''} required />
                     <Input name="author" placeholder="Author" defaultValue={editingPost?.author || ''} required />
+                    <div>
+                        <label>Cover Image</label>
+                        <ImageUploader 
+                            onUploadComplete={setImageUrl} 
+                            folder="blog-covers" 
+                        />
+                        {imageUrl && <img src={imageUrl} alt="Cover image preview" className="mt-2 h-32" />}
+                    </div>
                     <div className="flex items-center space-x-2">
                         <Checkbox id="featured" name="featured" defaultChecked={editingPost?.featured || false} />
                         <label htmlFor="featured">Featured Post</label>
                     </div>
                     <div className="flex space-x-2">
                         <Button type="submit">{editingPost ? 'Update Post' : 'Create Post'}</Button>
-                        {editingPost && <Button variant="outline" onClick={() => setEditingPost(null)}>Cancel</Button>}
+                        {editingPost && <Button variant="outline" onClick={handleCancelEdit}>Cancel</Button>}
                     </div>
                 </form>
             </CardContent>

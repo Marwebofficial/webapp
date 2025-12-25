@@ -60,7 +60,7 @@ export default function BlogPostPage() {
     const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
 
     const postRef = useMemoFirebase(
-        () => (firestore && slug) ? doc(firestore, 'blogPosts', slug) : null,
+        () => (firestore && slug) ? doc(firestore, 'blog', slug) : null,
         [firestore, slug]
     );
 
