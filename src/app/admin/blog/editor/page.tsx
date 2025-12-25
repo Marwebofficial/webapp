@@ -1,13 +1,14 @@
 
 'use client';
 
-import { useEffect, useState, Suspense, useRef } from 'react';
+import { useEffect, useState, Suspense, useRef, useMemo } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore, useUser, useStorage } from '@/firebase';
 import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,17 +18,20 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 import { Sparkles, Loader2, Image as ImageIcon, Upload, File, X } from 'lucide-react';
+import SimpleMdeEditor from "react-simplemde-editor";
+import "easymde/dist/easymde.min.css";
+import ImageUploader from '@/components/admin/ImageUploader';
 
 const attachmentSchema = z.object({
     name: z.string(),
-    url: z.string().url().or(z.string().startsWith("data:")),
+    url: z.string().url(),
 });
 
 const FormSchema = z.object({
     title: z.string().min(5, "Title must be at least 5 characters long."),
     slug: z.string().min(3, "URL Slug must be at least 3 characters long.").regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug can only contain lowercase letters, numbers, and hyphens.'),
     excerpt: z.string().min(20, "Excerpt must be at least 20 characters.").max(200, "Excerpt cannot exceed 200 characters."),
-    imageUrl: z.string().url("Please enter a valid image URL.").or(z.string().startsWith("data:image/")),
+    imageUrl: z.string().url("Please enter a valid image URL."),
     content: z.string().min(50, "Content must be at least 50 characters long."),
     attachments: z.array(attachmentSchema).optional(),
 });
@@ -36,13 +40,14 @@ type FormData = z.infer<typeof FormSchema>;
 
 function BlogPostEditor() {
     const firestore = useFirestore();
+    const storage = useStorage();
     const { user } = useUser();
     const router = useRouter();
     const searchParams = useSearchParams();
     const slug = searchParams.get('slug');
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(!!slug);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isUploading, setIsUploading] = useState(false);
     const attachmentInputRef = useRef<HTMLInputElement>(null);
 
     const form = useForm<FormData>({
@@ -61,7 +66,7 @@ function BlogPostEditor() {
       control: form.control,
       name: "attachments",
     });
-    
+
     const imageUrl = form.watch('imageUrl');
 
     useEffect(() => {
@@ -96,47 +101,71 @@ function BlogPostEditor() {
             form.setValue('slug', slugify(e.target.value), { shouldValidate: true });
         }
     };
-    
-    const handleImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
 
-        if (!file.type.startsWith('image/')) {
-            toast({
-                title: "Invalid File Type",
-                description: "Please select an image file (e.g., JPG, PNG, GIF).",
-                variant: "destructive"
-            });
+    const handleFileUpload = async (file: File, isAttachment: boolean, isInline: boolean = false): Promise<string | void> => {
+        if (!storage || !user) {
+            toast({ title: "Authentication Error", description: "Please sign in again.", variant: "destructive" });
             return;
         }
+        setIsUploading(true);
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const dataUrl = e.target?.result as string;
-            form.setValue('imageUrl', dataUrl, { shouldValidate: true });
+        const fileId = `${Date.now()}-${file.name}`;
+        const folder = isAttachment ? 'attachments' : 'images';
+        const storageRef = ref(storage, `blog/${user.uid}/${folder}/${fileId}`);
+
+        try {
+            const uploadResult = await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(uploadResult.ref);
+
+            if (isInline) {
+                return downloadURL;
+            }
+
+            if (isAttachment) {
+                append({ name: file.name, url: downloadURL });
+            } else {
+                form.setValue('imageUrl', downloadURL, { shouldValidate: true });
+            }
+
             toast({
-                title: "Image Uploaded",
-                description: "The image has been loaded and is ready to be saved with the post."
+                title: `Successfully uploaded ${isAttachment ? 'attachment' : 'image'}!`,
+                description: 'The file is now linked to your post.',
             });
-        };
-        reader.readAsDataURL(file);
+        } catch (error: any) {
+            console.error("Upload failed:", error);
+            toast({ title: "Upload Failed", description: error.message, variant: "destructive" });
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     const handleAttachmentFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const dataUrl = e.target?.result as string;
-            append({ name: file.name, url: dataUrl });
-            toast({
-                title: "Attachment Added",
-                description: `File "${file.name}" has been attached.`
-            });
-        };
-        reader.readAsDataURL(file);
+        if (file) {
+            handleFileUpload(file, true);
+        }
     };
+    
+    const mdeOptions = useMemo(() => {
+    return {
+      autofocus: true,
+      spellChecker: false,
+      uploadImage: true,
+      imageUploadFunction: async (file: File, onSuccess: (url: string) => void, onError: (error: string) => void) => {
+        try {
+          const url = await handleFileUpload(file, false, true);
+          if (url) {
+            onSuccess(url);
+          } else {
+            onError("Upload failed, URL not returned.");
+          }
+        } catch (error: any) {
+          onError(error.message);
+        }
+      },
+    }
+  }, [user, storage]);
+
 
     const onSubmit = async (data: FormData) => {
         if (!firestore || !user) return;
@@ -149,7 +178,7 @@ function BlogPostEditor() {
                 author: user.displayName || 'Admin',
                 updatedAt: serverTimestamp(),
             };
-            
+
             if (!slug) {
                 // @ts-ignore
                 postData.createdAt = serverTimestamp();
@@ -187,12 +216,12 @@ function BlogPostEditor() {
             </Card>
         );
     }
-    
+
     return (
         <Card className="w-full max-w-4xl mx-auto">
             <CardHeader>
                 <CardTitle>{slug ? 'Edit Blog Post' : 'Create New Blog Post'}</CardTitle>
-                <CardDescription>Fill out the details below. Content can be written in Markdown.</CardDescription>
+                <CardDescription>Fill out the details below. You can drag and drop images into the content editor.</CardDescription>
             </CardHeader>
             <CardContent>
                 <Form {...form}>
@@ -242,22 +271,12 @@ function BlogPostEditor() {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Cover Image</FormLabel>
-                                    <div className="flex gap-2">
-                                        <FormControl>
-                                            <Input {...field} placeholder="Paste image URL or upload one" />
-                                        </FormControl>
-                                        <input
-                                            type="file"
-                                            ref={fileInputRef}
-                                            onChange={handleImageFileChange}
-                                            className="hidden"
-                                            accept="image/*"
+                                    <FormControl>
+                                       <ImageUploader 
+                                            onUploadSuccess={(url) => form.setValue('imageUrl', url, { shouldValidate: true })} 
+                                            initialUrl={field.value}
                                         />
-                                        <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-                                             <Upload className="mr-2 h-4 w-4" />
-                                             Upload
-                                        </Button>
-                                    </div>
+                                    </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -272,9 +291,9 @@ function BlogPostEditor() {
                             name="content"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Content (Markdown supported)</FormLabel>
+                                    <FormLabel>Content</FormLabel>
                                     <FormControl>
-                                        <Textarea {...field} rows={15} className="min-h-[400px]" />
+                                        <SimpleMdeEditor {...field} options={mdeOptions} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -299,7 +318,7 @@ function BlogPostEditor() {
                                             <X className="h-4 w-4" />
                                         </Button>
                                     </div>
-                                ))}
+                                ))霹
                                 {fields.length === 0 && (
                                     <p className="text-sm text-center text-muted-foreground py-4">No files attached yet.</p>
                                 )}
@@ -309,20 +328,22 @@ function BlogPostEditor() {
                                 ref={attachmentInputRef}
                                 onChange={handleAttachmentFileChange}
                                 className="hidden"
+                                disabled={isUploading}
                             />
                             <Button
                                 type="button"
                                 variant="outline"
                                 onClick={() => attachmentInputRef.current?.click()}
+                                disabled={isUploading}
                             >
-                                <Upload className="mr-2 h-4 w-4" />
-                                Add Attachment
+                                {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />霹
+                                {isUploading ? 'Uploading...' : 'Add Attachment'}
                             </Button>
                         </div>
                         <div className="flex justify-end gap-2 pt-4">
                              <Button type="button" variant="ghost" onClick={() => router.back()}>Cancel</Button>
-                             <Button type="submit" disabled={form.formState.isSubmitting}>
-                                {form.formState.isSubmitting ? 'Saving...' : 'Save Post'}
+                             <Button type="submit" disabled={form.formState.isSubmitting || isUploading}>
+                                {(form.formState.isSubmitting || isUploading) ? 'Saving...' : 'Save Post'}
                             </Button>
                         </div>
                     </form>

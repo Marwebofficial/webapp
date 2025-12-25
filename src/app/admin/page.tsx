@@ -7,6 +7,7 @@ import { AnnouncementManager } from "@/components/admin/AnnouncementManager";
 import { NetworkStatusManager } from "@/components/admin/NetworkStatusManager";
 import { ReviewManager } from "@/components/admin/ReviewManager";
 import { PlansManager } from "@/components/admin/PlansManager";
+import { ImageUploader } from "@/components/admin/ImageUploader";
 import { networkProviders } from "@/lib/data-plans";
 import { useUser } from "@/firebase/provider";
 import { useDoc } from "@/firebase/firestore/use-doc";
@@ -40,6 +41,7 @@ export default function AdminPage() {
             <h1 className="text-3xl font-bold">Admin Dashboard</h1>
             <UserManagement />
             <BlogManager />
+            <ImageUploader />
             <AnnouncementManager />
             <NetworkStatusManager />
             <ReviewManager />
