@@ -18,9 +18,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 import { Sparkles, Loader2, Image as ImageIcon, Upload, File, X } from 'lucide-react';
-import SimpleMdeEditor from "react-simplemde-editor";
+import dynamic from 'next/dynamic';
 import "easymde/dist/easymde.min.css";
-import ImageUploader from '@/components/admin/ImageUploader';
+import { ImageUploader } from '@/components/admin/ImageUploader';
+
+const SimpleMdeEditor = dynamic(() => import('react-simplemde-editor'), { ssr: false });
 
 const attachmentSchema = z.object({
     name: z.string(),
@@ -318,7 +320,7 @@ function BlogPostEditor() {
                                             <X className="h-4 w-4" />
                                         </Button>
                                     </div>
-                                ))霹
+                                ))}
                                 {fields.length === 0 && (
                                     <p className="text-sm text-center text-muted-foreground py-4">No files attached yet.</p>
                                 )}
@@ -336,7 +338,7 @@ function BlogPostEditor() {
                                 onClick={() => attachmentInputRef.current?.click()}
                                 disabled={isUploading}
                             >
-                                {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />霹
+                                {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                                 {isUploading ? 'Uploading...' : 'Add Attachment'}
                             </Button>
                         </div>

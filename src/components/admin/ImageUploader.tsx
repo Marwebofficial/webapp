@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useStorage, useUser } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -9,14 +9,23 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload, Copy } from 'lucide-react';
 
-export function ImageUploader() {
+interface ImageUploaderProps {
+  onUploadSuccess: (url: string) => void;
+  initialUrl?: string;
+}
+
+export function ImageUploader({ onUploadSuccess, initialUrl }: ImageUploaderProps) {
     const storage = useStorage();
     const { user } = useUser();
     const { toast } = useToast();
     const [isUploading, setIsUploading] = useState(false);
-    const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
+    const [uploadedUrl, setUploadedUrl] = useState<string | null>(initialUrl || null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        setUploadedUrl(initialUrl || null);
+    }, [initialUrl]);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -44,11 +53,11 @@ export function ImageUploader() {
             const uploadResult = await uploadBytes(storageRef, selectedFile);
             const downloadURL = await getDownloadURL(uploadResult.ref);
             setUploadedUrl(downloadURL);
+            onUploadSuccess(downloadURL); // Pass the URL to the parent
             toast({
                 title: 'Upload Successful',
-                description: 'The image URL has been copied to your clipboard.',
+                description: 'The image is now linked.',
             });
-            await navigator.clipboard.writeText(downloadURL);
         } catch (error: any) {
             console.error("Upload failed:", error);
             toast({ title: "Upload Failed", description: error.message, variant: "destructive" });
@@ -69,11 +78,7 @@ export function ImageUploader() {
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>Image Uploader</CardTitle>
-                <CardDescription>Upload an image and get its public URL.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-6">
                 <Input
                     type="file"
                     ref={fileInputRef}
@@ -94,9 +99,6 @@ export function ImageUploader() {
                              <Button variant="outline" size="icon" onClick={copyToClipboard}>
                                 <Copy className="h-4 w-4" />
                              </Button>
-                        </div>
-                        <div className="relative mt-2 aspect-video w-full max-w-sm rounded-lg overflow-hidden border">
-                            <img src={uploadedUrl} alt="Uploaded preview" style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
                         </div>
                     </div>
                 )}
