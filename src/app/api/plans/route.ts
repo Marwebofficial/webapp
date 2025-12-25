@@ -1,12 +1,9 @@
 
-import { getPlans } from "@/firebase/firestore/plans";
 import { NextRequest, NextResponse } from "next/server";
-import { collection, query, where, getDocs, getFirestore } from "firebase/firestore";
-import { initializeApp } from "firebase/app";
-import { firebaseConfig } from "@/firebase/config";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { initializeFirebase } from "@/firebase/initialize";
 
-const app = initializeApp(firebaseConfig);
-const firestore = getFirestore(app);
+const { firestore } = initializeFirebase();
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
@@ -27,7 +24,7 @@ export async function GET(request: NextRequest) {
                 name: data.name,
                 amount: data.amount,
                 provider: data.provider,
-                data_id: data.data_id 
+                data_id: data.data_id
             };
         });
         return NextResponse.json(plans);
