@@ -125,7 +125,7 @@ export default function BlogPostPage() {
                                 alt={post.title}
                                 fill
                                 className="object-cover"
-                                priority
+                                loading="eager"
                             />
                         </div>
                         

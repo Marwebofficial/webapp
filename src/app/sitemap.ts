@@ -1,82 +1,37 @@
+
+import { getBlogPosts } from '@/firebase/firestore/blog';
 import { MetadataRoute } from 'next'
  
-export default function sitemap(): MetadataRoute.Sitemap {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dataconnectnigeria.vercel.app';
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+
+  const blogPosts = await getBlogPosts();
+
+  const posts = blogPosts.docs.map((doc) => ({
+    url: `https://dataconnect.vercel.app/blog/${doc.data().slug}`,
+    lastModified: doc.data().updatedAt.toDate(),
+  }));
 
   return [
     {
-      url: siteUrl,
+      url: 'https://dataconnect.vercel.app',
       lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 1,
     },
     {
-      url: `${siteUrl}/buy-data`,
+      url: 'https://dataconnect.vercel.app/buy-data',
       lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.9,
     },
     {
-      url: `${siteUrl}/buy-airtime`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.9,
-    },
-    {
-      url: `${siteUrl}/airtime-to-cash`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${siteUrl}/tv-subscription`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-        url: `${siteUrl}/blog`,
+        url: 'https://dataconnect.vercel.app/buy-airtime',
         lastModified: new Date(),
-        changeFrequency: 'weekly',
-        priority: 0.7,
     },
     {
-      url: `${siteUrl}/contact`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 0.5,
+        url: 'https://dataconnect.vercel.app/airtime-to-cash',
+        lastModified: new Date(),
     },
     {
-      url: `${siteUrl}/login`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 0.7,
+        url: 'https://dataconnect.vercel.app/blog',
+        lastModified: new Date(),
     },
-    {
-      url: `${siteUrl}/signup`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 0.7,
-    },
-    {
-      url: `${siteUrl}/terms-of-service`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 0.3,
-    },
-    {
-      url: `${siteUrl}/privacy-policy`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 0.3,
-    },
-     {
-      url: `${siteUrl}/payment-policy`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 0.3,
-    },
+    ...posts,
   ]
 }
-
-    

@@ -65,7 +65,7 @@ const fundingFormSchema = z.object({
 const ACCOUNT_DETAILS = {
     bank: "Palmpay",
     accountName: "onyeka marvelous",
-    accountNumber: "9040367103",
+    accountNumber: "09040367103",
 };
 
 type FundingFormData = z.infer<typeof fundingFormSchema>;

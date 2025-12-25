@@ -9,7 +9,7 @@ export const siteConfig = {
   name: "My Next.js App",
   description: "A Next.js app with Firebase and Tailwind CSS.",
   url: "http://localhost:3001",
-  WHATSAPP_NUMBER: "2348060128795",
+  WHATSAPP_NUMBER: "09040367103",
 };
 
 export function getFundingInfo(amount: number) {
